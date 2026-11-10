@@ -1,0 +1,4 @@
+# Protect source code, private uploads and runtime data when this repository is
+# placed under XAMPP's htdocs. Serve Next.js on :3000 and point PHP virtual hosts
+# directly at backend/public; do not expose the repository root.
+Require all denied

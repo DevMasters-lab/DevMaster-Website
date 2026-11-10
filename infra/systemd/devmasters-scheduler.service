@@ -1,0 +1,9 @@
+[Unit]
+Description=DevMasters scheduler
+After=network.target
+[Service]
+Type=oneshot
+User=devmasters
+WorkingDirectory=/srv/devmasters/backend
+ExecStart=/usr/bin/php artisan schedule:run
+NoNewPrivileges=true

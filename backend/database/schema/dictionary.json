@@ -1,0 +1,4064 @@
+{
+  "users": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "email",
+      "type": "varchar(254)",
+      "nullable": false,
+      "key": "UQ",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Canonicalized login email; unique, using the same normalization on all writes."
+    },
+    {
+      "name": "display_name",
+      "type": "varchar(200)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Name shown in the appropriate portal."
+    },
+    {
+      "name": "password_hash",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Encoded password hash; null until account setup; never plaintext."
+    },
+    {
+      "name": "phone",
+      "type": "varchar(32)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Normalized contact phone; not unique unless phone login is introduced."
+    },
+    {
+      "name": "status",
+      "type": "user_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "INVITED",
+      "references": "\u2014",
+      "definition": "Account lifecycle; ACTIVE is required to authenticate."
+    },
+    {
+      "name": "email_verified_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Verified email timestamp; reset when email changes."
+    },
+    {
+      "name": "phone_verified_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Verified phone timestamp; reset when phone changes."
+    },
+    {
+      "name": "last_login_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Latest successful login."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "roles": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "code",
+      "type": "varchar(64)",
+      "nullable": false,
+      "key": "UQ",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Stable role code; suggested seeds ADMIN, STAFF, EXPERT."
+    },
+    {
+      "name": "name",
+      "type": "varchar(120)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Human-readable role name."
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Role purpose and assignment guidance."
+    },
+    {
+      "name": "is_system",
+      "type": "boolean",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "false",
+      "references": "\u2014",
+      "definition": "Protects essential built-in role definitions."
+    },
+    {
+      "name": "is_active",
+      "type": "boolean",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "true",
+      "references": "\u2014",
+      "definition": "Inactive roles cannot confer access."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "permissions": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "code",
+      "type": "varchar(120)",
+      "nullable": false,
+      "key": "UQ",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Stable permission, for example offers.issue or selections.decide."
+    },
+    {
+      "name": "module",
+      "type": "varchar(64)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Business module owning the permission."
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "What action this permission permits."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    }
+  ],
+  "user_roles": [
+    {
+      "name": "user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Assigned account."
+    },
+    {
+      "name": "role_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "roles.id",
+      "definition": "Assigned role."
+    },
+    {
+      "name": "granted_by_user_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Staff grantor; null only for controlled system bootstrap."
+    },
+    {
+      "name": "granted_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Grant time; revoke by removing assignment and writing audit history."
+    }
+  ],
+  "role_permissions": [
+    {
+      "name": "role_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "roles.id",
+      "definition": "Role receiving the permission."
+    },
+    {
+      "name": "permission_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "permissions.id",
+      "definition": "Permission granted to the role."
+    },
+    {
+      "name": "granted_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Assignment timestamp; changes require audit history."
+    }
+  ],
+  "sessions": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Account authenticated by the session."
+    },
+    {
+      "name": "session_family_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Shared rotation-family identifier; not a foreign key."
+    },
+    {
+      "name": "refresh_token_hash",
+      "type": "varchar(128)",
+      "nullable": false,
+      "key": "UQ",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Digest of a high-entropy refresh token; never the raw token."
+    },
+    {
+      "name": "rotated_from_session_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK, UQ",
+      "default": "None",
+      "references": "sessions.id",
+      "definition": "Previous token record in this rotation chain."
+    },
+    {
+      "name": "expires_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Absolute refresh-token expiry."
+    },
+    {
+      "name": "last_used_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Latest validated use."
+    },
+    {
+      "name": "revoked_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Revocation or rotation timestamp."
+    },
+    {
+      "name": "revocation_reason",
+      "type": "varchar(120)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Logout, credential reset, rotation or suspected reuse."
+    },
+    {
+      "name": "client_description",
+      "type": "varchar(300)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Optional limited device/browser description."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "organizations": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "organization_code",
+      "type": "varchar(40)",
+      "nullable": false,
+      "key": "UQ",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Internal reference, for example ORG-000001."
+    },
+    {
+      "name": "name",
+      "type": "varchar(255)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Canonical organization/company name."
+    },
+    {
+      "name": "registration_number",
+      "type": "varchar(100)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Optional identifier; jurisdiction-specific uniqueness is not assumed."
+    },
+    {
+      "name": "website",
+      "type": "varchar(500)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Company website, when supplied."
+    },
+    {
+      "name": "address",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Company address, when needed."
+    },
+    {
+      "name": "is_active",
+      "type": "boolean",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "true",
+      "references": "\u2014",
+      "definition": "Archive from new use without deleting history."
+    },
+    {
+      "name": "created_by_user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Staff member who verified or created the record."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "contacts": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "organization_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "organizations.id",
+      "definition": "Organization represented by this contact."
+    },
+    {
+      "name": "full_name",
+      "type": "varchar(200)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Contact name."
+    },
+    {
+      "name": "job_title",
+      "type": "varchar(150)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Position or department."
+    },
+    {
+      "name": "email",
+      "type": "varchar(254)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Business email."
+    },
+    {
+      "name": "phone",
+      "type": "varchar(32)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Business contact number."
+    },
+    {
+      "name": "is_primary",
+      "type": "boolean",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "false",
+      "references": "\u2014",
+      "definition": "Proposed primary-contact flag; at most one true per organization."
+    },
+    {
+      "name": "is_active",
+      "type": "boolean",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "true",
+      "references": "\u2014",
+      "definition": "Inactive contacts remain available in historical links."
+    },
+    {
+      "name": "created_by_user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Staff creator."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "company_requests": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "reference_no",
+      "type": "varchar(40)",
+      "nullable": false,
+      "key": "UQ",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Human-facing request reference; not a secret access token."
+    },
+    {
+      "name": "request_type",
+      "type": "request_type",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "INVITE_US_TO_BID or HIRE_OUR_TEAM."
+    },
+    {
+      "name": "organization_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK",
+      "default": "None",
+      "references": "organizations.id",
+      "definition": "Verified company link, added by staff when available."
+    },
+    {
+      "name": "contact_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK",
+      "default": "None",
+      "references": "contacts.id",
+      "definition": "Verified contact; requires the matching organization link."
+    },
+    {
+      "name": "submitted_company_name",
+      "type": "varchar(255)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Original company name, immutable after submission."
+    },
+    {
+      "name": "submitted_contact_name",
+      "type": "varchar(200)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Original contact name, immutable after submission."
+    },
+    {
+      "name": "submitted_email",
+      "type": "varchar(254)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Original acknowledgement email, immutable after submission."
+    },
+    {
+      "name": "submitted_phone",
+      "type": "varchar(32)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Original phone as submitted."
+    },
+    {
+      "name": "title",
+      "type": "varchar(255)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Short request title; staff refinements are audited."
+    },
+    {
+      "name": "requirements",
+      "type": "text",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Current clarified requirement summary; original remains in submission_snapshot."
+    },
+    {
+      "name": "submission_snapshot",
+      "type": "jsonb",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Immutable validated original payload and form schema version; no credentials or file bytes."
+    },
+    {
+      "name": "expected_start_on",
+      "type": "date",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Indicative date; does not imply agreed placement terms."
+    },
+    {
+      "name": "expected_end_on",
+      "type": "date",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Indicative end date, when known."
+    },
+    {
+      "name": "response_due_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Bid/response deadline when applicable."
+    },
+    {
+      "name": "status",
+      "type": "request_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "SUBMITTED",
+      "references": "\u2014",
+      "definition": "Agency intake and matching state, not project-delivery status."
+    },
+    {
+      "name": "owner_user_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Responsible staff; may be unassigned at public intake."
+    },
+    {
+      "name": "submitted_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server receipt time."
+    },
+    {
+      "name": "closed_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Administrative closure time; required for CLOSED or CANCELLED."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "request_roles": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "company_requests.id",
+      "definition": "Parent request."
+    },
+    {
+      "name": "role_title",
+      "type": "varchar(200)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Requested professional role."
+    },
+    {
+      "name": "scope",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Role-specific requirements."
+    },
+    {
+      "name": "headcount",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Required experts; positive integer."
+    },
+    {
+      "name": "work_mode",
+      "type": "work_mode",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "REMOTE, ONSITE or HYBRID when known."
+    },
+    {
+      "name": "location_text",
+      "type": "varchar(255)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Work location or geographic requirement."
+    },
+    {
+      "name": "status",
+      "type": "request_role_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "OPEN",
+      "references": "\u2014",
+      "definition": "OPEN, FILLED or CANCELLED; FILLED is updated transactionally."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "request_activities": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "company_requests.id",
+      "definition": "Request discussed or changed."
+    },
+    {
+      "name": "actor_user_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Staff actor; null only for public/system events."
+    },
+    {
+      "name": "actor_type",
+      "type": "actor_type",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "USER, PUBLIC or SYSTEM."
+    },
+    {
+      "name": "activity_type",
+      "type": "request_activity_type",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Intake, note, clarification, status change, assignment or CRM linking."
+    },
+    {
+      "name": "body",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Internal explanation or communication summary."
+    },
+    {
+      "name": "from_status",
+      "type": "request_status",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Previous state for status-change events."
+    },
+    {
+      "name": "to_status",
+      "type": "request_status",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "New state for status-change events."
+    },
+    {
+      "name": "occurred_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Business event time."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    }
+  ],
+  "expert_profiles": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "user_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK, UQ",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Optional before approval; unique linked account after activation."
+    },
+    {
+      "name": "expert_code",
+      "type": "varchar(40)",
+      "nullable": false,
+      "key": "UQ",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Expert/application reference."
+    },
+    {
+      "name": "full_name",
+      "type": "varchar(200)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Applicant or expert name."
+    },
+    {
+      "name": "contact_email",
+      "type": "varchar(254)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Application/contact email; not itself a login account."
+    },
+    {
+      "name": "contact_phone",
+      "type": "varchar(32)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Contact phone."
+    },
+    {
+      "name": "professional_title",
+      "type": "varchar(200)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Professional headline."
+    },
+    {
+      "name": "biography",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Profile summary."
+    },
+    {
+      "name": "location_text",
+      "type": "varchar(255)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "General location; avoid unnecessary precise address data."
+    },
+    {
+      "name": "application_status",
+      "type": "application_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "SUBMITTED",
+      "references": "\u2014",
+      "definition": "Review workflow, separate from operational network status."
+    },
+    {
+      "name": "network_status",
+      "type": "network_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "PENDING",
+      "references": "\u2014",
+      "definition": "PENDING, ACTIVE, SUSPENDED or ARCHIVED."
+    },
+    {
+      "name": "application_snapshot",
+      "type": "jsonb",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Immutable original application, including form schema version."
+    },
+    {
+      "name": "submitted_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Application receipt time."
+    },
+    {
+      "name": "approved_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Most recent approval time; backed by an expert_review."
+    },
+    {
+      "name": "activated_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Portal activation time after approved review and account setup."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "expert_reviews": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "expert_profile_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "expert_profiles.id",
+      "definition": "Application/profile reviewed."
+    },
+    {
+      "name": "reviewer_user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Authorized staff reviewer."
+    },
+    {
+      "name": "decision",
+      "type": "expert_review_decision",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "APPROVED, REJECTED or CORRECTIONS_REQUIRED."
+    },
+    {
+      "name": "comments",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Internal review notes; separate from expert-facing feedback."
+    },
+    {
+      "name": "feedback_to_expert",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Approved feedback for email or portal communication."
+    },
+    {
+      "name": "reviewed_profile_snapshot",
+      "type": "jsonb",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Exact profile fields evaluated at this review, excluding secrets."
+    },
+    {
+      "name": "reviewed_document_refs",
+      "type": "jsonb",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "[]",
+      "references": "\u2014",
+      "definition": "Array of document-version IDs/checksums reviewed; historical snapshot, not FK enforcement."
+    },
+    {
+      "name": "reviewed_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Review decision time."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    }
+  ],
+  "skills": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "code",
+      "type": "varchar(80)",
+      "nullable": false,
+      "key": "UQ",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Stable skill identifier."
+    },
+    {
+      "name": "name",
+      "type": "varchar(150)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Display name."
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Skill definition."
+    },
+    {
+      "name": "is_active",
+      "type": "boolean",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "true",
+      "references": "\u2014",
+      "definition": "Retire from new selection without destroying prior links."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "expert_skills": [
+    {
+      "name": "expert_profile_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "expert_profiles.id",
+      "definition": "Expert declaring the skill."
+    },
+    {
+      "name": "skill_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "skills.id",
+      "definition": "Declared skill."
+    },
+    {
+      "name": "proficiency",
+      "type": "skill_proficiency",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Optional BEGINNER, INTERMEDIATE, ADVANCED or EXPERT."
+    },
+    {
+      "name": "years_experience",
+      "type": "numeric(4,1)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Nonnegative self-reported experience; not a certification claim."
+    },
+    {
+      "name": "notes",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Optional supporting experience summary."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    }
+  ],
+  "availabilities": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "expert_profile_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "expert_profiles.id",
+      "definition": "Expert whose availability is described."
+    },
+    {
+      "name": "starts_on",
+      "type": "date",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "First date in the interval."
+    },
+    {
+      "name": "ends_on",
+      "type": "date",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Last date; null means open-ended."
+    },
+    {
+      "name": "status",
+      "type": "availability_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "AVAILABLE, LIMITED or UNAVAILABLE."
+    },
+    {
+      "name": "hours_per_week",
+      "type": "numeric(5,2)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Optional stated capacity, between 0 and 168; not timesheet data."
+    },
+    {
+      "name": "notes",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Availability limitations or preferences."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "consent_records": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "expert_profile_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "expert_profiles.id",
+      "definition": "Applicant/expert providing consent."
+    },
+    {
+      "name": "purpose",
+      "type": "consent_purpose",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "NETWORK_PARTICIPATION or CV_SHARING; final policy wording remains to be approved."
+    },
+    {
+      "name": "policy_version",
+      "type": "varchar(60)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Version of the exact policy shown."
+    },
+    {
+      "name": "policy_text_snapshot",
+      "type": "text",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Policy wording acknowledged at that time."
+    },
+    {
+      "name": "action",
+      "type": "consent_action",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "GRANTED or WITHDRAWN."
+    },
+    {
+      "name": "channel",
+      "type": "consent_channel",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "PUBLIC_FORM, PORTAL or STAFF_RECORDED."
+    },
+    {
+      "name": "recorded_by_user_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Expert or staff recorder; null for public form."
+    },
+    {
+      "name": "evidence_summary",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Required for staff-recorded consent."
+    },
+    {
+      "name": "occurred_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Time consent was given or withdrawn."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    }
+  ],
+  "candidates": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "company_requests.id",
+      "definition": "Request under consideration."
+    },
+    {
+      "name": "expert_profile_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "expert_profiles.id",
+      "definition": "Approved expert considered for the request."
+    },
+    {
+      "name": "shortlisted_by_user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Responsible shortlisting staff."
+    },
+    {
+      "name": "status",
+      "type": "candidate_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "SHORTLISTED",
+      "references": "\u2014",
+      "definition": "Outreach/interest state; not the final placement decision."
+    },
+    {
+      "name": "internal_notes",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Staff-only suitability and matching notes."
+    },
+    {
+      "name": "shortlisted_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Time first added to shortlist."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "outreach_records": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "candidate_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "candidates.id",
+      "definition": "Shortlist entry contacted."
+    },
+    {
+      "name": "staff_user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Staff recorder."
+    },
+    {
+      "name": "channel",
+      "type": "outreach_channel",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "EMAIL, PHONE, PORTAL or IN_PERSON."
+    },
+    {
+      "name": "summary",
+      "type": "text",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "What was discussed; does not constitute offer acceptance."
+    },
+    {
+      "name": "interest_result",
+      "type": "interest_result",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "INTERESTED, NOT_INTERESTED or NO_RESPONSE."
+    },
+    {
+      "name": "contacted_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Time of contact."
+    },
+    {
+      "name": "follow_up_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Optional reminder time."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    }
+  ],
+  "expert_offers": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "reference_no",
+      "type": "varchar(40)",
+      "nullable": false,
+      "key": "UQ",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Human-readable offer reference."
+    },
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "company_requests.id",
+      "definition": "Company request served by the offer."
+    },
+    {
+      "name": "expert_profile_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "expert_profiles.id",
+      "definition": "Only expert entitled to view/respond to this offer."
+    },
+    {
+      "name": "candidate_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "candidates.id",
+      "definition": "Matching shortlist entry; must match request and expert."
+    },
+    {
+      "name": "request_role_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK",
+      "default": "None",
+      "references": "request_roles.id",
+      "definition": "Optional structured role belonging to this same request."
+    },
+    {
+      "name": "responsible_user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Staff member managing the offer."
+    },
+    {
+      "name": "status",
+      "type": "offer_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "DRAFT",
+      "references": "\u2014",
+      "definition": "Current negotiation state; selection is recorded separately."
+    },
+    {
+      "name": "current_version_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK, UQ",
+      "default": "None",
+      "references": "offer_versions.id",
+      "definition": "Current operative version; same offer only; null only during atomic initial creation."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "offer_versions": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "offer_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "expert_offers.id",
+      "definition": "Parent offer."
+    },
+    {
+      "name": "version_no",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Sequential positive version number per offer."
+    },
+    {
+      "name": "status",
+      "type": "offer_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "DRAFT",
+      "references": "\u2014",
+      "definition": "Lifecycle state; terms become immutable once issued_at is populated."
+    },
+    {
+      "name": "role_title",
+      "type": "varchar(200)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Role-title snapshot; required before issue."
+    },
+    {
+      "name": "scope",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Exact offered scope; required before issue."
+    },
+    {
+      "name": "work_mode",
+      "type": "work_mode",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "REMOTE, ONSITE or HYBRID, when applicable."
+    },
+    {
+      "name": "location_text",
+      "type": "varchar(255)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Agreed location details, when applicable."
+    },
+    {
+      "name": "starts_on",
+      "type": "date",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Proposed start; null permitted only when timing is explicitly explained in terms."
+    },
+    {
+      "name": "ends_on",
+      "type": "date",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Optional end; open-ended arrangements must be explicit in terms."
+    },
+    {
+      "name": "compensation_amount",
+      "type": "numeric(18,2)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Nonnegative quoted amount per rate_basis; required before issue."
+    },
+    {
+      "name": "currency",
+      "type": "varchar(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Three-letter uppercase currency code; required before issue and validated against configured allowed values."
+    },
+    {
+      "name": "rate_basis",
+      "type": "rate_basis",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "HOUR, DAY, MONTH, FIXED or OTHER; required before issue."
+    },
+    {
+      "name": "rate_basis_detail",
+      "type": "varchar(200)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Required when rate_basis is OTHER."
+    },
+    {
+      "name": "payer_type",
+      "type": "payer_type",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "DEVMASTERS, REQUESTING_COMPANY or OTHER; required before issue."
+    },
+    {
+      "name": "payer_name_snapshot",
+      "type": "varchar(255)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Exact payer name; required before issue even without an organization record."
+    },
+    {
+      "name": "payment_terms",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Payment schedule/conditions; required before issue; no invoice ledger implied."
+    },
+    {
+      "name": "terms",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Complete offered contractual/administrative terms; required before issue."
+    },
+    {
+      "name": "expires_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Acceptance deadline; required and future at issue."
+    },
+    {
+      "name": "issued_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Null for draft; immutable issue time thereafter."
+    },
+    {
+      "name": "issued_by_user_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Staff issuer; required when issued_at is set."
+    },
+    {
+      "name": "terms_hash",
+      "type": "varchar(64)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "SHA-256 of canonical issued terms plus attachment version IDs/checksums; required at issue."
+    },
+    {
+      "name": "created_by_user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Author of this version."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "offer_responses": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "offer_version_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "offer_versions.id",
+      "definition": "Exact version reviewed by the expert."
+    },
+    {
+      "name": "response_type",
+      "type": "offer_response_type",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "ACCEPTED, DECLINED, CHANGES_REQUESTED or COMMENT; COMMENT is a proposed non-decision event."
+    },
+    {
+      "name": "comments",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Expert comments or an attributed staff transcription."
+    },
+    {
+      "name": "channel",
+      "type": "response_channel",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "PORTAL, EMAIL, PHONE or IN_PERSON."
+    },
+    {
+      "name": "recorded_by_user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Authenticated expert for PORTAL; authorized staff for other channels."
+    },
+    {
+      "name": "responded_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Time of the expert response; server time for portal clicks."
+    },
+    {
+      "name": "recorded_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "When the system stored the event; distinct from an off-portal response time."
+    },
+    {
+      "name": "evidence_summary",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Required for non-PORTAL decisions; describe source and exact terms acknowledged."
+    },
+    {
+      "name": "command_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "UQ",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Unique command identifier preventing duplicate response writes."
+    }
+  ],
+  "selection_decisions": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "offer_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "expert_offers.id",
+      "definition": "Offer being decided."
+    },
+    {
+      "name": "offer_version_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "offer_versions.id",
+      "definition": "Accepted version used for this decision."
+    },
+    {
+      "name": "accepted_response_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "offer_responses.id",
+      "definition": "ACCEPTED response to the same version; verified transactionally."
+    },
+    {
+      "name": "decision_no",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Positive sequence per offer; no duplicate sequence values."
+    },
+    {
+      "name": "decision",
+      "type": "selection_result",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "SELECTED or NOT_SELECTED."
+    },
+    {
+      "name": "decided_by_user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Staff member with final-selection permission."
+    },
+    {
+      "name": "reason",
+      "type": "text",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Rationale, including any correction/reversal."
+    },
+    {
+      "name": "supersedes_decision_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK, UQ",
+      "default": "None",
+      "references": "selection_decisions.id",
+      "definition": "Previous decision in this offer's linear history."
+    },
+    {
+      "name": "decided_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Selection decision time."
+    }
+  ],
+  "placements": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "offer_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK, UQ",
+      "default": "None",
+      "references": "expert_offers.id",
+      "definition": "One placement at most per offer, including cancelled history."
+    },
+    {
+      "name": "offer_version_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK, UQ",
+      "default": "None",
+      "references": "offer_versions.id",
+      "definition": "Exact accepted terms; never re-point to a later revision."
+    },
+    {
+      "name": "accepted_response_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK, UQ",
+      "default": "None",
+      "references": "offer_responses.id",
+      "definition": "Evidence of acceptance of the same version."
+    },
+    {
+      "name": "selection_decision_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK, UQ",
+      "default": "None",
+      "references": "selection_decisions.id",
+      "definition": "Original SELECTED decision that created this placement."
+    },
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "company_requests.id",
+      "definition": "Same request as the offer; composite consistency required."
+    },
+    {
+      "name": "expert_profile_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "expert_profiles.id",
+      "definition": "Same expert as the offer; composite consistency required."
+    },
+    {
+      "name": "company_name_snapshot",
+      "type": "varchar(255)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Company name at selection; preserved if CRM details later change."
+    },
+    {
+      "name": "starts_on",
+      "type": "date",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Administrative start, copied from accepted terms where known."
+    },
+    {
+      "name": "ends_on",
+      "type": "date",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Administrative planned end, copied from accepted terms where known."
+    },
+    {
+      "name": "actual_end_on",
+      "type": "date",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Administrative closure date; not a deliverable completion report."
+    },
+    {
+      "name": "status",
+      "type": "placement_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "CONFIRMED",
+      "references": "\u2014",
+      "definition": "CONFIRMED, ACTIVE, ENDED or CANCELLED."
+    },
+    {
+      "name": "administrative_notes",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Staff-only handoff/closure notes."
+    },
+    {
+      "name": "created_by_user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Selecting staff member."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "documents": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "title",
+      "type": "varchar(255)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Document title."
+    },
+    {
+      "name": "document_type",
+      "type": "document_type",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "CV, CERTIFICATE, REQUEST_FILE, OFFER_ATTACHMENT, RESPONSE_EVIDENCE, EXPORT or OTHER."
+    },
+    {
+      "name": "created_by_user_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Null allowed for controlled anonymous intake uploads."
+    },
+    {
+      "name": "status",
+      "type": "document_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "ACTIVE",
+      "references": "\u2014",
+      "definition": "ACTIVE or ARCHIVED; archiving does not remove issued evidence."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "document_versions": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "document_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "documents.id",
+      "definition": "Logical document."
+    },
+    {
+      "name": "version_no",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Positive revision number per document."
+    },
+    {
+      "name": "original_filename",
+      "type": "varchar(255)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Sanitized original name; never used as an authorization decision."
+    },
+    {
+      "name": "bucket_name",
+      "type": "varchar(100)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Private RustFS bucket."
+    },
+    {
+      "name": "object_key",
+      "type": "varchar(700)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Opaque server-generated object key; unique with bucket_name."
+    },
+    {
+      "name": "object_version_id",
+      "type": "varchar(255)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Storage-provider version identifier when bucket versioning is enabled."
+    },
+    {
+      "name": "mime_type",
+      "type": "varchar(150)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Server-validated media type."
+    },
+    {
+      "name": "size_bytes",
+      "type": "bigint",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Nonnegative object size; upload limit enforced separately."
+    },
+    {
+      "name": "sha256",
+      "type": "varchar(64)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Checksum of the file bytes."
+    },
+    {
+      "name": "scan_status",
+      "type": "scan_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "PENDING",
+      "references": "\u2014",
+      "definition": "PENDING, CLEAN, INFECTED or ERROR."
+    },
+    {
+      "name": "scanned_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Latest scan completion time."
+    },
+    {
+      "name": "scan_message",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Sanitized scanner outcome; no secrets."
+    },
+    {
+      "name": "uploaded_by_user_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Uploader account; null for scoped public intake."
+    },
+    {
+      "name": "uploaded_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Upload completion time."
+    }
+  ],
+  "expert_documents": [
+    {
+      "name": "expert_profile_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "expert_profiles.id",
+      "definition": "Owning applicant/expert."
+    },
+    {
+      "name": "document_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "documents.id",
+      "definition": "Logical document attached to that expert."
+    },
+    {
+      "name": "purpose",
+      "type": "expert_document_purpose",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "CV, CERTIFICATE or OTHER."
+    },
+    {
+      "name": "is_primary_cv",
+      "type": "boolean",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "false",
+      "references": "\u2014",
+      "definition": "At most one current primary CV per expert; allowed only for CV purpose."
+    },
+    {
+      "name": "linked_by_user_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Null for anonymous initial application."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    }
+  ],
+  "request_documents": [
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "company_requests.id",
+      "definition": "Owning company request."
+    },
+    {
+      "name": "document_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "documents.id",
+      "definition": "Logical request document."
+    },
+    {
+      "name": "label",
+      "type": "varchar(150)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Business label or category."
+    },
+    {
+      "name": "linked_by_user_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Staff uploader/linker; null for public intake."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    }
+  ],
+  "offer_documents": [
+    {
+      "name": "offer_version_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "offer_versions.id",
+      "definition": "Terms version containing the attachment."
+    },
+    {
+      "name": "document_version_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "document_versions.id",
+      "definition": "Exact immutable bytes offered to the expert."
+    },
+    {
+      "name": "label",
+      "type": "varchar(150)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Attachment caption."
+    },
+    {
+      "name": "sort_order",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "0",
+      "references": "\u2014",
+      "definition": "Display order within the offer."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    }
+  ],
+  "notifications": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "recipient_user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Recipient account; experts may read only their own inbox."
+    },
+    {
+      "name": "outbox_event_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "outbox_events.id",
+      "definition": "Committed event that caused this notification."
+    },
+    {
+      "name": "notification_type",
+      "type": "varchar(80)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Stable business event code, for example OFFER_ISSUED or EXPERT_SELECTED."
+    },
+    {
+      "name": "title",
+      "type": "varchar(255)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Rendered title snapshot."
+    },
+    {
+      "name": "body",
+      "type": "text",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Rendered message; no credential/reset tokens."
+    },
+    {
+      "name": "action_path",
+      "type": "varchar(500)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Relative application path; destination rechecks authorization."
+    },
+    {
+      "name": "read_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Null means unread; update only for the recipient."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    }
+  ],
+  "outbox_events": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "event_type",
+      "type": "varchar(100)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Contracted event name, including notification, scan or export events."
+    },
+    {
+      "name": "aggregate_type",
+      "type": "varchar(80)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Logical aggregate type; not a polymorphic FK."
+    },
+    {
+      "name": "aggregate_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Logical aggregate ID; resolver validates type/ID when created."
+    },
+    {
+      "name": "aggregate_version",
+      "type": "integer",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Version of the aggregate at commit."
+    },
+    {
+      "name": "deduplication_key",
+      "type": "varchar(200)",
+      "nullable": false,
+      "key": "UQ",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Stable key for this business event, not a fresh value on each retry."
+    },
+    {
+      "name": "payload",
+      "type": "jsonb",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Minimal versioned event data; no passwords, OTPs, raw session or recovery tokens."
+    },
+    {
+      "name": "status",
+      "type": "outbox_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "PENDING",
+      "references": "\u2014",
+      "definition": "Publication lifecycle, not proof of email delivery."
+    },
+    {
+      "name": "available_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Earliest publish/retry time."
+    },
+    {
+      "name": "locked_until",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Dispatcher lease expiry for safe crash recovery."
+    },
+    {
+      "name": "publish_attempts",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "0",
+      "references": "\u2014",
+      "definition": "Nonnegative count of queue publication attempts."
+    },
+    {
+      "name": "published_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Queue acknowledgement time."
+    },
+    {
+      "name": "last_error",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Sanitized publication error."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "delivery_attempts": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "outbox_event_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "outbox_events.id",
+      "definition": "Committed event requiring delivery."
+    },
+    {
+      "name": "notification_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK",
+      "default": "None",
+      "references": "notifications.id",
+      "definition": "In-app notification when recipient has an account; null for public acknowledgement."
+    },
+    {
+      "name": "notification_template_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK",
+      "default": "None",
+      "references": "notification_templates.id",
+      "definition": "Exact template version used, if templated."
+    },
+    {
+      "name": "delivery_key",
+      "type": "varchar(200)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Deterministic key for event + recipient + channel + template version."
+    },
+    {
+      "name": "channel",
+      "type": "delivery_channel",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "EMAIL or SMS."
+    },
+    {
+      "name": "recipient_address",
+      "type": "varchar(254)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Email/phone snapshot; limited visibility and retention."
+    },
+    {
+      "name": "attempt_no",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Positive sequence within this event/delivery key."
+    },
+    {
+      "name": "status",
+      "type": "delivery_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "PENDING",
+      "references": "\u2014",
+      "definition": "PENDING, SENT, FAILED or UNKNOWN; SENT means provider accepted, not proven inbox delivery."
+    },
+    {
+      "name": "provider",
+      "type": "varchar(60)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "GMAIL or PLASGATE in the accepted architecture."
+    },
+    {
+      "name": "provider_message_id",
+      "type": "varchar(255)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Provider acknowledgement identifier when returned."
+    },
+    {
+      "name": "attempted_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "When this attempt began."
+    },
+    {
+      "name": "completed_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Provider outcome time."
+    },
+    {
+      "name": "error_code",
+      "type": "varchar(100)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Machine-readable, sanitized error."
+    },
+    {
+      "name": "error_message",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Sanitized failure/uncertainty information."
+    }
+  ],
+  "audit_events": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "actor_user_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Authenticated actor; null for public/system actions."
+    },
+    {
+      "name": "actor_type",
+      "type": "actor_type",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "USER, PUBLIC or SYSTEM."
+    },
+    {
+      "name": "action",
+      "type": "varchar(120)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Stable action code, for example offer.issued or placement.cancelled."
+    },
+    {
+      "name": "entity_type",
+      "type": "varchar(80)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Logical target type; not a relational FK."
+    },
+    {
+      "name": "entity_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Logical target ID; null allowed for login failures or unbound actions."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Target aggregate version at the time of the event."
+    },
+    {
+      "name": "reason",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Required for privileged corrections, rejection, withdrawal and reversal."
+    },
+    {
+      "name": "change_summary",
+      "type": "jsonb",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Allowlisted field changes; redact secrets and minimize sensitive personal data."
+    },
+    {
+      "name": "correlation_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Trace identifier shared across the command, audit and worker activity."
+    },
+    {
+      "name": "occurred_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server event time."
+    }
+  ],
+  "request_role_skills": [
+    {
+      "name": "request_role_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "request_roles.id",
+      "definition": "Role requiring the skill."
+    },
+    {
+      "name": "skill_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "skills.id",
+      "definition": "Required or preferred skill."
+    },
+    {
+      "name": "is_required",
+      "type": "boolean",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "true",
+      "references": "\u2014",
+      "definition": "True for required skill; false for preference."
+    },
+    {
+      "name": "minimum_proficiency",
+      "type": "skill_proficiency",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Optional minimum level; not an automated hiring score."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    }
+  ],
+  "offer_response_evidence": [
+    {
+      "name": "offer_response_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "offer_responses.id",
+      "definition": "Response whose evidence is being preserved."
+    },
+    {
+      "name": "document_version_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "document_versions.id",
+      "definition": "Exact CLEAN evidence file version."
+    },
+    {
+      "name": "label",
+      "type": "varchar(200)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Evidence caption, such as expert email confirmation."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    }
+  ],
+  "services": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "code",
+      "type": "varchar(80)",
+      "nullable": false,
+      "key": "UQ",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Stable service identifier."
+    },
+    {
+      "name": "name",
+      "type": "varchar(200)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Public service title."
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Description for the website."
+    },
+    {
+      "name": "is_active",
+      "type": "boolean",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "true",
+      "references": "\u2014",
+      "definition": "Whether it may be selected on new public requests."
+    },
+    {
+      "name": "sort_order",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "0",
+      "references": "\u2014",
+      "definition": "Display sequence."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "request_services": [
+    {
+      "name": "request_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "company_requests.id",
+      "definition": "Company request."
+    },
+    {
+      "name": "service_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK, FK",
+      "default": "None",
+      "references": "services.id",
+      "definition": "Service classification."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    }
+  ],
+  "public_pages": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "slug",
+      "type": "varchar(150)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "URL/page identifier."
+    },
+    {
+      "name": "locale",
+      "type": "varchar(12)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "en",
+      "references": "\u2014",
+      "definition": "Language code; English default is a proposal, not an accepted language requirement."
+    },
+    {
+      "name": "title",
+      "type": "varchar(255)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Page title."
+    },
+    {
+      "name": "body_markdown",
+      "type": "text",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Editable content; sanitize rendering and disallow unsafe embedded HTML."
+    },
+    {
+      "name": "status",
+      "type": "page_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "DRAFT",
+      "references": "\u2014",
+      "definition": "DRAFT, PUBLISHED or ARCHIVED."
+    },
+    {
+      "name": "published_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Required for a published page."
+    },
+    {
+      "name": "updated_by_user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Staff editor."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "notification_templates": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "template_key",
+      "type": "varchar(100)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Business template identity."
+    },
+    {
+      "name": "version_no",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Positive version number for this key/channel/locale."
+    },
+    {
+      "name": "channel",
+      "type": "delivery_channel",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "EMAIL or SMS."
+    },
+    {
+      "name": "locale",
+      "type": "varchar(12)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "en",
+      "references": "\u2014",
+      "definition": "Content language; default remains a proposed configuration."
+    },
+    {
+      "name": "subject",
+      "type": "varchar(255)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Required for EMAIL; null allowed for SMS."
+    },
+    {
+      "name": "body",
+      "type": "text",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Template text with an allowlisted set of variables."
+    },
+    {
+      "name": "variables_schema",
+      "type": "jsonb",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "{}",
+      "references": "\u2014",
+      "definition": "Expected variable names/types; validate before rendering."
+    },
+    {
+      "name": "is_active",
+      "type": "boolean",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "false",
+      "references": "\u2014",
+      "definition": "At most one active version per key/channel/locale."
+    },
+    {
+      "name": "published_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "After publication content is immutable; revise by inserting a new version."
+    },
+    {
+      "name": "created_by_user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Staff author."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "system_settings": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "key",
+      "type": "varchar(120)",
+      "nullable": false,
+      "key": "UQ",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Stable setting key."
+    },
+    {
+      "name": "value",
+      "type": "jsonb",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Validated non-secret value."
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Meaning, owner and allowed values."
+    },
+    {
+      "name": "updated_by_user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Authorized staff editor."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "idempotency_requests": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "actor_scope",
+      "type": "varchar(128)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Server-derived user or signed-public-submission scope; do not trust client-supplied actor identity."
+    },
+    {
+      "name": "key_hash",
+      "type": "varchar(64)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Digest of the supplied idempotency key."
+    },
+    {
+      "name": "request_hash",
+      "type": "varchar(64)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Digest of canonical method, route and body; different payload with same key must be rejected."
+    },
+    {
+      "name": "route",
+      "type": "varchar(200)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Versioned method/route identifier."
+    },
+    {
+      "name": "status",
+      "type": "idempotency_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "IN_PROGRESS",
+      "references": "\u2014",
+      "definition": "IN_PROGRESS, COMPLETED or FAILED."
+    },
+    {
+      "name": "resource_type",
+      "type": "varchar(80)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Logical result type, not an FK."
+    },
+    {
+      "name": "resource_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Logical result ID; same result is replayed on retry."
+    },
+    {
+      "name": "response_status",
+      "type": "integer",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "HTTP status of the committed result."
+    },
+    {
+      "name": "response_summary",
+      "type": "jsonb",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Minimal safe replay content; no credentials or full sensitive response body."
+    },
+    {
+      "name": "lease_expires_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Crash-recovery lease for an in-progress command."
+    },
+    {
+      "name": "expires_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Retention boundary for deduplication record; policy is not specified by the source."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ],
+  "export_jobs": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "PK",
+      "default": "Application UUID",
+      "references": "\u2014",
+      "definition": "Stable internal record identifier."
+    },
+    {
+      "name": "requested_by_user_id",
+      "type": "uuid",
+      "nullable": false,
+      "key": "FK",
+      "default": "None",
+      "references": "users.id",
+      "definition": "Staff owner; recheck permission at execution and download."
+    },
+    {
+      "name": "export_type",
+      "type": "export_type",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "REQUESTS, OFFERS or PLACEMENTS."
+    },
+    {
+      "name": "format",
+      "type": "export_format",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "CSV",
+      "references": "\u2014",
+      "definition": "CSV or XLSX."
+    },
+    {
+      "name": "filters",
+      "type": "jsonb",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "{}",
+      "references": "\u2014",
+      "definition": "Validated report filters; not SQL text."
+    },
+    {
+      "name": "status",
+      "type": "export_status",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "PENDING",
+      "references": "\u2014",
+      "definition": "PENDING, RUNNING, COMPLETED, FAILED or EXPIRED."
+    },
+    {
+      "name": "output_document_version_id",
+      "type": "uuid",
+      "nullable": true,
+      "key": "FK, UQ",
+      "default": "None",
+      "references": "document_versions.id",
+      "definition": "Exact private output artifact; required for COMPLETED."
+    },
+    {
+      "name": "started_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Worker start time."
+    },
+    {
+      "name": "completed_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Completion/failure time."
+    },
+    {
+      "name": "expires_at",
+      "type": "timestamptz(3)",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Download/retention expiry; duration is a policy decision."
+    },
+    {
+      "name": "error_message",
+      "type": "text",
+      "nullable": true,
+      "key": "\u2014",
+      "default": "None",
+      "references": "\u2014",
+      "definition": "Sanitized failure information."
+    },
+    {
+      "name": "created_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now()",
+      "references": "\u2014",
+      "definition": "Server time when this record was inserted."
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamptz(3)",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "now(); update on write",
+      "references": "\u2014",
+      "definition": "Server time of the latest authorized update."
+    },
+    {
+      "name": "record_version",
+      "type": "integer",
+      "nullable": false,
+      "key": "\u2014",
+      "default": "1",
+      "references": "\u2014",
+      "definition": "Optimistic concurrency counter; increment on each aggregate update."
+    }
+  ]
+}

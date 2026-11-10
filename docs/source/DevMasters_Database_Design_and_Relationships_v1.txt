@@ -1,0 +1,222 @@
+TECHNICAL DESIGN SERIES  /  02
+Database Dictionary
+and Relationships
+DevMasters agency platform
+Version 1.0  |  Proposed physical design  |  1 November 2026
+Purpose
+Translate the accepted agency architecture into a reviewable relational design for PostgreSQL and Prisma, preserving the distinction between an expert accepting an offer and DevMasters selecting that expert.
+Scope boundary
+Two secure portals: Admin and approved Expert. Companies submit public forms without an account. Experts work directly with the requesting company. No company portal, project tasks, timesheets or deliverable-management entities are included. [S1 §§1–3]
+01  Scope, provenance and conventions
+The accepted architecture determines business scope. Exact field names, types, lengths, nullability, enum values and supporting tables are proposed implementation details. [S1 §3]
+Source limits
+The attachment does not supply actual public-form field contracts, service names, retention periods, policy wording, installed PostgreSQL/Prisma versions or an existing schema. These details remain proposals or open decisions; no company/project-management requirements have been imported from other work.
+02  Core table catalogue — identity, intake and experts
+All 33 entities from the accepted ER diagram are retained. The physical names below are the proposed plural snake_case mapping. The Columns sheet expands every field. [S1 §3]
+03  Core table catalogue — matching, offers and shared services
+Offer acceptance, staff selection and administrative placement are separate records. Private file versions and delivery attempts preserve evidence without making business decisions depend on email success. [S1 §§2–4]
+04  Supporting tables — explicit refinements
+These nine tables implement functions already named in the architecture or normalize an identified relationship. They are not additional accepted business modules.
+Why the additions are needed
+request_role_skills supports structured manual matching; offer_response_evidence preserves exact supporting file versions. Services, public pages and templates map to the accepted configuration/content module. Idempotency and export-job records map to the accepted API and worker responsibilities. [S1 §§1,4]
+No artificial catalogue or policy is seeded. Service names, language defaults, allowed currencies, retention values and consent text still require product or policy decisions.
+05  Business relationship overview
+This is the core business path, not the entire FK inventory. The complete 80-link diagram is provided as editable Mermaid source and as a relationship matrix in Excel/Markdown.
+* Every committed offer must have at least one version. Minimum-child requirements require atomic creation and additional validation; a child foreign key alone does not guarantee them. [T1]
+06  Principal relationships and cardinalities
+“0..N” means zero or many. All links shown below are foreign-key-backed; the composite guards prevent unrelated records being combined. Full actor, reference, attachment and support links are listed in the workbook.
+07  Integrity: what must be enforced
+The complete register contains 30 specifications (C01–C30). These high-risk rules must be enforced in the database and/or serialized transactions, not just by form validation.
+PostgreSQL CHECK constraints cannot validate another table’s state. Composite FKs enforce identity consistency; acceptance/selection-state checks require guarded transactions or triggers. Triggers and unsupported database features belong in reviewed migrations. [T1–T3]
+08  Lifecycle and transaction boundaries
+The source separates the business decision from email delivery. This design retains that boundary and makes concurrent commands explicit. [S1 §4]
+09  Access, documents, notifications and retention
+These controls preserve the source’s expert-isolation, private-document and reliable-notification requirements. Retention durations remain unresolved; no legal compliance conclusion is implied. [S1 §§4–5]
+10  Decision register — part 1
+These are explicit proposals or open decisions, not silent changes to the accepted agency model. The source supplies no live database or executable schema to verify against.
+Exact form-requiredness, notification/consent wording, working-location details and compensation constraints should be confirmed before the implementation is treated as production-ready.
+10  Decision register — part 2
+These are explicit proposals or open decisions, not silent changes to the accepted agency model. The source supplies no live database or executable schema to verify against.
+11  Planned acceptance tests — part 1
+These are implementation test specifications, not test results. Run against the actual PostgreSQL constraints and API transaction paths, including concurrent requests.
+11  Planned acceptance tests — part 2
+These are implementation test specifications, not test results. Run against the actual PostgreSQL constraints and API transaction paths, including concurrent requests.
+12  Sources and implementation handover
+S1 is the authority for business scope. T1–T3 support implementation details only; they do not add business requirements or determine unresolved policy.
+S1  User-supplied accepted architecture
+Pasted markdown(3).md
+§1 Complete system architecture; §2 Agency workflow and offer lifecycle; §3 Data architecture; §4 Offer acceptance and selection notifications; §5 Deployment and security boundaries. Supplied in this conversation; all exact field specifications are proposed refinements.
+T1  PostgreSQL constraints
+https://www.postgresql.org/docs/current/ddl-constraints.html
+CHECKs are row-local; composite FKs, uniqueness and delete actions; child FKs are not automatically indexed. Consulted 2026-11-01; technical implementation reference, not a new business requirement.
+T2  Prisma Schema API
+https://docs.prisma.io/docs/orm/v7/reference/prisma-schema-reference
+Native PostgreSQL type mappings and relation/unique declarations. Consulted 2026-11-01; exact installed project version not supplied.
+T3  Prisma unsupported database features
+https://www.prisma.io/docs/orm/v7/prisma-migrate/workflows/unsupported-database-features
+Customize migrations for triggers and features not represented in Prisma schema. Consulted 2026-11-01; use installed-version documentation before implementation.
+Implementation sequence
+Confirm the decision register and installed technology versions. Implement base tables and junctions, then add circular current-version and composite consistency constraints. Add required-state, immutability and concurrency enforcement through reviewed migrations and guarded service transactions. Implement the outbox worker and authorization rules. Run the planned acceptance tests and a database-plus-object restore exercise before rollout.
+Deliverables
+DevMasters_Database_Dictionary_v1.xlsx — complete editable field dictionary and registers.
+DevMasters_Database_Design_v1.md — complete text specification, field dictionary and grouped Mermaid diagrams.
+DevMasters_Relationships_v1.mmd — exhaustive editable FK diagram.
+This Word document — readable technical design and relationship guide.
+42 TABLES | 442 COLUMNS | 80 FK LINKS | 30 INTEGRITY SPECS
+33 source entities
++ 9 labeled supporting tables | Complete field-level dictionary
+in Excel and Markdown | Full relationship matrix
+plus editable Mermaid source | Constraints, lifecycle rules
+and 20 planned tests
+How to read this package
+This Word guide explains the model and implementation rules. The accompanying Excel workbook and Markdown specification contain all 442 column definitions, all 80 foreign-key relationships and the full constraint register. This is a design deliverable, not an executed migration or an inventory of an inspected live database.
+Convention | Proposed specification
+Naming | Plural snake_case tables; stable UUID identifiers supplied by the application.
+Keys | PK = primary key; FK = foreign key; UQ = single-column unique. Junctions use a two-column composite PK.
+Calendar dates and timestamps | date for calendar dates; timestamptz(3) for events; UTC at application/API boundaries.
+Money and capacities | numeric(18,2) for offer compensation. No floating-point money, invoice or payment ledger is introduced.
+Draft requiredness | A nullable draft field can become mandatory before issue; required-on-issue rules are not optional business checks.
+Concurrency | record_version is a mutable aggregate counter; offer_versions.version_no identifies a distinct terms revision.
+Common metadata | created_at is server-generated. Every write path must maintain updated_at and record_version where present.
+Foreign-key actions | RESTRICT on delete/update by default. Disable/archive referenced masters instead of cascading away evidence.
+JSONB | Only validated snapshots, event data, settings, templates and report filters; use typed FKs for actual relationships.
+Technology mapping | Explicit Prisma native types. Verify installed versions before applying migration syntax or special constraints. [T2–T3]
+Table | Fields | Purpose
+users | 12 | Admin/staff and approved-expert authentication accounts.
+roles | 9 | Named groups of staff or expert permissions.
+permissions | 5 | Atomic actions checked by backend authorization.
+user_roles | 4 | Many-to-many account-to-role assignments.
+role_permissions | 3 | Many-to-many role-to-permission assignments.
+sessions | 13 | Refresh-session records and rotation history.
+organizations | 11 | Verified internal company records; not login accounts.
+contacts | 12 | Internal contact persons belonging to an organization.
+company_requests | 22 | Anonymous Invite Us to Bid and Hire Our Team submissions and agency follow-up.
+request_roles | 11 | Roles/headcount needed under one company request.
+request_activities | 10 | Append-only agency notes and request activity history.
+expert_profiles | 18 | Public application and, after approval, the expert profile.
+expert_reviews | 10 | Immutable application review decisions and reviewed evidence.
+skills | 8 | Controlled skill catalogue used for manual matching.
+expert_skills | 6 | Expert-to-skill many-to-many association.
+availabilities | 10 | Expert availability intervals for manual staff search.
+consent_records | 11 | Append-only expert consent and withdrawal events.
+Pre-approval application refinement
+expert_profiles.user_id is nullable before approval and unique when linked. This explicitly refines the source ERD, which showed a mandatory user owner, while its workflow requires applications to precede portal access. Approval, account activation and active-network eligibility remain separate checks.
+Table | Fields | Purpose
+candidates | 10 | One manual shortlist record per expert per request.
+outreach_records | 9 | Append-only history of staff contact with shortlisted experts.
+expert_offers | 12 | One DevMasters-to-expert offer, distinct from final selection.
+offer_versions | 26 | Versioned terms and operational state of one expert offer.
+offer_responses | 10 | Immutable expert response to an exact issued offer version.
+selection_decisions | 10 | Append-only DevMasters selection decisions, separate from acceptance.
+placements | 17 | Administrative record of a selected expert working directly with the company.
+documents | 8 | Logical private document whose bytes are stored outside PostgreSQL.
+document_versions | 15 | Immutable object metadata and mutable scan outcome for one uploaded file version.
+expert_documents | 6 | Expert-to-document ownership links for CVs and supporting certificates.
+request_documents | 5 | Internal request attachments received through public forms or staff.
+offer_documents | 5 | Exact attachment versions included with one offer version.
+notifications | 9 | User-facing in-app inbox; email delivery is tracked separately.
+outbox_events | 16 | Durable committed events queued independently of business decisions.
+delivery_attempts | 15 | Per-recipient, per-channel external notification delivery attempts.
+audit_events | 11 | Append-only security and business change history.
+Account-free acknowledgements
+notifications always has a user recipient. delivery_attempts.notification_id may be null for a public acknowledgement email, but every delivery attempt still belongs to a committed outbox_event. An anonymous request does not create a company account.
+Table | Fields | Purpose
+request_role_skills | 5 | Structured skill requirements for manual role matching.
+offer_response_evidence | 4 | Exact supporting files for an attributed off-portal expert response.
+services | 9 | Service catalogue for public pages and request categorization.
+request_services | 3 | Many-to-many request classification by service.
+public_pages | 11 | Editable public content without a company portal.
+notification_templates | 14 | Versioned staff-managed notification content.
+system_settings | 8 | Validated non-secret runtime business settings.
+idempotency_requests | 15 | Durable command deduplication for public intake and authenticated writes.
+export_jobs | 14 | Asynchronous private exports of requests, offers and placements.
+Relationship | Business meaning
+Request + expert -> candidate | One shortlist entry per request/expert pair. Multiple role-specific offers may follow from it.
+Offer -> versions -> responses | Issued terms and attachments are fixed. A revised offer requires a fresh response to its exact version.
+Acceptance -> selection | Acceptance is the expert’s agreement. Selection is a distinct authorized DevMasters decision.
+Selection -> placement | A placement points to the same offer, accepted version, acceptance response and SELECTED decision.
+Parent / left | Child / bridge | Cardinality | Rule
+users | expert_profiles | 0..1 to 0..1 | Optional user link until expert approval/activation.
+organizations | contacts | 1 to 0..N | Each contact belongs to exactly one internal company record.
+organizations / contacts | company_requests | 0..1 to 0..N | Both links may be absent at public intake; a contact needs its matching organization.
+company_requests | request_roles | 1 to 0..N | A request can initially have no structured roles.
+expert_profiles / skills | expert_skills | M:N via bridge | Unique expert/skill pair.
+company_requests / experts | candidates | M:N via shortlist | Unique request/expert pair.
+candidates | expert_offers | 1 to 0..N | Offer request and expert must match the candidate.
+expert_offers | offer_versions | 1 to 1..N | Version 1 created atomically with offer; one current version belongs to that offer.
+offer_versions | offer_responses | 1 to 0..N | Many comments; at most one non-comment decision per version.
+expert_offers | selection_decisions | 1 to 0..N | Append-only decisions and reasoned corrections.
+expert_offers | placements | 1 to 0..1 | One placement cycle per offer, including cancelled history.
+offer_versions | placements | 1 to 0..1 | Exact accepted terms retained; no pointer to “latest” terms.
+documents | document_versions | 1 to 1..N | Each version identifies immutable bytes; scan metadata may change.
+offer_versions / document_versions | offer_documents | M:N via bridge | Exact attachment versions; membership locks after issue.
+outbox_events | notifications / delivery_attempts | 1 to 0..N | Inbox deduplication and external delivery retries are distinct.
+IDs | Area | Required invariant
+C03 | Same company/contact | A request contact must belong to the linked organization.
+C04–C06 | Same shortlist, role and version | Offer candidate matches request/expert; role matches request; current version belongs to offer.
+C07–C14 | Exact acceptance-to-placement chain | Decision and placement reference the same offer/version/response. An ACCEPTED response and SELECTED decision must be verified, not merely an existing ID.
+C15–C18 | No duplicate business outcome | One candidate per request/expert, scoped revision numbers, one substantive response per version and one SELECTED event per offer.
+C19–C23 | Reference and delivery uniqueness | At most one primary company contact, primary CV and active template version; deduplicate inbox entries and delivery attempt sequences separately.
+C24–C25 | Valid values and issue readiness | Positive headcounts/sequences; nonnegative compensation; valid date order; complete terms/payer/currency/rate basis/expiry and clean attachments before issue.
+C26 | Required first version | Create parent + first version in one transaction; validate parent minimum-child cardinality before commit.
+C28 | Availability conflicts | Use an exclusion constraint or a serialized expert-lock transaction to prevent overlapping intervals; extension availability is not assumed.
+C29–C30 | History preservation | No new revision after a placement exists. Reject mutation of issued term fields/attachments and rewriting/deletion of acceptance or selection history.
+Command | Validate and lock | Write atomically
+Submit request | Validate public form and scoped idempotency key. | Request + original snapshot + document ownership links + acknowledgement outbox.
+Approve / activate expert | Authorized reviewer; review current application snapshot and required evidence. | Review record + profile state; then account invitation/linking. Portal access still requires all activation guards.
+Issue offer | Lock offer; compare record_version; validate current draft, complete terms, future expiry and CLEAN files. | Issued snapshot/hash + current offer state + inbox + audit + outbox.
+Revise terms | Lock offer; reject any offer with placement history. | Supersede old current version; create sequential draft; move current pointer. Fresh issue and acceptance required.
+Accept / decline / request changes | Lock current version; check ownership, channel, ISSUED state and current time before expiry. | Immutable response + attributed evidence links + offer/version state + audit.
+Select expert | Lock request, role when present, then offer; verify accepted current version, authorization and remaining headcount. | Selection decision + placement + inbox + audit + outbox.
+Correct selection | Lock same aggregates; verify authorized reasoned supersession. | New decision + cancellation of existing placement where required + audit/notifications; preserve prior records.
+Expiry and retry boundaries
+A valid acceptance is not retroactively cancelled when its old deadline passes. Late phone/email evidence cannot make a new acceptance valid by backdating responded_at. Retried commands replay the original committed result; email retry never duplicates the selection decision.
+Area | Proposed enforcement
+Expert isolation | Resolve the logged-in user to their profile and follow owned offer/version/response/placement/document links. Knowing a UUID never grants access.
+Staff permissions | Separate expert review, offer management, final selection and system administration. Staff-only notes, audit and delivery diagnostics are not exposed to experts.
+Public documents | Use scoped intake authorization. Null uploader_user_id does not make a file public; request/expert document links establish ownership.
+Issued attachments | Only exact CLEAN document versions are attached. Freeze bytes, checksums and offer-document membership; never substitute the latest CV/file.
+Outbox and inbox | Persist event, business decision and inbox in one transaction. Dispatcher and workers use leases, deterministic keys and retryable delivery attempts.
+Ambiguous delivery | SENT means provider acceptance, not confirmed inbox delivery. A provider timeout can leave UNKNOWN status and may cause repeat email; do not promise exactly-once external delivery.
+Secrets and temporary state | Protected runtime configuration holds provider/JWT/database/storage secrets. Keep verification/OTP/recovery challenges in expiring Redis state. Never store raw secrets in audit/outbox/settings.
+Archive and retention | Default FK actions restrict deletion. Disable/archive referenced masters. Purging, consent text and retention periods require an approved policy and a controlled process.
+Exports and recovery | Staff exports are private, reauthorized at execution/download and retained per policy. Test database and linked-object restoration together.
+ID / topic | Proposed treatment | Classification
+D01 / User/profile relationship | Propose nullable unique user_id before approval; activate only after approved review. | Explicit refinement
+D02 / Field-level dictionary | All field details, types, sizes, nullable choices and exact status lists in this deliverable are proposed v1 design, not pre-existing schema. | Implementation proposal
+D03 / Supporting entities | Keep all 33 core entities; add 9 clearly labeled support/refinement tables, without adding a new business module. | Implementation proposal
+D04 / Response cardinality | Allow multiple COMMENT events and one decision response per version. Revisions require new acceptance. | Policy proposal
+D05 / Role allocation | Propose positive headcount, optional offer role link and serialized capacity checks. Counts include ENDED history, exclude CANCELLED placements. | Policy proposal
+D06 / Repeat placements / amendments | Preserve this rule. Freeze further revisions once a placement exists; new engagement/amendment cycle creates a new offer. | Policy proposal
+D07 / Off-portal evidence | Add evidence_summary plus typed offer_response_evidence links to exact document versions. Evidence-only late claims do not backdate valid acceptance. | Implementation proposal
+ID / topic | Proposed treatment | Classification
+D08 / Anonymous notifications | Keep notification user-required; allow delivery_attempts.notification_id null for public recipients, always tied to outbox_event. | Explicit refinement
+D09 / Availability intervals | Propose non-overlapping inclusive intervals per expert; operational eligibility remains separate. | Policy proposal
+D10 / Consent and retention | No legal retention duration or policy text invented. Proposed purpose codes require approved wording and purge rules before production. | Open policy decision
+D11 / Default language / catalogue | English locale defaults, text sizes and input requiredness are proposed; use source payload snapshots until final form contract is approved. | Open product decision
+D12 / Technology versions and extensions | Verify installed versions before migration; prefer explicit native types and reviewed SQL for special constraints. btree_gist availability is not assumed. | Open implementation decision
+D13 / Migration status | This package is a schema design and dictionary, not an inventory of deployed tables, executable migration or tested database implementation. | Delivery boundary
+No migration or runtime claim
+The documentation has been structurally checked for all 33 source entities, unique field names, FK target/type consistency and complete dictionary counts. No migrations were applied and no API/database behavior or concurrency test has been executed.
+ID / scenario | Action | Expected result
+AT01 / Anonymous company intake | Submit a valid hiring request without login. | Request + original snapshot + outbox stored; no company user created.
+AT02 / Pending expert access | Submit an application and attempt portal access before approval. | Application persists with null user_id; access denied.
+AT03 / CRM mismatch | Link a request to organization A and a contact from B. | Database composite FK/check rejects the link.
+AT04 / Shortlist mismatch | Offer references a candidate from another request/expert. | Database composite FK rejects the offer.
+AT05 / Cross-offer current version | Set offer A.current_version_id to a version of offer B. | Database composite FK rejects the update.
+AT06 / Issued terms mutation | Change amount, payer, scope, expiry or attachment membership after issue. | Immutability protection rejects mutation; draft revision remains permitted before placement.
+AT07 / Superseded version response | Revise v1, then attempt acceptance of v1. | Rejected even when its original expiry is in the future.
+AT08 / Deadline and race | Race acceptance with expiry job at deadline. | Exactly one valid business state; acceptance cannot succeed when server time >= expires_at.
+AT09 / Duplicate acceptance | Send identical acceptance command twice, then a new contradictory decision on same version. | Retry returns original result; second decision is rejected by uniqueness/state rules.
+AT10 / Phone/email attribution | Record phone acceptance with no evidence or as an expert portal actor. | Rejected; authorized staff, channel, record time and evidence are required.
+ID / scenario | Action | Expected result
+AT11 / Premature selection | Select without an ACCEPTED response, or with acceptance from another version. | Rejected by cross-link constraints and guarded transaction/trigger.
+AT12 / Parallel capacity selection | Select two accepted offers concurrently for a one-person role. | At most one non-CANCELLED placement commits; losing command returns capacity conflict.
+AT13 / Duplicate placement | Repeat selection after transaction commit/timeout. | Return existing decision/placement; no duplicate placement created.
+AT14 / Email outage | Make Gmail unavailable when issuing or selecting. | Business and inbox remain committed; failed delivery is retried separately.
+AT15 / Quarantine access | Request download or issue offer with a PENDING/INFECTED file. | Denied; no raw bucket access bypass.
+AT16 / Cross-expert access | Expert A requests B profile, offer, response, placement or file. | Denied even if the UUID is known.
+AT17 / Selection reversal | Correct SELECTED to NOT_SELECTED with a reason. | Append decision and cancel existing placement atomically; accepted terms/evidence remain intact.
+AT18 / Archive master record | Attempt hard-delete of referenced account, company, offer or evidence. | RESTRICT prevents history loss; authorized disable/archive remains available.
+AT19 / Snapshot preservation | Correct company CRM name or revise CV after issuance. | Original company submission and issued document version remain unchanged.
+AT20 / Backup/restore validation | Restore database plus referenced private objects into a test environment. | All FKs and historical document-version/checksum links resolve; sample authorized downloads succeed.

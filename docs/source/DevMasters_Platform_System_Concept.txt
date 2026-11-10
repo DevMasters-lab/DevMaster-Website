@@ -1,0 +1,76 @@
+DevMasters Platform
+System Concept & Functional Requirements
+Digital Services • Expert Network • Bidding & Project Collaboration
+Concept document | 31 October 2026
+1. Executive Summary
+DevMasters is a multidisciplinary digital services team covering software development, networking, cybersecurity and data management. It can bid directly for client projects, support prime contractors as a subcontractor, join partner-led proposals as a technical team, and deliver ongoing services. The proposed platform will connect clients, bidding partners, professional experts and DevMasters management through one system.
+The first release should prioritize four journeys: (1) client inquiries and invitations to submit EOI/proposals; (2) partner requests to hire DevMasters teams; (3) professional applications to join the expert network; and (4) work assignment, task tracking and contribution records.
+2. Platform Components
+3. Functional Requirements
+3.1 Contact Us / Invite DevMasters to Submit EOI or Proposal
+Public actions: Contact Us; Invite Us to Submit EOI; Invite Us to Submit Proposal; Request Quotation; Request Technical Services.
+Workflow: Submit invitation → validate and acknowledge → create opportunity → management review → accept/decline/request clarification → prepare proposal → record submission and outcome → create project if awarded.
+3.2 Hire Our Team
+External companies may request an individual expert, proposal team, subcontracting support or implementation team. Capture company, contact, tender/project, engagement type, skills, number of experts, qualifications, proposed dates, deadline and TOR.
+Management must be able to search experts by skills, experience, certification and availability; build a proposed team; detect scheduling conflicts; generate approved CVs; calculate costs; send an offer; track bid outcomes; and convert awarded engagements into projects. Partners must not see private rates or personal information without authorization.
+3.3 Be Our Team
+Professionals register as prospective collaborators. Profiles include identity/contact, professional title, summary, multiple skills, years of experience, education, certifications, past projects, portfolio, attached CV, availability, working preference and expected rate. The system should show profile completeness and allow profile updates.
+Workflow: Register → verify email → complete profile and consent → submit for review → approve/reject/request information → join expert pool → receive eligible assignment invitations. Membership is distinct from employment or a signed engagement contract.
+3.4 Assign Work and Record Tasks
+Authorized managers create projects, define milestones and deliverables, assign approved experts, set tasks and deadlines, and monitor execution. Experts can view assignments, update status, log effort, comment, attach evidence and submit deliverables. Managers review, approve or request revisions.
+4. Supporting Management Modules
+5. Roles and Access
+6. Core Data Entities
+Users; Roles; Organizations; Contacts; Inquiries; Opportunities; Bid Invitations; Partner Team Requests; Professional Applications; Expert Profiles; Skills; Certifications; Expert Availability; CV Versions; Proposed Teams; Proposals; Contracts; Projects; Project Members; Milestones; Tasks; Task Comments; Time Entries; Deliverables; Attachments; Notifications; Activity Logs; Invoices and Payments.
+Important relationships: one professional profile can participate in multiple proposed teams and projects; one opportunity can produce multiple proposal versions; one awarded opportunity can become a project; one task belongs to a project and may have multiple contributors. Keep expert membership, employment status and contractual engagement separate.
+7. Delivery Roadmap
+Durations are illustrative only and should be validated against team capacity, integrations, scope and acceptance criteria.
+8. Technical & Security Recommendations
+Suggested architecture: Next.js frontend; Laravel Filament backend; PostgreSQL database; S3-compatible document storage; background job queue; Docker-based deployment; modular monolith initially. Integrate email, calendar, Git repositories and accounting tools when requirements justify them.
+Security baseline: MFA for privileged users; least-privilege role permissions; organization-level data isolation; encryption in transit and at rest; secure document upload and malware scanning; audit logs; backup and recovery; retention rules; explicit consent for expert CV sharing; secrets management outside ordinary project records.
+9. Open Decisions & Next Steps
+Confirm whether DevMasters is a hybrid core team plus external expert network.
+Define approval authority for professional membership, proposal commitments and task completion.
+Agree what expert profile data partners may view and when consent is required.
+Decide whether experts must accept assignments before work begins.
+Specify payment model: employee, daily-rate consultant, fixed-fee subcontractor or mixed.
+Validate the minimum viable scope, then prepare use cases, database ERD, wireframes and development tickets.
+Component | Primary users | Purpose
+Public website | Clients, companies, professionals | Present services and provide Contact Us, Invite to Bid, Hire Our Team and Be Our Team forms.
+Management portal | DevMasters administrators, bid and project managers | Review submissions, manage experts, bids, projects, assignments and reporting.
+Expert portal | Approved members and consultants | Maintain profiles, accept assignments, update tasks and submit deliverables/timesheets.
+Partner portal (later phase) | Approved external companies | Track permitted staffing requests, proposals and shared engagements.
+Central backend | All portals | Shared identity, records, workflows, files, notifications and audit trail.
+Form data | Required capabilities
+Organization and contact | Organization, contact name, email, telephone.
+Opportunity details | Request type, project title, technical area, scope, deadline, location and budget (optional).
+Attachments | Upload TOR, EOI/RFP and supporting documents with file-type and size controls.
+Processing | Acknowledgement/reference number, email notification, admin review, clarification, accept/decline, proposal preparation and status history.
+Task data | Example fields
+Identification | Project, task title, description, category, priority and dependencies.
+Responsibility | Assignee, reviewer, start date, due date and estimated effort.
+Execution | Status: To Do → In Progress → Review → Done; blocked/cancelled as needed.
+Evidence | Comments, attachments, timesheets, deliverables and revision history.
+Contribution record | Expert role, completed tasks, duration, approved effort and manager evaluation.
+Module | Key functions | Priority
+Identity & permissions | Roles, MFA, access controls, audit logs | P0
+Expert directory | Profiles, qualifications, skills, CVs, availability | P0
+CRM & opportunities | Clients, partner organizations, inquiries, invitations | P0
+Projects & tasks | Assignments, milestones, reviews, contribution history | P0
+Documents & notifications | Versioned files, email alerts, templates | P0
+Bidding & team matching | Bid/no-bid, CV generation, costing, team proposals | P1
+Contracts & finance | Engagement agreements, invoices, expenses, payments | P1
+Service desk & assets | Support requests, SLAs, infrastructure inventory | P2
+Analytics | Win rate, expert utilization, profitability, performance | P2
+Role | Typical access
+Super Administrator | System configuration, roles, security and audits.
+Director / Management | Approve opportunities, bids, experts, assignments and commercial terms.
+Bid / Business Development Manager | CRM, invitations, partner requests, proposals and submission tracking.
+Project Manager | Projects, team assignments, task review, deliverables and progress.
+Professional / Expert | Own profile and explicitly assigned work only.
+Finance Officer | Contracts, rates, invoices, expenses and payment status.
+External Partner (optional) | Only requests and documents explicitly shared with their organization.
+Phase | Scope | Indicative duration
+Phase 1 — Minimum Viable Platform | Public website/forms, authentication, expert applications, admin review, CRM/opportunities, projects/tasks, documents, notifications | 10–14 weeks
+Phase 2 — Commercial Operations | Team matching, proposals, CV generation, resource planning, contracts, finance, service desk | 8–12 weeks
+Phase 3 — Optimization | Advanced analytics, technical assets, partner portal, automation and integrations | 6–10 weeks

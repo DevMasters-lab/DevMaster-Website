@@ -1,0 +1,447 @@
+DEVMASTERS  /  COLUMNS |  |  |  |  |  |  |  |  |  | 
+One row per physical column. Nullable is database nullability; some nullable draft fields become required on issue (C25). 'Application UUID' is an application-supplied value, not a SQL DEFAULT. Updated timestamps/counters require write-path enforcement. |  |  |  |  |  |  |  |  |  | 
+ |  |  |  |  |  |  |  |  |  | 
+ |  |  |  |  |  |  |  |  |  | 
+Module | Table | Column | PostgreSQL type | Nullable | Key | Default / write rule | References | Definition / validation | Origin | Source
+01 Identity and access | users | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §§1,3,5
+01 Identity and access | users | email | varchar(254) | No | UQ | None | — | Canonicalized login email; unique, using the same normalization on all writes. | Core ER entity | S1 §§1,3,5
+01 Identity and access | users | display_name | varchar(200) | No | — | None | — | Name shown in the appropriate portal. | Core ER entity | S1 §§1,3,5
+01 Identity and access | users | password_hash | text | Yes | — | None | — | Encoded password hash; null until account setup; never plaintext. | Core ER entity | S1 §§1,3,5
+01 Identity and access | users | phone | varchar(32) | Yes | — | None | — | Normalized contact phone; not unique unless phone login is introduced. | Core ER entity | S1 §§1,3,5
+01 Identity and access | users | status | user_status | No | — | INVITED | — | Account lifecycle; ACTIVE is required to authenticate. | Core ER entity | S1 §§1,3,5
+01 Identity and access | users | email_verified_at | timestamptz(3) | Yes | — | None | — | Verified email timestamp; reset when email changes. | Core ER entity | S1 §§1,3,5
+01 Identity and access | users | phone_verified_at | timestamptz(3) | Yes | — | None | — | Verified phone timestamp; reset when phone changes. | Core ER entity | S1 §§1,3,5
+01 Identity and access | users | last_login_at | timestamptz(3) | Yes | — | None | — | Latest successful login. | Core ER entity | S1 §§1,3,5
+01 Identity and access | users | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §§1,3,5
+01 Identity and access | users | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Core ER entity | S1 §§1,3,5
+01 Identity and access | users | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Core ER entity | S1 §§1,3,5
+01 Identity and access | roles | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §3
+01 Identity and access | roles | code | varchar(64) | No | UQ | None | — | Stable role code; suggested seeds ADMIN, STAFF, EXPERT. | Core ER entity | S1 §3
+01 Identity and access | roles | name | varchar(120) | No | — | None | — | Human-readable role name. | Core ER entity | S1 §3
+01 Identity and access | roles | description | text | Yes | — | None | — | Role purpose and assignment guidance. | Core ER entity | S1 §3
+01 Identity and access | roles | is_system | boolean | No | — | false | — | Protects essential built-in role definitions. | Core ER entity | S1 §3
+01 Identity and access | roles | is_active | boolean | No | — | true | — | Inactive roles cannot confer access. | Core ER entity | S1 §3
+01 Identity and access | roles | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+01 Identity and access | roles | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Core ER entity | S1 §3
+01 Identity and access | roles | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Core ER entity | S1 §3
+01 Identity and access | permissions | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §3
+01 Identity and access | permissions | code | varchar(120) | No | UQ | None | — | Stable permission, for example offers.issue or selections.decide. | Core ER entity | S1 §3
+01 Identity and access | permissions | module | varchar(64) | No | — | None | — | Business module owning the permission. | Core ER entity | S1 §3
+01 Identity and access | permissions | description | text | No | — | None | — | What action this permission permits. | Core ER entity | S1 §3
+01 Identity and access | permissions | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+01 Identity and access | user_roles | user_id | uuid | No | PK, FK | None | users.id | Assigned account. | Core ER entity | S1 §3
+01 Identity and access | user_roles | role_id | uuid | No | PK, FK | None | roles.id | Assigned role. | Core ER entity | S1 §3
+01 Identity and access | user_roles | granted_by_user_id | uuid | Yes | FK | None | users.id | Staff grantor; null only for controlled system bootstrap. | Core ER entity | S1 §3
+01 Identity and access | user_roles | granted_at | timestamptz(3) | No | — | now() | — | Grant time; revoke by removing assignment and writing audit history. | Core ER entity | S1 §3
+01 Identity and access | role_permissions | role_id | uuid | No | PK, FK | None | roles.id | Role receiving the permission. | Core ER entity | S1 §3
+01 Identity and access | role_permissions | permission_id | uuid | No | PK, FK | None | permissions.id | Permission granted to the role. | Core ER entity | S1 §3
+01 Identity and access | role_permissions | granted_at | timestamptz(3) | No | — | now() | — | Assignment timestamp; changes require audit history. | Core ER entity | S1 §3
+01 Identity and access | sessions | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §3
+01 Identity and access | sessions | user_id | uuid | No | FK | None | users.id | Account authenticated by the session. | Core ER entity | S1 §3
+01 Identity and access | sessions | session_family_id | uuid | No | — | None | — | Shared rotation-family identifier; not a foreign key. | Core ER entity | S1 §3
+01 Identity and access | sessions | refresh_token_hash | varchar(128) | No | UQ | None | — | Digest of a high-entropy refresh token; never the raw token. | Core ER entity | S1 §3
+01 Identity and access | sessions | rotated_from_session_id | uuid | Yes | FK, UQ | None | sessions.id | Previous token record in this rotation chain. | Core ER entity | S1 §3
+01 Identity and access | sessions | expires_at | timestamptz(3) | No | — | None | — | Absolute refresh-token expiry. | Core ER entity | S1 §3
+01 Identity and access | sessions | last_used_at | timestamptz(3) | Yes | — | None | — | Latest validated use. | Core ER entity | S1 §3
+01 Identity and access | sessions | revoked_at | timestamptz(3) | Yes | — | None | — | Revocation or rotation timestamp. | Core ER entity | S1 §3
+01 Identity and access | sessions | revocation_reason | varchar(120) | Yes | — | None | — | Logout, credential reset, rotation or suspected reuse. | Core ER entity | S1 §3
+01 Identity and access | sessions | client_description | varchar(300) | Yes | — | None | — | Optional limited device/browser description. | Core ER entity | S1 §3
+01 Identity and access | sessions | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+01 Identity and access | sessions | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Core ER entity | S1 §3
+01 Identity and access | sessions | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Core ER entity | S1 §3
+02 Company intake and CRM | organizations | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §3
+02 Company intake and CRM | organizations | organization_code | varchar(40) | No | UQ | None | — | Internal reference, for example ORG-000001. | Core ER entity | S1 §3
+02 Company intake and CRM | organizations | name | varchar(255) | No | — | None | — | Canonical organization/company name. | Core ER entity | S1 §3
+02 Company intake and CRM | organizations | registration_number | varchar(100) | Yes | — | None | — | Optional identifier; jurisdiction-specific uniqueness is not assumed. | Core ER entity | S1 §3
+02 Company intake and CRM | organizations | website | varchar(500) | Yes | — | None | — | Company website, when supplied. | Core ER entity | S1 §3
+02 Company intake and CRM | organizations | address | text | Yes | — | None | — | Company address, when needed. | Core ER entity | S1 §3
+02 Company intake and CRM | organizations | is_active | boolean | No | — | true | — | Archive from new use without deleting history. | Core ER entity | S1 §3
+02 Company intake and CRM | organizations | created_by_user_id | uuid | No | FK | None | users.id | Staff member who verified or created the record. | Core ER entity | S1 §3
+02 Company intake and CRM | organizations | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+02 Company intake and CRM | organizations | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Core ER entity | S1 §3
+02 Company intake and CRM | organizations | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Core ER entity | S1 §3
+02 Company intake and CRM | contacts | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §3
+02 Company intake and CRM | contacts | organization_id | uuid | No | FK | None | organizations.id | Organization represented by this contact. | Core ER entity | S1 §3
+02 Company intake and CRM | contacts | full_name | varchar(200) | No | — | None | — | Contact name. | Core ER entity | S1 §3
+02 Company intake and CRM | contacts | job_title | varchar(150) | Yes | — | None | — | Position or department. | Core ER entity | S1 §3
+02 Company intake and CRM | contacts | email | varchar(254) | Yes | — | None | — | Business email. | Core ER entity | S1 §3
+02 Company intake and CRM | contacts | phone | varchar(32) | Yes | — | None | — | Business contact number. | Core ER entity | S1 §3
+02 Company intake and CRM | contacts | is_primary | boolean | No | — | false | — | Proposed primary-contact flag; at most one true per organization. | Core ER entity | S1 §3
+02 Company intake and CRM | contacts | is_active | boolean | No | — | true | — | Inactive contacts remain available in historical links. | Core ER entity | S1 §3
+02 Company intake and CRM | contacts | created_by_user_id | uuid | No | FK | None | users.id | Staff creator. | Core ER entity | S1 §3
+02 Company intake and CRM | contacts | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+02 Company intake and CRM | contacts | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Core ER entity | S1 §3
+02 Company intake and CRM | contacts | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Core ER entity | S1 §3
+02 Company intake and CRM | company_requests | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | reference_no | varchar(40) | No | UQ | None | — | Human-facing request reference; not a secret access token. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | request_type | request_type | No | — | None | — | INVITE_US_TO_BID or HIRE_OUR_TEAM. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | organization_id | uuid | Yes | FK | None | organizations.id | Verified company link, added by staff when available. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | contact_id | uuid | Yes | FK | None | contacts.id | Verified contact; requires the matching organization link. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | submitted_company_name | varchar(255) | No | — | None | — | Original company name, immutable after submission. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | submitted_contact_name | varchar(200) | No | — | None | — | Original contact name, immutable after submission. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | submitted_email | varchar(254) | No | — | None | — | Original acknowledgement email, immutable after submission. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | submitted_phone | varchar(32) | Yes | — | None | — | Original phone as submitted. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | title | varchar(255) | No | — | None | — | Short request title; staff refinements are audited. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | requirements | text | No | — | None | — | Current clarified requirement summary; original remains in submission_snapshot. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | submission_snapshot | jsonb | No | — | None | — | Immutable validated original payload and form schema version; no credentials or file bytes. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | expected_start_on | date | Yes | — | None | — | Indicative date; does not imply agreed placement terms. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | expected_end_on | date | Yes | — | None | — | Indicative end date, when known. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | response_due_at | timestamptz(3) | Yes | — | None | — | Bid/response deadline when applicable. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | status | request_status | No | — | SUBMITTED | — | Agency intake and matching state, not project-delivery status. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | owner_user_id | uuid | Yes | FK | None | users.id | Responsible staff; may be unassigned at public intake. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | submitted_at | timestamptz(3) | No | — | now() | — | Server receipt time. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | closed_at | timestamptz(3) | Yes | — | None | — | Administrative closure time; required for CLOSED or CANCELLED. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | company_requests | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Core ER entity | S1 §§1–3
+02 Company intake and CRM | request_roles | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §3
+02 Company intake and CRM | request_roles | request_id | uuid | No | FK | None | company_requests.id | Parent request. | Core ER entity | S1 §3
+02 Company intake and CRM | request_roles | role_title | varchar(200) | No | — | None | — | Requested professional role. | Core ER entity | S1 §3
+02 Company intake and CRM | request_roles | scope | text | Yes | — | None | — | Role-specific requirements. | Core ER entity | S1 §3
+02 Company intake and CRM | request_roles | headcount | integer | No | — | 1 | — | Required experts; positive integer. | Core ER entity | S1 §3
+02 Company intake and CRM | request_roles | work_mode | work_mode | Yes | — | None | — | REMOTE, ONSITE or HYBRID when known. | Core ER entity | S1 §3
+02 Company intake and CRM | request_roles | location_text | varchar(255) | Yes | — | None | — | Work location or geographic requirement. | Core ER entity | S1 §3
+02 Company intake and CRM | request_roles | status | request_role_status | No | — | OPEN | — | OPEN, FILLED or CANCELLED; FILLED is updated transactionally. | Core ER entity | S1 §3
+02 Company intake and CRM | request_roles | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+02 Company intake and CRM | request_roles | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Core ER entity | S1 §3
+02 Company intake and CRM | request_roles | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Core ER entity | S1 §3
+02 Company intake and CRM | request_activities | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §3
+02 Company intake and CRM | request_activities | request_id | uuid | No | FK | None | company_requests.id | Request discussed or changed. | Core ER entity | S1 §3
+02 Company intake and CRM | request_activities | actor_user_id | uuid | Yes | FK | None | users.id | Staff actor; null only for public/system events. | Core ER entity | S1 §3
+02 Company intake and CRM | request_activities | actor_type | actor_type | No | — | None | — | USER, PUBLIC or SYSTEM. | Core ER entity | S1 §3
+02 Company intake and CRM | request_activities | activity_type | request_activity_type | No | — | None | — | Intake, note, clarification, status change, assignment or CRM linking. | Core ER entity | S1 §3
+02 Company intake and CRM | request_activities | body | text | Yes | — | None | — | Internal explanation or communication summary. | Core ER entity | S1 §3
+02 Company intake and CRM | request_activities | from_status | request_status | Yes | — | None | — | Previous state for status-change events. | Core ER entity | S1 §3
+02 Company intake and CRM | request_activities | to_status | request_status | Yes | — | None | — | New state for status-change events. | Core ER entity | S1 §3
+02 Company intake and CRM | request_activities | occurred_at | timestamptz(3) | No | — | now() | — | Business event time. | Core ER entity | S1 §3
+02 Company intake and CRM | request_activities | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+03 Expert network | expert_profiles | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | user_id | uuid | Yes | FK, UQ | None | users.id | Optional before approval; unique linked account after activation. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | expert_code | varchar(40) | No | UQ | None | — | Expert/application reference. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | full_name | varchar(200) | No | — | None | — | Applicant or expert name. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | contact_email | varchar(254) | No | — | None | — | Application/contact email; not itself a login account. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | contact_phone | varchar(32) | Yes | — | None | — | Contact phone. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | professional_title | varchar(200) | Yes | — | None | — | Professional headline. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | biography | text | Yes | — | None | — | Profile summary. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | location_text | varchar(255) | Yes | — | None | — | General location; avoid unnecessary precise address data. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | application_status | application_status | No | — | SUBMITTED | — | Review workflow, separate from operational network status. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | network_status | network_status | No | — | PENDING | — | PENDING, ACTIVE, SUSPENDED or ARCHIVED. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | application_snapshot | jsonb | No | — | None | — | Immutable original application, including form schema version. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | submitted_at | timestamptz(3) | No | — | now() | — | Application receipt time. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | approved_at | timestamptz(3) | Yes | — | None | — | Most recent approval time; backed by an expert_review. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | activated_at | timestamptz(3) | Yes | — | None | — | Portal activation time after approved review and account setup. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_profiles | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Core ER entity | S1 §§1–3,5
+03 Expert network | expert_reviews | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §3
+03 Expert network | expert_reviews | expert_profile_id | uuid | No | FK | None | expert_profiles.id | Application/profile reviewed. | Core ER entity | S1 §3
+03 Expert network | expert_reviews | reviewer_user_id | uuid | No | FK | None | users.id | Authorized staff reviewer. | Core ER entity | S1 §3
+03 Expert network | expert_reviews | decision | expert_review_decision | No | — | None | — | APPROVED, REJECTED or CORRECTIONS_REQUIRED. | Core ER entity | S1 §3
+03 Expert network | expert_reviews | comments | text | Yes | — | None | — | Internal review notes; separate from expert-facing feedback. | Core ER entity | S1 §3
+03 Expert network | expert_reviews | feedback_to_expert | text | Yes | — | None | — | Approved feedback for email or portal communication. | Core ER entity | S1 §3
+03 Expert network | expert_reviews | reviewed_profile_snapshot | jsonb | No | — | None | — | Exact profile fields evaluated at this review, excluding secrets. | Core ER entity | S1 §3
+03 Expert network | expert_reviews | reviewed_document_refs | jsonb | No | — | [] | — | Array of document-version IDs/checksums reviewed; historical snapshot, not FK enforcement. | Core ER entity | S1 §3
+03 Expert network | expert_reviews | reviewed_at | timestamptz(3) | No | — | now() | — | Review decision time. | Core ER entity | S1 §3
+03 Expert network | expert_reviews | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+03 Expert network | skills | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §3
+03 Expert network | skills | code | varchar(80) | No | UQ | None | — | Stable skill identifier. | Core ER entity | S1 §3
+03 Expert network | skills | name | varchar(150) | No | — | None | — | Display name. | Core ER entity | S1 §3
+03 Expert network | skills | description | text | Yes | — | None | — | Skill definition. | Core ER entity | S1 §3
+03 Expert network | skills | is_active | boolean | No | — | true | — | Retire from new selection without destroying prior links. | Core ER entity | S1 §3
+03 Expert network | skills | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+03 Expert network | skills | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Core ER entity | S1 §3
+03 Expert network | skills | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Core ER entity | S1 §3
+03 Expert network | expert_skills | expert_profile_id | uuid | No | PK, FK | None | expert_profiles.id | Expert declaring the skill. | Core ER entity | S1 §3
+03 Expert network | expert_skills | skill_id | uuid | No | PK, FK | None | skills.id | Declared skill. | Core ER entity | S1 §3
+03 Expert network | expert_skills | proficiency | skill_proficiency | Yes | — | None | — | Optional BEGINNER, INTERMEDIATE, ADVANCED or EXPERT. | Core ER entity | S1 §3
+03 Expert network | expert_skills | years_experience | numeric(4,1) | Yes | — | None | — | Nonnegative self-reported experience; not a certification claim. | Core ER entity | S1 §3
+03 Expert network | expert_skills | notes | text | Yes | — | None | — | Optional supporting experience summary. | Core ER entity | S1 §3
+03 Expert network | expert_skills | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+03 Expert network | availabilities | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §3
+03 Expert network | availabilities | expert_profile_id | uuid | No | FK | None | expert_profiles.id | Expert whose availability is described. | Core ER entity | S1 §3
+03 Expert network | availabilities | starts_on | date | No | — | None | — | First date in the interval. | Core ER entity | S1 §3
+03 Expert network | availabilities | ends_on | date | Yes | — | None | — | Last date; null means open-ended. | Core ER entity | S1 §3
+03 Expert network | availabilities | status | availability_status | No | — | None | — | AVAILABLE, LIMITED or UNAVAILABLE. | Core ER entity | S1 §3
+03 Expert network | availabilities | hours_per_week | numeric(5,2) | Yes | — | None | — | Optional stated capacity, between 0 and 168; not timesheet data. | Core ER entity | S1 §3
+03 Expert network | availabilities | notes | text | Yes | — | None | — | Availability limitations or preferences. | Core ER entity | S1 §3
+03 Expert network | availabilities | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+03 Expert network | availabilities | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Core ER entity | S1 §3
+03 Expert network | availabilities | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Core ER entity | S1 §3
+03 Expert network | consent_records | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §3
+03 Expert network | consent_records | expert_profile_id | uuid | No | FK | None | expert_profiles.id | Applicant/expert providing consent. | Core ER entity | S1 §3
+03 Expert network | consent_records | purpose | consent_purpose | No | — | None | — | NETWORK_PARTICIPATION or CV_SHARING; final policy wording remains to be approved. | Core ER entity | S1 §3
+03 Expert network | consent_records | policy_version | varchar(60) | No | — | None | — | Version of the exact policy shown. | Core ER entity | S1 §3
+03 Expert network | consent_records | policy_text_snapshot | text | No | — | None | — | Policy wording acknowledged at that time. | Core ER entity | S1 §3
+03 Expert network | consent_records | action | consent_action | No | — | None | — | GRANTED or WITHDRAWN. | Core ER entity | S1 §3
+03 Expert network | consent_records | channel | consent_channel | No | — | None | — | PUBLIC_FORM, PORTAL or STAFF_RECORDED. | Core ER entity | S1 §3
+03 Expert network | consent_records | recorded_by_user_id | uuid | Yes | FK | None | users.id | Expert or staff recorder; null for public form. | Core ER entity | S1 §3
+03 Expert network | consent_records | evidence_summary | text | Yes | — | None | — | Required for staff-recorded consent. | Core ER entity | S1 §3
+03 Expert network | consent_records | occurred_at | timestamptz(3) | No | — | now() | — | Time consent was given or withdrawn. | Core ER entity | S1 §3
+03 Expert network | consent_records | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+04 Matching and outreach | candidates | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §3
+04 Matching and outreach | candidates | request_id | uuid | No | FK | None | company_requests.id | Request under consideration. | Core ER entity | S1 §3
+04 Matching and outreach | candidates | expert_profile_id | uuid | No | FK | None | expert_profiles.id | Approved expert considered for the request. | Core ER entity | S1 §3
+04 Matching and outreach | candidates | shortlisted_by_user_id | uuid | No | FK | None | users.id | Responsible shortlisting staff. | Core ER entity | S1 §3
+04 Matching and outreach | candidates | status | candidate_status | No | — | SHORTLISTED | — | Outreach/interest state; not the final placement decision. | Core ER entity | S1 §3
+04 Matching and outreach | candidates | internal_notes | text | Yes | — | None | — | Staff-only suitability and matching notes. | Core ER entity | S1 §3
+04 Matching and outreach | candidates | shortlisted_at | timestamptz(3) | No | — | now() | — | Time first added to shortlist. | Core ER entity | S1 §3
+04 Matching and outreach | candidates | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+04 Matching and outreach | candidates | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Core ER entity | S1 §3
+04 Matching and outreach | candidates | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Core ER entity | S1 §3
+04 Matching and outreach | outreach_records | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §3
+04 Matching and outreach | outreach_records | candidate_id | uuid | No | FK | None | candidates.id | Shortlist entry contacted. | Core ER entity | S1 §3
+04 Matching and outreach | outreach_records | staff_user_id | uuid | No | FK | None | users.id | Staff recorder. | Core ER entity | S1 §3
+04 Matching and outreach | outreach_records | channel | outreach_channel | No | — | None | — | EMAIL, PHONE, PORTAL or IN_PERSON. | Core ER entity | S1 §3
+04 Matching and outreach | outreach_records | summary | text | No | — | None | — | What was discussed; does not constitute offer acceptance. | Core ER entity | S1 §3
+04 Matching and outreach | outreach_records | interest_result | interest_result | Yes | — | None | — | INTERESTED, NOT_INTERESTED or NO_RESPONSE. | Core ER entity | S1 §3
+04 Matching and outreach | outreach_records | contacted_at | timestamptz(3) | No | — | now() | — | Time of contact. | Core ER entity | S1 §3
+04 Matching and outreach | outreach_records | follow_up_at | timestamptz(3) | Yes | — | None | — | Optional reminder time. | Core ER entity | S1 §3
+04 Matching and outreach | outreach_records | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+05 Offers and placements | expert_offers | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §3
+05 Offers and placements | expert_offers | reference_no | varchar(40) | No | UQ | None | — | Human-readable offer reference. | Core ER entity | S1 §3
+05 Offers and placements | expert_offers | request_id | uuid | No | FK | None | company_requests.id | Company request served by the offer. | Core ER entity | S1 §3
+05 Offers and placements | expert_offers | expert_profile_id | uuid | No | FK | None | expert_profiles.id | Only expert entitled to view/respond to this offer. | Core ER entity | S1 §3
+05 Offers and placements | expert_offers | candidate_id | uuid | No | FK | None | candidates.id | Matching shortlist entry; must match request and expert. | Core ER entity | S1 §3
+05 Offers and placements | expert_offers | request_role_id | uuid | Yes | FK | None | request_roles.id | Optional structured role belonging to this same request. | Core ER entity | S1 §3
+05 Offers and placements | expert_offers | responsible_user_id | uuid | No | FK | None | users.id | Staff member managing the offer. | Core ER entity | S1 §3
+05 Offers and placements | expert_offers | status | offer_status | No | — | DRAFT | — | Current negotiation state; selection is recorded separately. | Core ER entity | S1 §3
+05 Offers and placements | expert_offers | current_version_id | uuid | Yes | FK, UQ | None | offer_versions.id | Current operative version; same offer only; null only during atomic initial creation. | Core ER entity | S1 §3
+05 Offers and placements | expert_offers | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+05 Offers and placements | expert_offers | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Core ER entity | S1 §3
+05 Offers and placements | expert_offers | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Core ER entity | S1 §3
+05 Offers and placements | offer_versions | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | offer_id | uuid | No | FK | None | expert_offers.id | Parent offer. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | version_no | integer | No | — | None | — | Sequential positive version number per offer. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | status | offer_status | No | — | DRAFT | — | Lifecycle state; terms become immutable once issued_at is populated. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | role_title | varchar(200) | Yes | — | None | — | Role-title snapshot; required before issue. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | scope | text | Yes | — | None | — | Exact offered scope; required before issue. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | work_mode | work_mode | Yes | — | None | — | REMOTE, ONSITE or HYBRID, when applicable. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | location_text | varchar(255) | Yes | — | None | — | Agreed location details, when applicable. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | starts_on | date | Yes | — | None | — | Proposed start; null permitted only when timing is explicitly explained in terms. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | ends_on | date | Yes | — | None | — | Optional end; open-ended arrangements must be explicit in terms. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | compensation_amount | numeric(18,2) | Yes | — | None | — | Nonnegative quoted amount per rate_basis; required before issue. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | currency | varchar(3) | Yes | — | None | — | Three-letter uppercase currency code; required before issue and validated against configured allowed values. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | rate_basis | rate_basis | Yes | — | None | — | HOUR, DAY, MONTH, FIXED or OTHER; required before issue. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | rate_basis_detail | varchar(200) | Yes | — | None | — | Required when rate_basis is OTHER. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | payer_type | payer_type | Yes | — | None | — | DEVMASTERS, REQUESTING_COMPANY or OTHER; required before issue. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | payer_name_snapshot | varchar(255) | Yes | — | None | — | Exact payer name; required before issue even without an organization record. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | payment_terms | text | Yes | — | None | — | Payment schedule/conditions; required before issue; no invoice ledger implied. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | terms | text | Yes | — | None | — | Complete offered contractual/administrative terms; required before issue. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | expires_at | timestamptz(3) | Yes | — | None | — | Acceptance deadline; required and future at issue. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | issued_at | timestamptz(3) | Yes | — | None | — | Null for draft; immutable issue time thereafter. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | issued_by_user_id | uuid | Yes | FK | None | users.id | Staff issuer; required when issued_at is set. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | terms_hash | varchar(64) | Yes | — | None | — | SHA-256 of canonical issued terms plus attachment version IDs/checksums; required at issue. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | created_by_user_id | uuid | No | FK | None | users.id | Author of this version. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_versions | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_responses | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_responses | offer_version_id | uuid | No | FK | None | offer_versions.id | Exact version reviewed by the expert. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_responses | response_type | offer_response_type | No | — | None | — | ACCEPTED, DECLINED, CHANGES_REQUESTED or COMMENT; COMMENT is a proposed non-decision event. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_responses | comments | text | Yes | — | None | — | Expert comments or an attributed staff transcription. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_responses | channel | response_channel | No | — | None | — | PORTAL, EMAIL, PHONE or IN_PERSON. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_responses | recorded_by_user_id | uuid | No | FK | None | users.id | Authenticated expert for PORTAL; authorized staff for other channels. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_responses | responded_at | timestamptz(3) | No | — | None | — | Time of the expert response; server time for portal clicks. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_responses | recorded_at | timestamptz(3) | No | — | now() | — | When the system stored the event; distinct from an off-portal response time. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_responses | evidence_summary | text | Yes | — | None | — | Required for non-PORTAL decisions; describe source and exact terms acknowledged. | Core ER entity | S1 §§2–4
+05 Offers and placements | offer_responses | command_id | uuid | No | UQ | None | — | Unique command identifier preventing duplicate response writes. | Core ER entity | S1 §§2–4
+05 Offers and placements | selection_decisions | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §§2–4
+05 Offers and placements | selection_decisions | offer_id | uuid | No | FK | None | expert_offers.id | Offer being decided. | Core ER entity | S1 §§2–4
+05 Offers and placements | selection_decisions | offer_version_id | uuid | No | FK | None | offer_versions.id | Accepted version used for this decision. | Core ER entity | S1 §§2–4
+05 Offers and placements | selection_decisions | accepted_response_id | uuid | No | FK | None | offer_responses.id | ACCEPTED response to the same version; verified transactionally. | Core ER entity | S1 §§2–4
+05 Offers and placements | selection_decisions | decision_no | integer | No | — | None | — | Positive sequence per offer; no duplicate sequence values. | Core ER entity | S1 §§2–4
+05 Offers and placements | selection_decisions | decision | selection_result | No | — | None | — | SELECTED or NOT_SELECTED. | Core ER entity | S1 §§2–4
+05 Offers and placements | selection_decisions | decided_by_user_id | uuid | No | FK | None | users.id | Staff member with final-selection permission. | Core ER entity | S1 §§2–4
+05 Offers and placements | selection_decisions | reason | text | No | — | None | — | Rationale, including any correction/reversal. | Core ER entity | S1 §§2–4
+05 Offers and placements | selection_decisions | supersedes_decision_id | uuid | Yes | FK, UQ | None | selection_decisions.id | Previous decision in this offer's linear history. | Core ER entity | S1 §§2–4
+05 Offers and placements | selection_decisions | decided_at | timestamptz(3) | No | — | now() | — | Selection decision time. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | offer_id | uuid | No | FK, UQ | None | expert_offers.id | One placement at most per offer, including cancelled history. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | offer_version_id | uuid | No | FK, UQ | None | offer_versions.id | Exact accepted terms; never re-point to a later revision. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | accepted_response_id | uuid | No | FK, UQ | None | offer_responses.id | Evidence of acceptance of the same version. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | selection_decision_id | uuid | No | FK, UQ | None | selection_decisions.id | Original SELECTED decision that created this placement. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | request_id | uuid | No | FK | None | company_requests.id | Same request as the offer; composite consistency required. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | expert_profile_id | uuid | No | FK | None | expert_profiles.id | Same expert as the offer; composite consistency required. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | company_name_snapshot | varchar(255) | No | — | None | — | Company name at selection; preserved if CRM details later change. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | starts_on | date | Yes | — | None | — | Administrative start, copied from accepted terms where known. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | ends_on | date | Yes | — | None | — | Administrative planned end, copied from accepted terms where known. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | actual_end_on | date | Yes | — | None | — | Administrative closure date; not a deliverable completion report. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | status | placement_status | No | — | CONFIRMED | — | CONFIRMED, ACTIVE, ENDED or CANCELLED. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | administrative_notes | text | Yes | — | None | — | Staff-only handoff/closure notes. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | created_by_user_id | uuid | No | FK | None | users.id | Selecting staff member. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Core ER entity | S1 §§2–4
+05 Offers and placements | placements | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Core ER entity | S1 §§2–4
+06 Private documents | documents | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §3
+06 Private documents | documents | title | varchar(255) | No | — | None | — | Document title. | Core ER entity | S1 §3
+06 Private documents | documents | document_type | document_type | No | — | None | — | CV, CERTIFICATE, REQUEST_FILE, OFFER_ATTACHMENT, RESPONSE_EVIDENCE, EXPORT or OTHER. | Core ER entity | S1 §3
+06 Private documents | documents | created_by_user_id | uuid | Yes | FK | None | users.id | Null allowed for controlled anonymous intake uploads. | Core ER entity | S1 §3
+06 Private documents | documents | status | document_status | No | — | ACTIVE | — | ACTIVE or ARCHIVED; archiving does not remove issued evidence. | Core ER entity | S1 §3
+06 Private documents | documents | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+06 Private documents | documents | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Core ER entity | S1 §3
+06 Private documents | documents | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Core ER entity | S1 §3
+06 Private documents | document_versions | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §3
+06 Private documents | document_versions | document_id | uuid | No | FK | None | documents.id | Logical document. | Core ER entity | S1 §3
+06 Private documents | document_versions | version_no | integer | No | — | None | — | Positive revision number per document. | Core ER entity | S1 §3
+06 Private documents | document_versions | original_filename | varchar(255) | No | — | None | — | Sanitized original name; never used as an authorization decision. | Core ER entity | S1 §3
+06 Private documents | document_versions | bucket_name | varchar(100) | No | — | None | — | Private RustFS bucket. | Core ER entity | S1 §3
+06 Private documents | document_versions | object_key | varchar(700) | No | — | None | — | Opaque server-generated object key; unique with bucket_name. | Core ER entity | S1 §3
+06 Private documents | document_versions | object_version_id | varchar(255) | Yes | — | None | — | Storage-provider version identifier when bucket versioning is enabled. | Core ER entity | S1 §3
+06 Private documents | document_versions | mime_type | varchar(150) | No | — | None | — | Server-validated media type. | Core ER entity | S1 §3
+06 Private documents | document_versions | size_bytes | bigint | No | — | None | — | Nonnegative object size; upload limit enforced separately. | Core ER entity | S1 §3
+06 Private documents | document_versions | sha256 | varchar(64) | No | — | None | — | Checksum of the file bytes. | Core ER entity | S1 §3
+06 Private documents | document_versions | scan_status | scan_status | No | — | PENDING | — | PENDING, CLEAN, INFECTED or ERROR. | Core ER entity | S1 §3
+06 Private documents | document_versions | scanned_at | timestamptz(3) | Yes | — | None | — | Latest scan completion time. | Core ER entity | S1 §3
+06 Private documents | document_versions | scan_message | text | Yes | — | None | — | Sanitized scanner outcome; no secrets. | Core ER entity | S1 §3
+06 Private documents | document_versions | uploaded_by_user_id | uuid | Yes | FK | None | users.id | Uploader account; null for scoped public intake. | Core ER entity | S1 §3
+06 Private documents | document_versions | uploaded_at | timestamptz(3) | No | — | now() | — | Upload completion time. | Core ER entity | S1 §3
+06 Private documents | expert_documents | expert_profile_id | uuid | No | PK, FK | None | expert_profiles.id | Owning applicant/expert. | Core ER entity | S1 §3
+06 Private documents | expert_documents | document_id | uuid | No | PK, FK | None | documents.id | Logical document attached to that expert. | Core ER entity | S1 §3
+06 Private documents | expert_documents | purpose | expert_document_purpose | No | — | None | — | CV, CERTIFICATE or OTHER. | Core ER entity | S1 §3
+06 Private documents | expert_documents | is_primary_cv | boolean | No | — | false | — | At most one current primary CV per expert; allowed only for CV purpose. | Core ER entity | S1 §3
+06 Private documents | expert_documents | linked_by_user_id | uuid | Yes | FK | None | users.id | Null for anonymous initial application. | Core ER entity | S1 §3
+06 Private documents | expert_documents | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+06 Private documents | request_documents | request_id | uuid | No | PK, FK | None | company_requests.id | Owning company request. | Core ER entity | S1 §3
+06 Private documents | request_documents | document_id | uuid | No | PK, FK | None | documents.id | Logical request document. | Core ER entity | S1 §3
+06 Private documents | request_documents | label | varchar(150) | Yes | — | None | — | Business label or category. | Core ER entity | S1 §3
+06 Private documents | request_documents | linked_by_user_id | uuid | Yes | FK | None | users.id | Staff uploader/linker; null for public intake. | Core ER entity | S1 §3
+06 Private documents | request_documents | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+06 Private documents | offer_documents | offer_version_id | uuid | No | PK, FK | None | offer_versions.id | Terms version containing the attachment. | Core ER entity | S1 §3
+06 Private documents | offer_documents | document_version_id | uuid | No | PK, FK | None | document_versions.id | Exact immutable bytes offered to the expert. | Core ER entity | S1 §3
+06 Private documents | offer_documents | label | varchar(150) | Yes | — | None | — | Attachment caption. | Core ER entity | S1 §3
+06 Private documents | offer_documents | sort_order | integer | No | — | 0 | — | Display order within the offer. | Core ER entity | S1 §3
+06 Private documents | offer_documents | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §3
+07 Notifications and audit | notifications | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §§3–4
+07 Notifications and audit | notifications | recipient_user_id | uuid | No | FK | None | users.id | Recipient account; experts may read only their own inbox. | Core ER entity | S1 §§3–4
+07 Notifications and audit | notifications | outbox_event_id | uuid | No | FK | None | outbox_events.id | Committed event that caused this notification. | Core ER entity | S1 §§3–4
+07 Notifications and audit | notifications | notification_type | varchar(80) | No | — | None | — | Stable business event code, for example OFFER_ISSUED or EXPERT_SELECTED. | Core ER entity | S1 §§3–4
+07 Notifications and audit | notifications | title | varchar(255) | No | — | None | — | Rendered title snapshot. | Core ER entity | S1 §§3–4
+07 Notifications and audit | notifications | body | text | No | — | None | — | Rendered message; no credential/reset tokens. | Core ER entity | S1 §§3–4
+07 Notifications and audit | notifications | action_path | varchar(500) | Yes | — | None | — | Relative application path; destination rechecks authorization. | Core ER entity | S1 §§3–4
+07 Notifications and audit | notifications | read_at | timestamptz(3) | Yes | — | None | — | Null means unread; update only for the recipient. | Core ER entity | S1 §§3–4
+07 Notifications and audit | notifications | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §§3–4
+07 Notifications and audit | outbox_events | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | outbox_events | event_type | varchar(100) | No | — | None | — | Contracted event name, including notification, scan or export events. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | outbox_events | aggregate_type | varchar(80) | No | — | None | — | Logical aggregate type; not a polymorphic FK. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | outbox_events | aggregate_id | uuid | No | — | None | — | Logical aggregate ID; resolver validates type/ID when created. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | outbox_events | aggregate_version | integer | Yes | — | None | — | Version of the aggregate at commit. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | outbox_events | deduplication_key | varchar(200) | No | UQ | None | — | Stable key for this business event, not a fresh value on each retry. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | outbox_events | payload | jsonb | No | — | None | — | Minimal versioned event data; no passwords, OTPs, raw session or recovery tokens. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | outbox_events | status | outbox_status | No | — | PENDING | — | Publication lifecycle, not proof of email delivery. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | outbox_events | available_at | timestamptz(3) | No | — | now() | — | Earliest publish/retry time. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | outbox_events | locked_until | timestamptz(3) | Yes | — | None | — | Dispatcher lease expiry for safe crash recovery. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | outbox_events | publish_attempts | integer | No | — | 0 | — | Nonnegative count of queue publication attempts. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | outbox_events | published_at | timestamptz(3) | Yes | — | None | — | Queue acknowledgement time. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | outbox_events | last_error | text | Yes | — | None | — | Sanitized publication error. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | outbox_events | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | outbox_events | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | outbox_events | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | delivery_attempts | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | delivery_attempts | outbox_event_id | uuid | No | FK | None | outbox_events.id | Committed event requiring delivery. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | delivery_attempts | notification_id | uuid | Yes | FK | None | notifications.id | In-app notification when recipient has an account; null for public acknowledgement. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | delivery_attempts | notification_template_id | uuid | Yes | FK | None | notification_templates.id | Exact template version used, if templated. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | delivery_attempts | delivery_key | varchar(200) | No | — | None | — | Deterministic key for event + recipient + channel + template version. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | delivery_attempts | channel | delivery_channel | No | — | None | — | EMAIL or SMS. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | delivery_attempts | recipient_address | varchar(254) | No | — | None | — | Email/phone snapshot; limited visibility and retention. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | delivery_attempts | attempt_no | integer | No | — | None | — | Positive sequence within this event/delivery key. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | delivery_attempts | status | delivery_status | No | — | PENDING | — | PENDING, SENT, FAILED or UNKNOWN; SENT means provider accepted, not proven inbox delivery. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | delivery_attempts | provider | varchar(60) | No | — | None | — | GMAIL or PLASGATE in the accepted architecture. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | delivery_attempts | provider_message_id | varchar(255) | Yes | — | None | — | Provider acknowledgement identifier when returned. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | delivery_attempts | attempted_at | timestamptz(3) | No | — | now() | — | When this attempt began. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | delivery_attempts | completed_at | timestamptz(3) | Yes | — | None | — | Provider outcome time. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | delivery_attempts | error_code | varchar(100) | Yes | — | None | — | Machine-readable, sanitized error. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | delivery_attempts | error_message | text | Yes | — | None | — | Sanitized failure/uncertainty information. | Core ER entity | S1 §§1,3–4
+07 Notifications and audit | audit_events | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Core ER entity | S1 §§1,3–5
+07 Notifications and audit | audit_events | actor_user_id | uuid | Yes | FK | None | users.id | Authenticated actor; null for public/system actions. | Core ER entity | S1 §§1,3–5
+07 Notifications and audit | audit_events | actor_type | actor_type | No | — | None | — | USER, PUBLIC or SYSTEM. | Core ER entity | S1 §§1,3–5
+07 Notifications and audit | audit_events | action | varchar(120) | No | — | None | — | Stable action code, for example offer.issued or placement.cancelled. | Core ER entity | S1 §§1,3–5
+07 Notifications and audit | audit_events | entity_type | varchar(80) | No | — | None | — | Logical target type; not a relational FK. | Core ER entity | S1 §§1,3–5
+07 Notifications and audit | audit_events | entity_id | uuid | Yes | — | None | — | Logical target ID; null allowed for login failures or unbound actions. | Core ER entity | S1 §§1,3–5
+07 Notifications and audit | audit_events | record_version | integer | Yes | — | None | — | Target aggregate version at the time of the event. | Core ER entity | S1 §§1,3–5
+07 Notifications and audit | audit_events | reason | text | Yes | — | None | — | Required for privileged corrections, rejection, withdrawal and reversal. | Core ER entity | S1 §§1,3–5
+07 Notifications and audit | audit_events | change_summary | jsonb | Yes | — | None | — | Allowlisted field changes; redact secrets and minimize sensitive personal data. | Core ER entity | S1 §§1,3–5
+07 Notifications and audit | audit_events | correlation_id | uuid | No | — | None | — | Trace identifier shared across the command, audit and worker activity. | Core ER entity | S1 §§1,3–5
+07 Notifications and audit | audit_events | occurred_at | timestamptz(3) | No | — | now() | — | Server event time. | Core ER entity | S1 §§1,3–5
+08 Supporting and configuration | request_role_skills | request_role_id | uuid | No | PK, FK | None | request_roles.id | Role requiring the skill. | Supporting refinement | S1 §§1–3; proposed normalization
+08 Supporting and configuration | request_role_skills | skill_id | uuid | No | PK, FK | None | skills.id | Required or preferred skill. | Supporting refinement | S1 §§1–3; proposed normalization
+08 Supporting and configuration | request_role_skills | is_required | boolean | No | — | true | — | True for required skill; false for preference. | Supporting refinement | S1 §§1–3; proposed normalization
+08 Supporting and configuration | request_role_skills | minimum_proficiency | skill_proficiency | Yes | — | None | — | Optional minimum level; not an automated hiring score. | Supporting refinement | S1 §§1–3; proposed normalization
+08 Supporting and configuration | request_role_skills | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Supporting refinement | S1 §§1–3; proposed normalization
+08 Supporting and configuration | offer_response_evidence | offer_response_id | uuid | No | PK, FK | None | offer_responses.id | Response whose evidence is being preserved. | Supporting refinement | S1 §4; proposed typed evidence link
+08 Supporting and configuration | offer_response_evidence | document_version_id | uuid | No | PK, FK | None | document_versions.id | Exact CLEAN evidence file version. | Supporting refinement | S1 §4; proposed typed evidence link
+08 Supporting and configuration | offer_response_evidence | label | varchar(200) | Yes | — | None | — | Evidence caption, such as expert email confirmation. | Supporting refinement | S1 §4; proposed typed evidence link
+08 Supporting and configuration | offer_response_evidence | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Supporting refinement | S1 §4; proposed typed evidence link
+08 Supporting and configuration | services | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | services | code | varchar(80) | No | UQ | None | — | Stable service identifier. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | services | name | varchar(200) | No | — | None | — | Public service title. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | services | description | text | Yes | — | None | — | Description for the website. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | services | is_active | boolean | No | — | true | — | Whether it may be selected on new public requests. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | services | sort_order | integer | No | — | 0 | — | Display sequence. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | services | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | services | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | services | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | request_services | request_id | uuid | No | PK, FK | None | company_requests.id | Company request. | Supporting refinement | S1 §1; proposed normalization
+08 Supporting and configuration | request_services | service_id | uuid | No | PK, FK | None | services.id | Service classification. | Supporting refinement | S1 §1; proposed normalization
+08 Supporting and configuration | request_services | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Supporting refinement | S1 §1; proposed normalization
+08 Supporting and configuration | public_pages | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | public_pages | slug | varchar(150) | No | — | None | — | URL/page identifier. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | public_pages | locale | varchar(12) | No | — | en | — | Language code; English default is a proposal, not an accepted language requirement. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | public_pages | title | varchar(255) | No | — | None | — | Page title. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | public_pages | body_markdown | text | No | — | None | — | Editable content; sanitize rendering and disallow unsafe embedded HTML. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | public_pages | status | page_status | No | — | DRAFT | — | DRAFT, PUBLISHED or ARCHIVED. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | public_pages | published_at | timestamptz(3) | Yes | — | None | — | Required for a published page. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | public_pages | updated_by_user_id | uuid | No | FK | None | users.id | Staff editor. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | public_pages | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | public_pages | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | public_pages | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Supporting refinement | S1 §1 configuration and content
+08 Supporting and configuration | notification_templates | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Supporting refinement | S1 §1 notifications and configuration
+08 Supporting and configuration | notification_templates | template_key | varchar(100) | No | — | None | — | Business template identity. | Supporting refinement | S1 §1 notifications and configuration
+08 Supporting and configuration | notification_templates | version_no | integer | No | — | None | — | Positive version number for this key/channel/locale. | Supporting refinement | S1 §1 notifications and configuration
+08 Supporting and configuration | notification_templates | channel | delivery_channel | No | — | None | — | EMAIL or SMS. | Supporting refinement | S1 §1 notifications and configuration
+08 Supporting and configuration | notification_templates | locale | varchar(12) | No | — | en | — | Content language; default remains a proposed configuration. | Supporting refinement | S1 §1 notifications and configuration
+08 Supporting and configuration | notification_templates | subject | varchar(255) | Yes | — | None | — | Required for EMAIL; null allowed for SMS. | Supporting refinement | S1 §1 notifications and configuration
+08 Supporting and configuration | notification_templates | body | text | No | — | None | — | Template text with an allowlisted set of variables. | Supporting refinement | S1 §1 notifications and configuration
+08 Supporting and configuration | notification_templates | variables_schema | jsonb | No | — | {} | — | Expected variable names/types; validate before rendering. | Supporting refinement | S1 §1 notifications and configuration
+08 Supporting and configuration | notification_templates | is_active | boolean | No | — | false | — | At most one active version per key/channel/locale. | Supporting refinement | S1 §1 notifications and configuration
+08 Supporting and configuration | notification_templates | published_at | timestamptz(3) | Yes | — | None | — | After publication content is immutable; revise by inserting a new version. | Supporting refinement | S1 §1 notifications and configuration
+08 Supporting and configuration | notification_templates | created_by_user_id | uuid | No | FK | None | users.id | Staff author. | Supporting refinement | S1 §1 notifications and configuration
+08 Supporting and configuration | notification_templates | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Supporting refinement | S1 §1 notifications and configuration
+08 Supporting and configuration | notification_templates | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Supporting refinement | S1 §1 notifications and configuration
+08 Supporting and configuration | notification_templates | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Supporting refinement | S1 §1 notifications and configuration
+08 Supporting and configuration | system_settings | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Supporting refinement | S1 §1 configuration; §5 secrets boundary
+08 Supporting and configuration | system_settings | key | varchar(120) | No | UQ | None | — | Stable setting key. | Supporting refinement | S1 §1 configuration; §5 secrets boundary
+08 Supporting and configuration | system_settings | value | jsonb | No | — | None | — | Validated non-secret value. | Supporting refinement | S1 §1 configuration; §5 secrets boundary
+08 Supporting and configuration | system_settings | description | text | No | — | None | — | Meaning, owner and allowed values. | Supporting refinement | S1 §1 configuration; §5 secrets boundary
+08 Supporting and configuration | system_settings | updated_by_user_id | uuid | No | FK | None | users.id | Authorized staff editor. | Supporting refinement | S1 §1 configuration; §5 secrets boundary
+08 Supporting and configuration | system_settings | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Supporting refinement | S1 §1 configuration; §5 secrets boundary
+08 Supporting and configuration | system_settings | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Supporting refinement | S1 §1 configuration; §5 secrets boundary
+08 Supporting and configuration | system_settings | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Supporting refinement | S1 §1 configuration; §5 secrets boundary
+08 Supporting and configuration | idempotency_requests | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Supporting refinement | S1 §1 REST idempotency
+08 Supporting and configuration | idempotency_requests | actor_scope | varchar(128) | No | — | None | — | Server-derived user or signed-public-submission scope; do not trust client-supplied actor identity. | Supporting refinement | S1 §1 REST idempotency
+08 Supporting and configuration | idempotency_requests | key_hash | varchar(64) | No | — | None | — | Digest of the supplied idempotency key. | Supporting refinement | S1 §1 REST idempotency
+08 Supporting and configuration | idempotency_requests | request_hash | varchar(64) | No | — | None | — | Digest of canonical method, route and body; different payload with same key must be rejected. | Supporting refinement | S1 §1 REST idempotency
+08 Supporting and configuration | idempotency_requests | route | varchar(200) | No | — | None | — | Versioned method/route identifier. | Supporting refinement | S1 §1 REST idempotency
+08 Supporting and configuration | idempotency_requests | status | idempotency_status | No | — | IN_PROGRESS | — | IN_PROGRESS, COMPLETED or FAILED. | Supporting refinement | S1 §1 REST idempotency
+08 Supporting and configuration | idempotency_requests | resource_type | varchar(80) | Yes | — | None | — | Logical result type, not an FK. | Supporting refinement | S1 §1 REST idempotency
+08 Supporting and configuration | idempotency_requests | resource_id | uuid | Yes | — | None | — | Logical result ID; same result is replayed on retry. | Supporting refinement | S1 §1 REST idempotency
+08 Supporting and configuration | idempotency_requests | response_status | integer | Yes | — | None | — | HTTP status of the committed result. | Supporting refinement | S1 §1 REST idempotency
+08 Supporting and configuration | idempotency_requests | response_summary | jsonb | Yes | — | None | — | Minimal safe replay content; no credentials or full sensitive response body. | Supporting refinement | S1 §1 REST idempotency
+08 Supporting and configuration | idempotency_requests | lease_expires_at | timestamptz(3) | Yes | — | None | — | Crash-recovery lease for an in-progress command. | Supporting refinement | S1 §1 REST idempotency
+08 Supporting and configuration | idempotency_requests | expires_at | timestamptz(3) | No | — | None | — | Retention boundary for deduplication record; policy is not specified by the source. | Supporting refinement | S1 §1 REST idempotency
+08 Supporting and configuration | idempotency_requests | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Supporting refinement | S1 §1 REST idempotency
+08 Supporting and configuration | idempotency_requests | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Supporting refinement | S1 §1 REST idempotency
+08 Supporting and configuration | idempotency_requests | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Supporting refinement | S1 §1 REST idempotency
+08 Supporting and configuration | export_jobs | id | uuid | No | PK | Application UUID | — | Stable internal record identifier. | Supporting refinement | S1 §1 reports, worker and exports
+08 Supporting and configuration | export_jobs | requested_by_user_id | uuid | No | FK | None | users.id | Staff owner; recheck permission at execution and download. | Supporting refinement | S1 §1 reports, worker and exports
+08 Supporting and configuration | export_jobs | export_type | export_type | No | — | None | — | REQUESTS, OFFERS or PLACEMENTS. | Supporting refinement | S1 §1 reports, worker and exports
+08 Supporting and configuration | export_jobs | format | export_format | No | — | CSV | — | CSV or XLSX. | Supporting refinement | S1 §1 reports, worker and exports
+08 Supporting and configuration | export_jobs | filters | jsonb | No | — | {} | — | Validated report filters; not SQL text. | Supporting refinement | S1 §1 reports, worker and exports
+08 Supporting and configuration | export_jobs | status | export_status | No | — | PENDING | — | PENDING, RUNNING, COMPLETED, FAILED or EXPIRED. | Supporting refinement | S1 §1 reports, worker and exports
+08 Supporting and configuration | export_jobs | output_document_version_id | uuid | Yes | FK, UQ | None | document_versions.id | Exact private output artifact; required for COMPLETED. | Supporting refinement | S1 §1 reports, worker and exports
+08 Supporting and configuration | export_jobs | started_at | timestamptz(3) | Yes | — | None | — | Worker start time. | Supporting refinement | S1 §1 reports, worker and exports
+08 Supporting and configuration | export_jobs | completed_at | timestamptz(3) | Yes | — | None | — | Completion/failure time. | Supporting refinement | S1 §1 reports, worker and exports
+08 Supporting and configuration | export_jobs | expires_at | timestamptz(3) | Yes | — | None | — | Download/retention expiry; duration is a policy decision. | Supporting refinement | S1 §1 reports, worker and exports
+08 Supporting and configuration | export_jobs | error_message | text | Yes | — | None | — | Sanitized failure information. | Supporting refinement | S1 §1 reports, worker and exports
+08 Supporting and configuration | export_jobs | created_at | timestamptz(3) | No | — | now() | — | Server time when this record was inserted. | Supporting refinement | S1 §1 reports, worker and exports
+08 Supporting and configuration | export_jobs | updated_at | timestamptz(3) | No | — | now(); update on write | — | Server time of the latest authorized update. | Supporting refinement | S1 §1 reports, worker and exports
+08 Supporting and configuration | export_jobs | record_version | integer | No | — | 1 | — | Optimistic concurrency counter; increment on each aggregate update. | Supporting refinement | S1 §1 reports, worker and exports

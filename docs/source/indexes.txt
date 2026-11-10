@@ -1,0 +1,30 @@
+DEVMASTERS  /  INDEXES |  |  | 
+Candidate access-path indexes. Do not duplicate indexes already supplied by a PK/UNIQUE or a useful leading prefix. Verify final choices using actual queries and query plans. |  |  | 
+ |  |  | 
+ |  |  | 
+ID | Table(s) | Index columns / predicate | Use case
+I01 | sessions | (user_id, revoked_at, expires_at); (session_family_id) | Session validation, family revocation and cleanup.
+I02 | contacts | (organization_id, is_active) | Company contact listing.
+I03 | company_requests | (status, submitted_at DESC); (owner_user_id, status); (organization_id) | Admin queues, owner workload and company history.
+I04 | request_roles | (request_id, status) | Role requirements and headcount locks.
+I05 | request_activities | (request_id, occurred_at DESC) | Request timeline.
+I06 | expert_profiles | (application_status, submitted_at); (network_status); (contact_email) | Review queue, active network and manual duplicate review; email not globally unique here.
+I07 | expert_reviews | (expert_profile_id, reviewed_at DESC) | Review history.
+I08 | expert_skills | (skill_id, expert_profile_id) | Skill-to-expert search; complement the expert-first composite PK.
+I09 | availabilities | (expert_profile_id, starts_on, ends_on) | Availability lookup; interval conflict protection is a separate constraint.
+I10 | consent_records | (expert_profile_id, purpose, occurred_at DESC) | Latest consent per purpose.
+I11 | candidates | (expert_profile_id, status); (request_id, status) | Request shortlists and expert matching history.
+I12 | outreach_records | (candidate_id, contacted_at DESC); (follow_up_at) | Contact history and follow-up reminders.
+I13 | expert_offers | (expert_profile_id, status); (request_id, status); (responsible_user_id, status); (request_role_id) | Own offers, agency queues, role placement-capacity lookup.
+I14 | offer_versions | (status, expires_at) | Expiry worker; unique offer/version index already serves version lists.
+I15 | offer_responses | (offer_version_id, recorded_at DESC) | Response timeline and acceptance lookups.
+I16 | selection_decisions | (offer_id, decision_no DESC) | Current and historical decisions.
+I17 | placements | (expert_profile_id, status); (request_id, status) | Expert placement history and agency reports.
+I18 | document_versions | (scan_status, uploaded_at) | Scanning queue; unique document/version index serves version listing.
+I19 | notifications | (recipient_user_id, read_at, created_at DESC) | Own inbox and unread counts.
+I20 | outbox_events | (status, available_at); (locked_until) | Dispatcher polling and stale-lease recovery.
+I21 | delivery_attempts | (outbox_event_id, delivery_key, attempt_no DESC); (status, attempted_at) | Delivery tracking and retries; avoid duplicate redundant indexes.
+I22 | audit_events | (entity_type, entity_id, occurred_at DESC); (actor_user_id, occurred_at DESC) | Record history and actor investigation.
+I23 | idempotency_requests | (expires_at); (status, lease_expires_at) | TTL cleanup and crash recovery.
+I24 | export_jobs | (requested_by_user_id, created_at DESC); (status, created_at) | Export history and worker queue.
+I25 | all FK/junction fields | Index child-side FKs when existing PK/unique/index leading columns do not cover access or deletion checks. | PostgreSQL does not automatically index referencing FK columns. Avoid redundant duplicate indexes; validate against real query plans. T1.

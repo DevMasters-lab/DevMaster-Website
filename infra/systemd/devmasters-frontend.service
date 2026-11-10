@@ -1,0 +1,13 @@
+[Unit]
+Description=DevMasters Next.js frontend
+After=network.target
+[Service]
+User=devmasters
+WorkingDirectory=/srv/devmasters/frontend
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3000
+Restart=always
+NoNewPrivileges=true
+PrivateTmp=true
+[Install]
+WantedBy=multi-user.target

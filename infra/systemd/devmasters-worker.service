@@ -1,0 +1,14 @@
+[Unit]
+Description=DevMasters Laravel queue worker
+After=network.target
+[Service]
+User=devmasters
+WorkingDirectory=/srv/devmasters/backend
+ExecStart=/usr/bin/php artisan queue:work --sleep=3 --tries=5 --timeout=180
+Restart=always
+RestartSec=5
+TimeoutStopSec=210
+NoNewPrivileges=true
+PrivateTmp=true
+[Install]
+WantedBy=multi-user.target

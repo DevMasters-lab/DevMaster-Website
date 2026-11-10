@@ -1,0 +1,225 @@
+@font-face {
+    font-family: Battambang;
+    src: url('/fonts/Battambang-Regular.ttf') format('truetype');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+@font-face {
+    font-family: Battambang;
+    src: url('/fonts/Battambang-Bold.ttf') format('truetype');
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+}
+@font-face {
+    font-family: Moul;
+    src: url('/fonts/Moul-Regular.ttf') format('truetype');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+@font-face {
+    font-family: Inter;
+    src: url('/fonts/Inter.ttf') format('truetype');
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+}
+:root,
+html[lang='km'] {
+    --dm-font-body: Battambang, Inter, sans-serif;
+    --dm-font-title: Moul, 'Times New Roman', Battambang, serif;
+    --dm-body-leading: 1.9;
+    --dm-title-leading: 1.8;
+}
+html[lang='en'] {
+    --dm-font-body: Inter, Battambang, sans-serif;
+    --dm-font-title: 'Times New Roman', Times, Moul, Battambang, serif;
+    --dm-body-leading: 1.6;
+    --dm-title-leading: 1.2;
+}
+html[lang] {
+    --font-family: var(--dm-font-body);
+    --serif-font-family: var(--dm-font-title);
+    --font-sans: var(--dm-font-body);
+    --font-serif: var(--dm-font-title);
+    font-family: var(--dm-font-body);
+}
+html[lang] body {
+    font-family: var(--dm-font-body);
+    line-height: var(--dm-body-leading);
+}
+html[lang] :where(button, input, select, textarea, nav, table, h3, h4, h5, h6, [role='dialog'], [role='alertdialog'], [role='alert'], [role='status']) {
+    font-family: var(--dm-font-body);
+}
+html[lang] :is(h1, h2) {
+    font-family: var(--dm-font-title);
+    line-height: var(--dm-title-leading);
+}
+html[lang] :is(h1, h2) :where(*) {
+    font-family: inherit;
+}
+html[lang='km'] :where(p, li, label, input, select, textarea, button, th, td, h3, h4, h5, h6) {
+    line-height: 1.9;
+    letter-spacing: normal;
+}
+html[lang='km'] :is(h1, h2),
+html[lang='km'] :is(h1, h2) :where(*) {
+    font-style: normal;
+    font-weight: 400;
+    font-synthesis: none;
+    letter-spacing: normal;
+}
+
+/* Shared sidebar tokens also cover menus and labels rendered outside the sidebar. */
+:root,
+html[lang='km'] {
+    --dm-sidebar-font: var(--dm-font-body);
+    --dm-sidebar-leading: 1.8;
+    --dm-sidebar-heading-weight: 700;
+}
+html[lang='en'] {
+    --dm-sidebar-leading: 1.5;
+    --dm-sidebar-heading-weight: 600;
+}
+html[lang] :is(.expert-sidebar, .mobile-portal-nav, .expert-user, .fi-sidebar, .fi-user-menu, .fi-dropdown-panel, .tippy-box) {
+    font-family: var(--dm-sidebar-font);
+    font-size: var(--dm-text-nav);
+    font-weight: 500;
+    line-height: var(--dm-sidebar-leading);
+}
+html[lang] :is(.expert-sidebar, .mobile-portal-nav, .expert-user, .fi-sidebar, .fi-user-menu, .fi-dropdown-panel, .tippy-box) :where(a, button, span, p, li, label, input, select, [role='menuitem'], [role='tooltip']) {
+    font-family: var(--dm-sidebar-font);
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: var(--dm-sidebar-leading);
+}
+html[lang] :is(.expert-sidebar nav a, .sidebar-bottom a, .sidebar-bottom button, .mobile-portal-nav a, .fi-sidebar-item-label, .fi-user-menu-trigger-text, .fi-dropdown-list-item-label) {
+    font-size: var(--dm-text-nav);
+    font-weight: 500;
+    line-height: var(--dm-sidebar-leading);
+}
+html[lang] :is(.expert-sidebar, .fi-sidebar) :is(h1, h2, h3, h4, h5, h6, [role='heading'], .portal-label, .fi-sidebar-group-label),
+html[lang] .fi-dropdown-header {
+    font-family: var(--dm-sidebar-font);
+    font-size: var(--dm-text-small);
+    font-style: normal;
+    font-weight: var(--dm-sidebar-heading-weight);
+    line-height: var(--dm-sidebar-leading);
+    letter-spacing: normal;
+}
+html[lang] :is(.expert-sidebar, .fi-sidebar) :is(h1, h2, h3, h4, h5, h6, [role='heading'], .portal-label, .fi-sidebar-group-label) :where(*),
+html[lang] .fi-dropdown-header :where(*) {
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+}
+html[lang] :is(.expert-sidebar nav ul ul a, .fi-sidebar-sub-group-items .fi-sidebar-item-label) {
+    font-size: var(--dm-text-submenu);
+    font-weight: 400;
+}
+html[lang] :is(.expert-sidebar nav a, .fi-sidebar-group-label, .fi-sidebar-item-label, .fi-user-menu-trigger-text, .fi-dropdown-list-item-label, .tippy-content) {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+html[lang] :is(.expert-sidebar nav a, .mobile-portal-nav a) > svg {
+    flex-shrink: 0;
+}
+html[lang] .mobile-portal-nav a {
+    white-space: nowrap;
+}
+
+/* Readable scale shared by Next.js, Tailwind utilities and Filament. */
+:root {
+    --dm-text-body: 17px;
+    --dm-text-description: 18px;
+    --dm-text-nav: 16px;
+    --dm-text-submenu: 15px;
+    --dm-text-control: 16px;
+    --dm-text-input: 16px;
+    --dm-text-label: 16px;
+    --dm-text-small: 14px;
+    --dm-text-table: 16px;
+    --dm-text-footer: 15px;
+    --dm-text-section: 38px;
+    --dm-text-card: 23px;
+    --dm-text-panel: 28px;
+    --dm-text-page: 32px;
+}
+html[lang] {
+    --text-xs: var(--dm-text-small);
+    --text-sm: var(--dm-text-label);
+    --text-base: var(--dm-text-body);
+    --text-lg: var(--dm-text-description);
+    --text-xl: var(--dm-text-card);
+    --text-xs--line-height: var(--dm-sidebar-leading);
+    --text-sm--line-height: var(--dm-sidebar-leading);
+    --text-base--line-height: var(--dm-body-leading);
+    --text-lg--line-height: var(--dm-body-leading);
+}
+html[lang] body {
+    font-size: var(--dm-text-body);
+}
+/* These text roles override legacy inline sizes as well as utility classes. */
+html[lang] p {
+    font-size: var(--dm-text-body) !important;
+    line-height: var(--dm-body-leading);
+}
+html[lang] small {
+    font-size: var(--dm-text-small) !important;
+    line-height: var(--dm-sidebar-leading);
+}
+html[lang] label {
+    font-size: var(--dm-text-label) !important;
+}
+html[lang] :is(input, select, textarea) {
+    font-size: var(--dm-text-input) !important;
+    line-height: var(--dm-sidebar-leading);
+}
+html[lang] button {
+    font-size: var(--dm-text-control);
+}
+html[lang] :is(th, td) {
+    font-size: var(--dm-text-table) !important;
+    line-height: var(--dm-sidebar-leading);
+}
+html.fi :is(.fi-btn, .fi-link, .fi-tabs-item-label, .fi-topbar-item-label) {
+    font-size: var(--dm-text-control);
+}
+html.fi :is(.fi-fo-field-label-content, .fi-fo-field-label, .fi-sc-field-label, .fi-in-entry-label) {
+    font-size: var(--dm-text-label);
+}
+html.fi :is(.fi-sc-text, .fi-in-text-item, .fi-ta-text-item, .fi-ta-header-cell-label) {
+    font-size: var(--dm-text-table);
+    line-height: var(--dm-sidebar-leading);
+}
+html.fi :is(.fi-fo-field-helper-text, .fi-fo-field-error-message, .fi-pagination, .fi-breadcrumbs, .fi-wi-stats-overview-stat-description, .fi-badge) {
+    font-size: var(--dm-text-small);
+    line-height: var(--dm-sidebar-leading);
+}
+html.fi :is(.fi-header-heading, .fi-simple-header-heading) {
+    font-size: var(--dm-text-page);
+}
+html.fi :is(.fi-modal-heading, .fi-section-header-heading, .fi-no-notification-title) {
+    font-size: var(--dm-text-card);
+}
+@media (max-width: 760px) {
+    :root {
+        --dm-text-body: 16px;
+        --dm-text-description: 16px;
+        --dm-text-nav: 15px;
+        --dm-text-submenu: 14px;
+        --dm-text-control: 15px;
+        --dm-text-label: 15px;
+        --dm-text-small: 13px;
+        --dm-text-table: 15px;
+        --dm-text-footer: 14px;
+        --dm-text-section: 28px;
+        --dm-text-card: 20px;
+        --dm-text-panel: 26px;
+        --dm-text-page: 28px;
+    }
+}

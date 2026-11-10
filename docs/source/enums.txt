@@ -1,0 +1,42 @@
+DEVMASTERS  /  ENUMS |  | 
+These exact controlled vocabularies are v1 proposals. They may be implemented as PostgreSQL enums; changing them later requires a reviewed migration. No seed service catalogue or legal policy text is invented. |  | 
+ |  | 
+ |  | 
+Type name | Allowed values | Meaning / boundary
+user_status | INVITED,ACTIVE,SUSPENDED,DISABLED | ACTIVE requires valid credentials and applicable activation checks.
+request_type | INVITE_US_TO_BID,HIRE_OUR_TEAM | Maps directly to the two public company forms.
+request_status | SUBMITTED,UNDER_REVIEW,CLARIFICATION_REQUIRED,MATCHING,ON_HOLD,CLOSED,CANCELLED | Intake/agency workflow only; offers and placements have independent states.
+work_mode | REMOTE,ONSITE,HYBRID | Optional working-location classification.
+request_role_status | OPEN,FILLED,CANCELLED | FILLED is controlled by headcount transaction checks, not expert acceptance count.
+actor_type | USER,PUBLIC,SYSTEM | USER requires an authenticated actor FK; PUBLIC and SYSTEM must not masquerade as a user.
+request_activity_type | SUBMITTED,NOTE,CLARIFICATION,STATUS_CHANGED,OWNER_ASSIGNED,CRM_LINKED | Agency record history; staff-only visibility.
+application_status | SUBMITTED,UNDER_REVIEW,CORRECTIONS_REQUIRED,APPROVED,REJECTED,WITHDRAWN | APPROVED review precedes expert activation.
+network_status | PENDING,ACTIVE,SUSPENDED,ARCHIVED | Operational access/matching eligibility, separate from availability.
+expert_review_decision | APPROVED,REJECTED,CORRECTIONS_REQUIRED | Immutable review outcome; new reviews supersede operational state, not old records.
+skill_proficiency | BEGINNER,INTERMEDIATE,ADVANCED,EXPERT | Proposed optional self-reporting scale, not a verified credential.
+availability_status | AVAILABLE,LIMITED,UNAVAILABLE | Applies to one non-overlapping date interval.
+consent_purpose | NETWORK_PARTICIPATION,CV_SHARING | Proposed purpose codes; wording and lawful retention are unresolved.
+consent_action | GRANTED,WITHDRAWN | Append events rather than toggle historic consent.
+consent_channel | PUBLIC_FORM,PORTAL,STAFF_RECORDED | Staff-recorded consent needs evidence and attribution.
+candidate_status | SHORTLISTED,CONTACTED,INTERESTED,NOT_INTERESTED,REMOVED | Not an acceptance or final selection status.
+outreach_channel | EMAIL,PHONE,PORTAL,IN_PERSON | Contact channel, separate from formal response channel.
+interest_result | INTERESTED,NOT_INTERESTED,NO_RESPONSE | Interest alone cannot create a placement.
+offer_status | DRAFT,ISSUED,ACCEPTED,DECLINED,CHANGES_REQUESTED,EXPIRED,WITHDRAWN,SUPERSEDED | SUPERSEDED applies only to historical offer_versions, never expert_offers.status; enforce a CHECK on expert_offers.
+rate_basis | HOUR,DAY,MONTH,FIXED,OTHER | Amounts are per the named basis, not accumulated invoice totals.
+payer_type | DEVMASTERS,REQUESTING_COMPANY,OTHER | Exact payer name is required in the issued snapshot.
+offer_response_type | ACCEPTED,DECLINED,CHANGES_REQUESTED,COMMENT | COMMENT is a proposed non-decision response; at most one non-COMMENT response per version.
+response_channel | PORTAL,EMAIL,PHONE,IN_PERSON | PORTAL means authenticated owning expert; other channels mean attributed staff entry.
+selection_result | SELECTED,NOT_SELECTED | Separate from acceptance; reversal preserves history and cancels rather than deletes placement.
+placement_status | CONFIRMED,ACTIVE,ENDED,CANCELLED | Administrative only; no task/delivery-completion semantics.
+document_type | CV,CERTIFICATE,REQUEST_FILE,OFFER_ATTACHMENT,RESPONSE_EVIDENCE,EXPORT,OTHER | Logical file classification.
+document_status | ACTIVE,ARCHIVED | Archiving does not purge historical bytes.
+scan_status | PENDING,CLEAN,INFECTED,ERROR | Fail closed: only CLEAN permits ordinary download/use.
+expert_document_purpose | CV,CERTIFICATE,OTHER | is_primary_cv is allowed only for CV.
+outbox_status | PENDING,PUBLISHING,PUBLISHED,FAILED | Publication status only; failed/exhausted events remain recoverable for staff retry.
+delivery_channel | EMAIL,SMS | User-visible messages may additionally exist in notifications independently.
+delivery_status | PENDING,SENT,FAILED,UNKNOWN | SENT denotes provider acceptance, not confirmed recipient delivery.
+page_status | DRAFT,PUBLISHED,ARCHIVED | Public reads expose only published content.
+idempotency_status | IN_PROGRESS,COMPLETED,FAILED | Same key + changed payload is a conflict, not a new operation.
+export_type | REQUESTS,OFFERS,PLACEMENTS | Only architecture-approved report domains.
+export_format | CSV,XLSX | Proposed initial export formats.
+export_status | PENDING,RUNNING,COMPLETED,FAILED,EXPIRED | Private report artifact lifecycle.

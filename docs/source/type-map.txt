@@ -1,0 +1,16 @@
+DEVMASTERS  /  TYPE MAP |  |  | 
+Explicit PostgreSQL-to-Prisma mapping proposal. T2 is the technical reference; installed Prisma/PostgreSQL versions were not provided. |  |  | 
+ |  |  | 
+ |  |  | 
+PostgreSQL type | Prisma field mapping | Purpose | Implementation note
+uuid | String @db.Uuid | Keys and foreign keys | Proposed UUIDs supplied by the application; generation strategy is not an accepted source decision.
+varchar(n) | String @db.VarChar(n) | Bounded text | All lengths are v1 proposals, not source-provided limits.
+text | String @db.Text | Long prose and hashes | Use encoded hashes only for credentials; never raw passwords.
+integer | Int | Counters, sequence and headcount | Positive/nonnegative checks as specified.
+bigint | BigInt | File size in bytes | Serialize deliberately when exposing through JSON.
+numeric(p,s) | Decimal @db.Decimal(p,s) | Money, experience and capacity | Never replace compensation with binary floating-point values.
+boolean | Boolean | Flags | Only store flags that do not contradict event-derived state.
+date | DateTime @db.Date | Business calendar dates | Do not infer a time-of-day or time zone.
+timestamptz(3) | DateTime @db.Timestamptz(3) | Event timestamps | Use UTC at application/API boundaries; display appropriate locale/time zone.
+jsonb | Json @db.JsonB | Snapshots and validated payloads | No arbitrary SQL, file bytes, credentials or substitutes for relational links.
+named enum | Prisma enum | Controlled lifecycle values | Exact vocabularies are in Enums; implementation/version compatibility must be checked.

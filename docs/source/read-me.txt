@@ -1,0 +1,30 @@
+DEVMASTERS
+DATABASE DICTIONARY & RELATIONSHIPS |  |  |  |  |  |  | 
+ |  |  |  |  |  |  | 
+Version 1.0  •  Proposed physical design  •  1 November 2026 |  |  |  |  |  |  | 
+ |  |  |  |  |  |  | 
+Basis: the accepted DevMasters agency architecture. Admin and approved-Expert portals only. Company requests are public and account-free; experts work directly with the requesting company. No project tasks, timesheets or deliverable management. |  |  |  |  |  |  | 
+ |  |  |  |  |  |  | 
+ |  |  |  |  |  |  | 
+Core entities |  | Supporting tables |  | Physical columns |  | FK relationships | 
+33 |  | 9 |  | 442 |  | 80 | 
+ |  |  |  |  |  |  | 
+ |  |  |  |  |  |  | 
+HOW TO USE THIS WORKBOOK |  |  |  |  |  |  | 
+ |  |  |  |  |  |  | 
+Tables |  |  | Entity inventory, purpose, provenance and design notes. |  |  |  | 
+Columns |  |  | Full field dictionary: 442 columns with types, nullability, defaults and references. |  |  |  | 
+Relationships + Constraints |  |  | 80 simple FK links plus 30 integrity specifications, including composite cross-record guards. |  |  |  | 
+Enums + Type Map |  |  | Proposed controlled values and explicit PostgreSQL/Prisma type mappings. |  |  |  | 
+Business Rules + Indexes |  |  | Transaction boundaries, authorization, lifecycle handling and proposed access paths. |  |  |  | 
+Decisions + Tests + Sources |  |  | Unspecified policy choices, 20 planned acceptance tests and source traceability. |  |  |  | 
+ |  |  |  |  |  |  | 
+READ BEFORE IMPLEMENTATION |  |  |  |  |  |  | 
+ |  |  |  |  |  |  | 
+All exact fields, lengths, defaults, enums and support tables are proposed v1 specifications. The source fixes the business model, not a deployed schema. |  |  |  |  |  |  | 
+PK = primary key; FK = foreign key; UQ = single-column unique constraint. Multiple PK-marked identifiers in a bridge form one composite primary key. |  |  |  |  |  |  | 
+Nullable = database-level nullability. Required-on-issue rules still apply to draft offer fields. “None” means no default; it does not mean an optional field. |  |  |  |  |  |  | 
+All timestamps are proposed as timestamptz(3); dates remain date. UUID identity and integer record_version are proposals. Apply updated_at and record_version changes in every write path. |  |  |  |  |  |  | 
+Default FK actions: RESTRICT on delete/update. Preserve history by disabling or archiving records. Retention durations, legal policy wording and controlled purging remain unresolved. |  |  |  |  |  |  | 
+IMPORTANT: accepted offer ≠ selected expert. Selection must reference the exact valid acceptance. Issued terms and file-version references are preserved. |  |  |  |  |  |  | 
+This package is documentation, not an executed migration. Planned tests have not been run against an application or database. |  |  |  |  |  |  | 

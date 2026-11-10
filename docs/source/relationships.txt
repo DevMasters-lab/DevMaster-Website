@@ -1,0 +1,85 @@
+DEVMASTERS  /  RELATIONSHIPS |  |  |  |  |  |  |  |  | 
+Exhaustive simple-FK inventory. Cardinality is read in both directions. Composite constraints C03–C14 additionally enforce same-company/request/expert/offer/version chains. All FK delete/update actions proposed as RESTRICT. |  |  |  |  |  |  |  |  | 
+ |  |  |  |  |  |  |  |  | 
+ |  |  |  |  |  |  |  |  | 
+ID | Parent table | Parent column | Child table | Child FK column | Parent per child | Children per parent | On delete | On update | Meaning
+FK001 | users | id | user_roles | user_id | 1 | 0..N | RESTRICT | RESTRICT | Assigned account.
+FK002 | roles | id | user_roles | role_id | 1 | 0..N | RESTRICT | RESTRICT | Assigned role.
+FK003 | users | id | user_roles | granted_by_user_id | 0..1 | 0..N | RESTRICT | RESTRICT | Staff grantor; null only for controlled system bootstrap.
+FK004 | roles | id | role_permissions | role_id | 1 | 0..N | RESTRICT | RESTRICT | Role receiving the permission.
+FK005 | permissions | id | role_permissions | permission_id | 1 | 0..N | RESTRICT | RESTRICT | Permission granted to the role.
+FK006 | users | id | sessions | user_id | 1 | 0..N | RESTRICT | RESTRICT | Account authenticated by the session.
+FK007 | sessions | id | sessions | rotated_from_session_id | 0..1 | 0..1 | RESTRICT | RESTRICT | Previous token record in this rotation chain.
+FK008 | users | id | organizations | created_by_user_id | 1 | 0..N | RESTRICT | RESTRICT | Staff member who verified or created the record.
+FK009 | organizations | id | contacts | organization_id | 1 | 0..N | RESTRICT | RESTRICT | Organization represented by this contact.
+FK010 | users | id | contacts | created_by_user_id | 1 | 0..N | RESTRICT | RESTRICT | Staff creator.
+FK011 | organizations | id | company_requests | organization_id | 0..1 | 0..N | RESTRICT | RESTRICT | Verified company link, added by staff when available.
+FK012 | contacts | id | company_requests | contact_id | 0..1 | 0..N | RESTRICT | RESTRICT | Verified contact; requires the matching organization link.
+FK013 | users | id | company_requests | owner_user_id | 0..1 | 0..N | RESTRICT | RESTRICT | Responsible staff; may be unassigned at public intake.
+FK014 | company_requests | id | request_roles | request_id | 1 | 0..N | RESTRICT | RESTRICT | Parent request.
+FK015 | company_requests | id | request_activities | request_id | 1 | 0..N | RESTRICT | RESTRICT | Request discussed or changed.
+FK016 | users | id | request_activities | actor_user_id | 0..1 | 0..N | RESTRICT | RESTRICT | Staff actor; null only for public/system events.
+FK017 | users | id | expert_profiles | user_id | 0..1 | 0..1 | RESTRICT | RESTRICT | Optional before approval; unique linked account after activation.
+FK018 | expert_profiles | id | expert_reviews | expert_profile_id | 1 | 0..N | RESTRICT | RESTRICT | Application/profile reviewed.
+FK019 | users | id | expert_reviews | reviewer_user_id | 1 | 0..N | RESTRICT | RESTRICT | Authorized staff reviewer.
+FK020 | expert_profiles | id | expert_skills | expert_profile_id | 1 | 0..N | RESTRICT | RESTRICT | Expert declaring the skill.
+FK021 | skills | id | expert_skills | skill_id | 1 | 0..N | RESTRICT | RESTRICT | Declared skill.
+FK022 | expert_profiles | id | availabilities | expert_profile_id | 1 | 0..N | RESTRICT | RESTRICT | Expert whose availability is described.
+FK023 | expert_profiles | id | consent_records | expert_profile_id | 1 | 0..N | RESTRICT | RESTRICT | Applicant/expert providing consent.
+FK024 | users | id | consent_records | recorded_by_user_id | 0..1 | 0..N | RESTRICT | RESTRICT | Expert or staff recorder; null for public form.
+FK025 | company_requests | id | candidates | request_id | 1 | 0..N | RESTRICT | RESTRICT | Request under consideration.
+FK026 | expert_profiles | id | candidates | expert_profile_id | 1 | 0..N | RESTRICT | RESTRICT | Approved expert considered for the request.
+FK027 | users | id | candidates | shortlisted_by_user_id | 1 | 0..N | RESTRICT | RESTRICT | Responsible shortlisting staff.
+FK028 | candidates | id | outreach_records | candidate_id | 1 | 0..N | RESTRICT | RESTRICT | Shortlist entry contacted.
+FK029 | users | id | outreach_records | staff_user_id | 1 | 0..N | RESTRICT | RESTRICT | Staff recorder.
+FK030 | company_requests | id | expert_offers | request_id | 1 | 0..N | RESTRICT | RESTRICT | Company request served by the offer.
+FK031 | expert_profiles | id | expert_offers | expert_profile_id | 1 | 0..N | RESTRICT | RESTRICT | Only expert entitled to view/respond to this offer.
+FK032 | candidates | id | expert_offers | candidate_id | 1 | 0..N | RESTRICT | RESTRICT | Matching shortlist entry; must match request and expert.
+FK033 | request_roles | id | expert_offers | request_role_id | 0..1 | 0..N | RESTRICT | RESTRICT | Optional structured role belonging to this same request.
+FK034 | users | id | expert_offers | responsible_user_id | 1 | 0..N | RESTRICT | RESTRICT | Staff member managing the offer.
+FK035 | offer_versions | id | expert_offers | current_version_id | 0..1 | 0..1 | RESTRICT | RESTRICT | Current operative version; same offer only; null only during atomic initial creation.
+FK036 | expert_offers | id | offer_versions | offer_id | 1 | 0..N | RESTRICT | RESTRICT | Parent offer.
+FK037 | users | id | offer_versions | issued_by_user_id | 0..1 | 0..N | RESTRICT | RESTRICT | Staff issuer; required when issued_at is set.
+FK038 | users | id | offer_versions | created_by_user_id | 1 | 0..N | RESTRICT | RESTRICT | Author of this version.
+FK039 | offer_versions | id | offer_responses | offer_version_id | 1 | 0..N | RESTRICT | RESTRICT | Exact version reviewed by the expert.
+FK040 | users | id | offer_responses | recorded_by_user_id | 1 | 0..N | RESTRICT | RESTRICT | Authenticated expert for PORTAL; authorized staff for other channels.
+FK041 | expert_offers | id | selection_decisions | offer_id | 1 | 0..N | RESTRICT | RESTRICT | Offer being decided.
+FK042 | offer_versions | id | selection_decisions | offer_version_id | 1 | 0..N | RESTRICT | RESTRICT | Accepted version used for this decision.
+FK043 | offer_responses | id | selection_decisions | accepted_response_id | 1 | 0..N | RESTRICT | RESTRICT | ACCEPTED response to the same version; verified transactionally.
+FK044 | users | id | selection_decisions | decided_by_user_id | 1 | 0..N | RESTRICT | RESTRICT | Staff member with final-selection permission.
+FK045 | selection_decisions | id | selection_decisions | supersedes_decision_id | 0..1 | 0..1 | RESTRICT | RESTRICT | Previous decision in this offer's linear history.
+FK046 | expert_offers | id | placements | offer_id | 1 | 0..1 | RESTRICT | RESTRICT | One placement at most per offer, including cancelled history.
+FK047 | offer_versions | id | placements | offer_version_id | 1 | 0..1 | RESTRICT | RESTRICT | Exact accepted terms; never re-point to a later revision.
+FK048 | offer_responses | id | placements | accepted_response_id | 1 | 0..1 | RESTRICT | RESTRICT | Evidence of acceptance of the same version.
+FK049 | selection_decisions | id | placements | selection_decision_id | 1 | 0..1 | RESTRICT | RESTRICT | Original SELECTED decision that created this placement.
+FK050 | company_requests | id | placements | request_id | 1 | 0..N | RESTRICT | RESTRICT | Same request as the offer; composite consistency required.
+FK051 | expert_profiles | id | placements | expert_profile_id | 1 | 0..N | RESTRICT | RESTRICT | Same expert as the offer; composite consistency required.
+FK052 | users | id | placements | created_by_user_id | 1 | 0..N | RESTRICT | RESTRICT | Selecting staff member.
+FK053 | users | id | documents | created_by_user_id | 0..1 | 0..N | RESTRICT | RESTRICT | Null allowed for controlled anonymous intake uploads.
+FK054 | documents | id | document_versions | document_id | 1 | 0..N | RESTRICT | RESTRICT | Logical document.
+FK055 | users | id | document_versions | uploaded_by_user_id | 0..1 | 0..N | RESTRICT | RESTRICT | Uploader account; null for scoped public intake.
+FK056 | expert_profiles | id | expert_documents | expert_profile_id | 1 | 0..N | RESTRICT | RESTRICT | Owning applicant/expert.
+FK057 | documents | id | expert_documents | document_id | 1 | 0..N | RESTRICT | RESTRICT | Logical document attached to that expert.
+FK058 | users | id | expert_documents | linked_by_user_id | 0..1 | 0..N | RESTRICT | RESTRICT | Null for anonymous initial application.
+FK059 | company_requests | id | request_documents | request_id | 1 | 0..N | RESTRICT | RESTRICT | Owning company request.
+FK060 | documents | id | request_documents | document_id | 1 | 0..N | RESTRICT | RESTRICT | Logical request document.
+FK061 | users | id | request_documents | linked_by_user_id | 0..1 | 0..N | RESTRICT | RESTRICT | Staff uploader/linker; null for public intake.
+FK062 | offer_versions | id | offer_documents | offer_version_id | 1 | 0..N | RESTRICT | RESTRICT | Terms version containing the attachment.
+FK063 | document_versions | id | offer_documents | document_version_id | 1 | 0..N | RESTRICT | RESTRICT | Exact immutable bytes offered to the expert.
+FK064 | users | id | notifications | recipient_user_id | 1 | 0..N | RESTRICT | RESTRICT | Recipient account; experts may read only their own inbox.
+FK065 | outbox_events | id | notifications | outbox_event_id | 1 | 0..N | RESTRICT | RESTRICT | Committed event that caused this notification.
+FK066 | outbox_events | id | delivery_attempts | outbox_event_id | 1 | 0..N | RESTRICT | RESTRICT | Committed event requiring delivery.
+FK067 | notifications | id | delivery_attempts | notification_id | 0..1 | 0..N | RESTRICT | RESTRICT | In-app notification when recipient has an account; null for public acknowledgement.
+FK068 | notification_templates | id | delivery_attempts | notification_template_id | 0..1 | 0..N | RESTRICT | RESTRICT | Exact template version used, if templated.
+FK069 | users | id | audit_events | actor_user_id | 0..1 | 0..N | RESTRICT | RESTRICT | Authenticated actor; null for public/system actions.
+FK070 | request_roles | id | request_role_skills | request_role_id | 1 | 0..N | RESTRICT | RESTRICT | Role requiring the skill.
+FK071 | skills | id | request_role_skills | skill_id | 1 | 0..N | RESTRICT | RESTRICT | Required or preferred skill.
+FK072 | offer_responses | id | offer_response_evidence | offer_response_id | 1 | 0..N | RESTRICT | RESTRICT | Response whose evidence is being preserved.
+FK073 | document_versions | id | offer_response_evidence | document_version_id | 1 | 0..N | RESTRICT | RESTRICT | Exact CLEAN evidence file version.
+FK074 | company_requests | id | request_services | request_id | 1 | 0..N | RESTRICT | RESTRICT | Company request.
+FK075 | services | id | request_services | service_id | 1 | 0..N | RESTRICT | RESTRICT | Service classification.
+FK076 | users | id | public_pages | updated_by_user_id | 1 | 0..N | RESTRICT | RESTRICT | Staff editor.
+FK077 | users | id | notification_templates | created_by_user_id | 1 | 0..N | RESTRICT | RESTRICT | Staff author.
+FK078 | users | id | system_settings | updated_by_user_id | 1 | 0..N | RESTRICT | RESTRICT | Authorized staff editor.
+FK079 | users | id | export_jobs | requested_by_user_id | 1 | 0..N | RESTRICT | RESTRICT | Staff owner; recheck permission at execution and download.
+FK080 | document_versions | id | export_jobs | output_document_version_id | 0..1 | 0..1 | RESTRICT | RESTRICT | Exact private output artifact; required for COMPLETED.

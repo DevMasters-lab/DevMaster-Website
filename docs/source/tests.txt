@@ -1,0 +1,25 @@
+DEVMASTERS  /  TESTS |  |  | 
+Implementation acceptance-test specifications. These are planned tests; no application/database runtime was supplied and these tests have not been executed. |  |  | 
+ |  |  | 
+ |  |  | 
+ID | Scenario | Action | Expected result
+AT01 | Anonymous company intake | Submit a valid hiring request without login. | Request + original snapshot + outbox stored; no company user created.
+AT02 | Pending expert access | Submit an application and attempt portal access before approval. | Application persists with null user_id; access denied.
+AT03 | CRM mismatch | Link a request to organization A and a contact from B. | Database composite FK/check rejects the link.
+AT04 | Shortlist mismatch | Offer references a candidate from another request/expert. | Database composite FK rejects the offer.
+AT05 | Cross-offer current version | Set offer A.current_version_id to a version of offer B. | Database composite FK rejects the update.
+AT06 | Issued terms mutation | Change amount, payer, scope, expiry or attachment membership after issue. | Immutability protection rejects mutation; draft revision remains permitted before placement.
+AT07 | Superseded version response | Revise v1, then attempt acceptance of v1. | Rejected even when its original expiry is in the future.
+AT08 | Deadline and race | Race acceptance with expiry job at deadline. | Exactly one valid business state; acceptance cannot succeed when server time >= expires_at.
+AT09 | Duplicate acceptance | Send identical acceptance command twice, then a new contradictory decision on same version. | Retry returns original result; second decision is rejected by uniqueness/state rules.
+AT10 | Phone/email attribution | Record phone acceptance with no evidence or as an expert portal actor. | Rejected; authorized staff, channel, record time and evidence are required.
+AT11 | Premature selection | Select without an ACCEPTED response, or with acceptance from another version. | Rejected by cross-link constraints and guarded transaction/trigger.
+AT12 | Parallel capacity selection | Select two accepted offers concurrently for a one-person role. | At most one non-CANCELLED placement commits; losing command returns capacity conflict.
+AT13 | Duplicate placement | Repeat selection after transaction commit/timeout. | Return existing decision/placement; no duplicate placement created.
+AT14 | Email outage | Make Gmail unavailable when issuing or selecting. | Business and inbox remain committed; failed delivery is retried separately.
+AT15 | Quarantine access | Request download or issue offer with a PENDING/INFECTED file. | Denied; no raw bucket access bypass.
+AT16 | Cross-expert access | Expert A requests B profile, offer, response, placement or file. | Denied even if the UUID is known.
+AT17 | Selection reversal | Correct SELECTED to NOT_SELECTED with a reason. | Append decision and cancel existing placement atomically; accepted terms/evidence remain intact.
+AT18 | Archive master record | Attempt hard-delete of referenced account, company, offer or evidence. | RESTRICT prevents history loss; authorized disable/archive remains available.
+AT19 | Snapshot preservation | Correct company CRM name or revise CV after issuance. | Original company submission and issued document version remain unchanged.
+AT20 | Backup/restore validation | Restore database plus referenced private objects into a test environment. | All FKs and historical document-version/checksum links resolve; sample authorized downloads succeed.

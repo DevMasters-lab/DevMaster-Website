@@ -1,0 +1,9 @@
+DEVMASTERS  /  SOURCES |  |  |  | 
+S1 controls business scope. T1–T3 support implementation details only. The earlier project-management Word handover is superseded by S1; no company portal, task, timesheet or deliverable entities are added. |  |  |  | 
+ |  |  |  | 
+ |  |  |  | 
+ID | Source title | File / URL | Relevant scope | Provenance note
+S1 | User-supplied accepted architecture | Pasted markdown(3).md | §1 Complete system architecture; §2 Agency workflow and offer lifecycle; §3 Data architecture; §4 Offer acceptance and selection notifications; §5 Deployment and security boundaries. | Supplied in this conversation; all exact field specifications are proposed refinements.
+T1 | PostgreSQL constraints | https://www.postgresql.org/docs/current/ddl-constraints.html | CHECKs are row-local; composite FKs, uniqueness and delete actions; child FKs are not automatically indexed. | Consulted 2026-11-01; technical implementation reference, not a new business requirement.
+T2 | Prisma Schema API | https://docs.prisma.io/docs/orm/v7/reference/prisma-schema-reference | Native PostgreSQL type mappings and relation/unique declarations. | Consulted 2026-11-01; exact installed project version not supplied.
+T3 | Prisma unsupported database features | https://www.prisma.io/docs/orm/v7/prisma-migrate/workflows/unsupported-database-features | Customize migrations for triggers and features not represented in Prisma schema. | Consulted 2026-11-01; use installed-version documentation before implementation.
