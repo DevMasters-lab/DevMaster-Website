@@ -1,0 +1,196 @@
+# DevMasters API on Render Free
+
+This runbook deploys the existing Laravel backend from `DevMasters-lab/DevMaster-Website` to `https://api.devmasters.dev`, using the existing Neon project `devmaster-website` in Singapore. It does not create or replace a database. Render builds Docker remotely; Docker Desktop is not required on the Mac.
+
+## Application and container
+
+The lock file contains Laravel **13.39.0**, Sanctum **4.3.3**, Filament **5.11.0**, and Livewire **4.4.8**. Although `composer.json` allows PHP `^8.3`, locked Symfony dependencies require **PHP 8.4.1 or newer**. The Dockerfile uses PHP 8.4 with Apache and installs the production dependencies from `composer.lock`, without development packages.
+
+Apache serves only `public/`, enables rewriting, and listens on `0.0.0.0` at Render's `PORT`. Configuration and view caches are generated at runtime after secrets are available. `.env` files, Composer credentials, local storage, and cached local configuration are excluded from the image. Keep secrets in Render environment variables; do not add Docker build arguments containing secrets. [Render Docker documentation](https://render.com/docs/docker).
+
+Supervisor runs Apache and `php artisan schedule:work`. The synchronous queue executes jobs dispatched by the existing minute-by-minute outbox schedule. PostgreSQL stores HTTP sessions and cache/locks. The new infrastructure migration creates `laravel_sessions`, `cache`, and `cache_locks`; it preserves the application's existing `sessions` business table, which has a different schema. There is no separate Redis service or paid Render worker requirement.
+
+## Render settings
+
+Create **New → Web Service** and select the existing GitHub repository:
+
+| Setting | Value |
+| --- | --- |
+| Name | `devmasters-api` |
+| Repository | `DevMasters-lab/DevMaster-Website` |
+| Branch | `main` |
+| Language | Docker |
+| Root Directory | `backend` |
+| Dockerfile Path | `./Dockerfile` |
+| Docker Build Context | `.` |
+| Docker Command | Leave empty; use the image default |
+| Region | Singapore |
+| Instance Type | **Free** |
+| Health Check Path | `/api/health` |
+| Pre-deploy command | Leave empty |
+
+The repository path is `backend/Dockerfile`; after choosing root directory `backend`, use the root-relative path `./Dockerfile` in Render.
+
+## Render environment variables
+
+Use `.env.render.example` as the safe template and enter values in the service's **Environment** section. Do not upload an actual `.env` file. Angle-bracket values below are placeholders to replace, not literal settings.
+
+```dotenv
+APP_NAME=DevMasters
+APP_ENV=production
+APP_DEBUG=false
+APP_KEY=<persistent-existing-production-key-or-generate-once>
+APP_URL=https://api.devmasters.dev
+FRONTEND_URL=https://website.devmasters.dev
+APP_LOCALE=km
+APP_FALLBACK_LOCALE=en
+LOG_CHANNEL=stderr
+LOG_LEVEL=info
+
+DB_CONNECTION=pgsql
+DB_HOST=<exact-neon-hostname>
+DB_PORT=5432
+DB_DATABASE=neondb
+DB_USERNAME=neondb_owner
+DB_PASSWORD=<neon-role-password>
+DB_SSLMODE=require
+
+SESSION_DRIVER=database
+SESSION_TABLE=laravel_sessions
+SESSION_LIFETIME=120
+SESSION_DOMAIN=.devmasters.dev
+SESSION_SECURE_COOKIE=true
+SESSION_HTTP_ONLY=true
+SESSION_SAME_SITE=lax
+SANCTUM_STATEFUL_DOMAINS=website.devmasters.dev,api.devmasters.dev
+TRUSTED_PROXIES=*
+CACHE_STORE=database
+QUEUE_CONNECTION=sync
+RUN_MIGRATIONS=false
+
+FILESYSTEM_DISK=private
+PRIVATE_STORAGE_DRIVER=s3
+AWS_ACCESS_KEY_ID=<private-storage-and-ses-access-key>
+AWS_SECRET_ACCESS_KEY=<private-storage-and-ses-secret-key>
+AWS_DEFAULT_REGION=<bucket-and-ses-region>
+AWS_BUCKET=<existing-private-bucket>
+AWS_USE_PATH_STYLE_ENDPOINT=false
+LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK=local
+CLAMAV_HOST=<reachable-protected-scanner-host>
+CLAMAV_PORT=<scanner-tcp-port>
+
+MAIL_MAILER=ses
+MAIL_FROM_ADDRESS=<verified-ses-sender-address>
+MAIL_FROM_NAME=DevMasters
+ALLOWED_CURRENCIES=USD,KHR
+CONSENT_VERSION=<existing-approved-consent-version>
+```
+
+Render supplies `PORT`; do not hardcode it. Leave `DB_URL` unset so it cannot override the individual Neon settings. Preserve an existing production `APP_KEY`; it protects sessions, encrypted MFA secrets and queued reset notifications. For a first deployment only, generate a key privately with `php artisan key:generate --show --no-interaction`, save it in Render, and retain a secure backup. Never commit the generated value.
+
+For S3-compatible providers, additionally set `AWS_ENDPOINT=https://<provider-endpoint>` and set `AWS_USE_PATH_STYLE_ENDPOINT` as that provider requires. For AWS S3, leave `AWS_ENDPOINT` unset. The current storage and SES configurations share `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_DEFAULT_REGION`. An S3-compatible provider's credentials usually cannot authenticate to AWS SES: use compatible AWS credentials for both, or arrange separate transport credentials/configuration before launch. Existing code does not use `AWS_ENDPOINT` as an SES endpoint.
+
+The installed AWS SDK supports SES over HTTPS. Verify the sender/domain and SES sending permissions, including sandbox recipient restrictions if applicable. Render Free blocks outbound SMTP ports 25, 465 and 587, so ordinary SMTP settings are unsuitable. Do not use `MAIL_MAILER=log` for real password recovery or invitations. [Render Free restrictions](https://render.com/docs/free).
+
+## Neon connection and production migrations
+
+In the existing Neon project's **Connect** dialog, choose the intended branch, database `neondb`, and role `neondb_owner`. Copy its hostname and role password into Render secrets. Keep `DB_SSLMODE=require`; Laravel passes it to PostgreSQL's SSL connection configuration. [Neon secure connections](https://neon.com/docs/connect/connect-securely).
+
+Use the **direct/unpooled** Neon hostname for migration administration. A pooled hostname may be used for normal requests after checking application behavior. Do not infer the endpoint from the project name. The migrations require PostgreSQL and `btree_gist`, which Neon supports. [Neon supported extensions](https://neon.com/docs/extensions/pg-extensions).
+
+1. Back up the existing production database and private objects off-host. Verify recovery before schema changes. Rehearse pending migrations against a separate Neon branch copied from the production branch.
+2. Inspect migration history and schema. The initial migration creates enums and tables without `IF NOT EXISTS`; if tables already exist but migration records are absent, reconcile that history with a reviewed plan before running anything. Never substitute a database reset.
+3. Review pending SQL and apply migrations once using the same checked-out commit and production secrets. A local PHP 8.4 environment with Composer dependencies can perform this without Docker or a paid Render shell. Put production values in the already-ignored `backend/.env.production`, restrict that file to your user, and use the direct Neon host. Do not replace the local `.env`.
+
+   ```sh
+   cd backend
+   chmod 600 .env.production
+   php artisan config:clear --env=production --no-interaction
+   php artisan migrate:status --env=production --no-interaction
+   php artisan migrate --pretend --env=production --no-interaction
+   # Only after backup, rehearsal and SQL review:
+   php artisan migrate --force --env=production --no-interaction
+   ```
+
+   Ensure exported shell variables do not override this environment file. Do not run automated tests with production credentials. Remove the temporary production file securely when administration is finished.
+
+4. Alternatively, after the same review and backup, temporarily set Render `RUN_MIGRATIONS=true` for one deployment. Startup runs ordinary `migrate --force`, then starts the server. Set it back to `false` immediately after successful migration. This flag is an explicit opt-in and persists until changed; it is not automatically consumed. Avoid simultaneous migration runs or overlapping deployment administration.
+5. No seeder runs automatically. The existing `DatabaseSeeder` synchronizes built-in role permissions, so review its effects separately before any first-time role initialization. Verify the required roles exist before creating an administrator.
+
+For a new administrator, the existing command can run locally against the same isolated production environment:
+
+```sh
+php artisan devmasters:create-admin admin@example.com --env=production
+```
+
+It prompts privately for the password; do not put passwords in command arguments. Use an actual administrator address and finish mandatory authenticator MFA setup at `/admin`. The local setup-link route intentionally remains unavailable in production.
+
+## Persistent files and background work
+
+Configure a private S3-compatible bucket before accepting applications, uploads or reports. Existing uploads, quarantine objects and exports already use the private disk. Preserve existing object keys when moving files and copy existing objects to the configured bucket. Keep backup copies outside Render. Local temporary uploads and generated export scratch files may remain ephemeral.
+
+Provide a reachable, access-controlled ClamAV TCP endpoint. Documents remain quarantined when the scanner cannot complete; the deployment does not disable this protection. Scans, business email, reports, password-reset jobs and offer expiration depend on the configured services and scheduler. The existing platform doctor also checks Redis independently of selected drivers, so its Redis warning does not by itself diagnose this database-backed deployment.
+
+Render Free sleeps after idle periods, loses local changes on restarts, and has no interactive shell or one-off jobs. The scheduler pauses while asleep, resumes on wake, and processes eligible outbox work afterward. Offer expiration and scheduled work can be delayed. This Free setup cannot promise continuous background processing; external storage, scanning and email have their own availability and provider costs. [Render Free behavior](https://render.com/docs/free).
+
+The image includes Bookworm's PostgreSQL 15 client for existing administration commands. Its `pg_dump` cannot back up a newer PostgreSQL server. Check the Neon server version and run backups off-host with a matching or newer client. Container-local backup archives disappear on restart and must never be your only recovery copy.
+
+## Deploy and connect the frontend
+
+1. Commit and push only the reviewed deployment changes to the existing `main` branch. Preserve unrelated working-tree changes.
+2. Create the Render service with the settings above and fill its environment values. Complete migrations through the reviewed approach above before relying on session-backed routes.
+3. Deploy and inspect build/runtime logs. Confirm Apache and scheduler both start. Test `/api/health` using the **actual** hostname assigned by Render.
+4. Complete custom-domain DNS and TLS below.
+5. In Vercel, set production `LARAVEL_URL=https://api.devmasters.dev` and `FRONTEND_URL=https://website.devmasters.dev`, then redeploy the frontend so Next.js rewrites use the new destination. Do not add `NEXT_PUBLIC_API_URL`: this application already uses server-side `LARAVEL_URL` and same-origin browser paths.
+
+The browser calls `/api/v1/*` and `/sanctum/csrf-cookie` on `website.devmasters.dev`; Next.js proxies them to Laravel. Existing code includes credentials, retrieves CSRF cookies, and sends `X-XSRF-TOKEN`. Shared `.devmasters.dev` cookies, HTTPS, exact-origin CORS with credentials, and the configured stateful domains support this flow. `SameSite=lax` permits these same-site HTTPS subdomains. Keep the API version prefix and existing JSON error handling unchanged.
+
+## Hostinger DNS for api.devmasters.dev
+
+1. Render → service → **Settings → Custom Domains**: add `api.devmasters.dev`.
+2. Hostinger → `devmasters.dev` → **DNS / Nameservers → DNS Zone Editor**: add the record below. Use the hostname Render actually assigned, which can differ from the service name.
+
+   | Type | Name | Target | TTL |
+   | --- | --- | --- | --- |
+   | CNAME | `api` | `<actual-assigned-service>.onrender.com` | Default |
+
+   Enter a hostname only in Target: no `https://` and no path. Replace conflicting `api` A/AAAA/CNAME records only. Preserve `website`, apex, mail and other DNS records; no nameserver change is required when Hostinger already hosts the authoritative zone. [Hostinger CNAME instructions](https://www.hostinger.com/support/4738777-how-to-manage-cname-records-at-hostinger/), [Render subdomain DNS instructions](https://render.com/docs/configure-other-dns).
+
+3. Return to Render and click **Verify** after propagation. Render provisions and renews the HTTPS certificate. Wait for both DNS verification and certificate readiness before switching Vercel. [Render custom domains](https://render.com/docs/custom-domains).
+
+## Deployment checks
+
+These commands display status and CORS headers without printing cookies or secret values:
+
+```sh
+curl --fail --silent --show-error https://api.devmasters.dev/api/health
+curl --silent --show-error --output /dev/null --write-out '%{http_code}\n' \
+  https://api.devmasters.dev/api/v1/reference-data
+curl --silent --show-error --output /dev/null --write-out '%{http_code}\n' \
+  https://website.devmasters.dev/api/v1/reference-data
+curl --silent --show-error --dump-header - --output /dev/null \
+  --request OPTIONS https://api.devmasters.dev/api/v1/auth/login \
+  --header 'Origin: https://website.devmasters.dev' \
+  --header 'Access-Control-Request-Method: POST' \
+  --header 'Access-Control-Request-Headers: content-type,x-xsrf-token' \
+  | awk 'BEGIN { IGNORECASE=1 } /^HTTP\// || /^[Aa]ccess-[Cc]ontrol-/ || /^[Vv]ary:/ { print }'
+curl --silent --show-error --output /dev/null --write-out '%{http_code}\n' \
+  --header 'Accept: application/json' \
+  https://website.devmasters.dev/sanctum/csrf-cookie
+dig +short CNAME api.devmasters.dev
+```
+
+Expect health JSON with HTTP 200, reference data HTTP 200, preflight HTTP 200/204 with the exact frontend origin and credentials allowed, and CSRF HTTP 204. A healthy liveness response alone does not verify database schema, email, scanner or object storage. Allow for cold starts, then repeat failed probes.
+
+In the browser, test expert login/logout, an unauthenticated `/api/v1/auth/me` response (401 JSON), invalid input (422 JSON), CSRF rejection for an unsafe request without a valid token, language selection, and the Filament admin login/MFA/assets. Submit a small test CV with an authorized test account, confirm it persists across redeploys, reaches a completed scan, and downloads only for an authorized user. Exercise report generation and a password-reset email with controlled test accounts. Never paste cookie headers, reset URLs or passwords into shared logs.
+
+If health works but reference data fails, check Neon credentials/SSL and pending migrations. Authentication failures usually require checking Vercel rewrites, shared cookie domain, CSRF headers, proxy trust and HTTPS. Pending outbox records require checking scheduler logs, SES configuration, scanner reachability and private bucket permissions. A Docker build and deployed end-to-end checks remain necessary when Docker is unavailable locally.
+
+## Preparation validation — 11 November 2026
+
+- Local PHP 8.4.23; Composer strict validation and production platform requirements passed.
+- Laravel suite: 70 passed, 325 assertions; one native S3/ClamAV/restore integration test skipped. Six new tests cover health, CORS/CSRF, UUID database sessions, cache values and scheduler locks. Database tests used only local `devmaster-website_test`; runtime-table creation in these tests was transactional and rolled back.
+- Frontend: 9 tests passed; TypeScript checking passed. No frontend changes retained.
+- An isolated copy passed optimized Composer installation without development packages, Filament asset publication, configuration/route/view caching, and HTTP health checks on `0.0.0.0` at a dynamically selected port using PHP's built-in test server. Forwarded HTTPS/host handling also passed an application request check.
+- Shell syntax, eight startup configuration rejection cases, Supervisor configuration, Docker RUN shell syntax, formatting and whitespace checks passed. Targeted secret-pattern checks found no matches in tracked/new backend files; secret files and local storage are excluded from the Docker context.
+- Docker was unavailable and was not installed. A real Docker build, Apache/Supervisor container startup, image size, live Neon SSL connection, DNS/TLS and deployed browser journeys remain unverified. No production migrations, seeders, Render service, provider secrets, Vercel settings or DNS records were changed during preparation.

@@ -8,6 +8,8 @@ use App\Http\Controllers\LocaleController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Middleware\AuthenticateSession;
 
+Route::get('/health', fn () => response()->json(['status' => 'ok']))->name('api.health');
+
 Route::middleware('web')->prefix('v1')->group(function () {
     Route::get('/application-corrections/{token}', [ApplicationCorrectionController::class, 'show'])->middleware('throttle:recovery');
     Route::post('/application-corrections/{token}', [ApplicationCorrectionController::class, 'update'])->middleware('throttle:recovery');

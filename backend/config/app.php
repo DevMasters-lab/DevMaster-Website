@@ -2,6 +2,8 @@
 
 return [
 
+    'trusted_proxies' => env('TRUSTED_PROXIES', '127.0.0.1,::1'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Name

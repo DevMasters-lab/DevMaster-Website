@@ -21,6 +21,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
@@ -37,6 +38,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        TrustProxies::at(config('app.trusted_proxies'));
         Field::configureUsing(fn ($field) => $field->translateLabel()->label(fn () => __(ucfirst(strtolower(Str::headline($field->getName()))))));
         TextEntry::configureUsing(fn ($entry) => $entry->translateLabel());
         TextColumn::configureUsing(fn ($column) => $column->translateLabel());
