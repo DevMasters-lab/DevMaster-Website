@@ -42,7 +42,9 @@ RUN a2ensite render \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R ug+rwX storage bootstrap/cache
 
-ENV APP_ENV=production APP_DEBUG=false LOG_CHANNEL=stderr LOG_LEVEL=info PORT=10000
+# This image runs behind Render's ingress. The local Laravel default stays loopback-only.
+ENV APP_ENV=production APP_DEBUG=false LOG_CHANNEL=stderr LOG_LEVEL=info PORT=10000 \
+    TRUSTED_PROXIES="*"
 EXPOSE 10000
 STOPSIGNAL SIGTERM
 CMD ["/var/www/html/start-render.sh"]

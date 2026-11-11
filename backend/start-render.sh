@@ -4,7 +4,9 @@ set -eu
 : "${APP_KEY:?Set a persistent APP_KEY in Render secrets}"
 : "${APP_URL:?Set the public HTTPS API URL in Render}"
 : "${FRONTEND_URL:?Set the public HTTPS frontend URL in Render}"
-: "${TRUSTED_PROXIES:?Set TRUSTED_PROXIES for the Render reverse proxy}"
+# Render terminates HTTPS at its ingress; preserve an explicit proxy allowlist.
+TRUSTED_PROXIES="${TRUSTED_PROXIES:-*}"
+export TRUSTED_PROXIES
 : "${DB_HOST:?Set the Neon hostname in Render}"
 : "${DB_DATABASE:?Set the Neon database in Render}"
 : "${DB_USERNAME:?Set the Neon role in Render}"
