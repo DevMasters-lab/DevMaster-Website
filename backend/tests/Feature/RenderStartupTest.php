@@ -90,6 +90,29 @@ PHP;
         $this->assertStringContainsString('Set DB_SSLMODE=require', $process->getErrorOutput());
     }
 
+    #[DataProvider('clientCertificatePaths')]
+    public function test_optional_postgres_client_certificate_path_is_exported(string|false $certificate, string $expected): void
+    {
+        $process = $this->preflight(
+            ['PGSSLCERT' => $certificate],
+            'exec /bin/sh -c \'printf "%s" "$PGSSLCERT"\'',
+        );
+
+        $process->run();
+
+        $this->assertSame(0, $process->getExitCode(), $process->getErrorOutput());
+        $this->assertSame($expected, $process->getOutput());
+    }
+
+    public static function clientCertificatePaths(): array
+    {
+        return [
+            'missing optional certificate' => [false, '/var/www/.postgresql/postgresql.crt'],
+            'empty optional certificate' => ['', '/var/www/.postgresql/postgresql.crt'],
+            'explicit certificate override' => ['/etc/secrets/client.crt', '/etc/secrets/client.crt'],
+        ];
+    }
+
     private function preflight(array $environment, ?string $command = null): Process
     {
         // Stop before filesystem writes and Artisan; exercise the real POSIX guards.

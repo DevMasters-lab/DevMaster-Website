@@ -54,6 +54,7 @@ DB_DATABASE=neondb
 DB_USERNAME=neondb_owner
 DB_PASSWORD=<neon-role-password>
 DB_SSLMODE=require
+PGSSLCERT=/var/www/.postgresql/postgresql.crt
 
 SESSION_DRIVER=database
 SESSION_TABLE=laravel_sessions
@@ -86,7 +87,7 @@ ALLOWED_CURRENCIES=USD,KHR
 CONSENT_VERSION=<existing-approved-consent-version>
 ```
 
-Render supplies `PORT`; do not hardcode it. Leave `DB_URL` unset so it cannot override the individual Neon settings. Preserve an existing production `APP_KEY`; it protects sessions, encrypted MFA secrets and queued reset notifications. For a first deployment only, generate a key privately with `php artisan key:generate --show --no-interaction`, save it in Render, and retain a secure backup. Never commit the generated value.
+Render supplies `PORT`; do not hardcode it. Leave `DB_URL` unset so it cannot override the individual Neon settings. Preserve the `APP_KEY` that encrypted existing MFA secrets and queued reset notifications, including when moving an existing database to Render. Only for a genuinely new installation with no encrypted data, write a key once into a permission-restricted, Git-ignored `.env.production` file using `php artisan key:generate --env=production --force --no-interaction`, then transfer it privately into Render. Never display, commit or regenerate an existing key on startup.
 
 For S3-compatible providers, additionally set `AWS_ENDPOINT=https://<provider-endpoint>` and set `AWS_USE_PATH_STYLE_ENDPOINT` as that provider requires. For AWS S3, leave `AWS_ENDPOINT` unset. The current storage and SES configurations share `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_DEFAULT_REGION`. An S3-compatible provider's credentials usually cannot authenticate to AWS SES: use compatible AWS credentials for both, or arrange separate transport credentials/configuration before launch. Existing code does not use `AWS_ENDPOINT` as an SES endpoint.
 
@@ -185,6 +186,22 @@ Expect health JSON with HTTP 200, reference data HTTP 200, preflight HTTP 200/20
 In the browser, test expert login/logout, an unauthenticated `/api/v1/auth/me` response (401 JSON), invalid input (422 JSON), CSRF rejection for an unsafe request without a valid token, language selection, and the Filament admin login/MFA/assets. Submit a small test CV with an authorized test account, confirm it persists across redeploys, reaches a completed scan, and downloads only for an authorized user. Exercise report generation and a password-reset email with controlled test accounts. Never paste cookie headers, reset URLs or passwords into shared logs.
 
 If health works but reference data fails, check Neon credentials/SSL and pending migrations. Authentication failures usually require checking Vercel rewrites, shared cookie domain, CSRF headers, proxy trust and HTTPS. Pending outbox records require checking scheduler logs, SES configuration, scanner reachability and private bucket permissions. A Docker build and deployed end-to-end checks remain necessary when Docker is unavailable locally.
+
+### Confirmed HTTP 500 investigation
+
+The Render runtime logs showed `Unsupported cipher or incorrect key length` before the `headers already sent` fatal. The invalid encryption configuration fails when Laravel resolves cookie middleware, then fails again when middleware is resolved during termination after the first 500 body has been sent. `Response.php:393` is where that response body is echoed; it is not unexpected application output. Do not patch Symfony, disable warnings, enable public debugging or mask this with extra output buffering.
+
+Restore the original valid `APP_KEY` privately in Render. Do not paste it into chat, print it, commit it or generate a new key on every deployment. Existing encrypted MFA data and queued notifications require their original key. For the current service URL, set `APP_URL=https://devmasters-api.onrender.com`; switch to the custom API URL once its DNS/TLS is ready. Keep `APP_ENV=production`, `APP_DEBUG=false`, `LOG_CHANNEL=stderr`, `DB_CONNECTION=pgsql`, `DB_SSLMODE=require`, `SESSION_DRIVER=database` and `SESSION_TABLE=laravel_sessions`.
+
+The scheduler logs also showed libpq trying to open `/root/.postgresql/postgresql.crt` as an unprivileged process. Supervisor changes UID without resetting the inherited environment. The image now provides a readable `/var/www/.postgresql` directory and exports `PGSSLCERT=/var/www/.postgresql/postgresql.crt`; the optional client certificate itself remains absent because Neon uses the configured role/password. Libpq permits a missing optional certificate, while an inaccessible path causes failure. Custom `PGSSLCERT` paths remain supported. This does not disable PostgreSQL TLS; keep `DB_SSLMODE=require`. [Supervisor environment](https://supervisord.org/subprocess.html#subprocess-environment), [libpq certificate environment variables](https://www.postgresql.org/docs/15/libpq-envars.html).
+
+Startup now runs `devmasters:render-check --configuration-only` before optional migrations, and a full `devmasters:render-check` after runtime caches are generated. It validates the actual Laravel encrypter and writable directories, then verifies a live SSL database connection and the required session/cache columns using read-only queries. Failures report controlled configuration/schema messages without printing keys, passwords, DSNs or raw database exceptions. The command never migrates, seeds or writes application records, and does not connect to Redis, SMTP, object storage or ClamAV.
+
+The existing `2026_11_11_080217_create_render_runtime_tables` migration creates `laravel_sessions`, `cache` and `cache_locks` without touching the business `sessions` table. Their presence on production could not be confirmed while the certificate lookup was failing. If the new startup check reports them missing, review migration history and apply only the pending additive migration through the safe procedure above. Do not reset the database. Keep `RUN_MIGRATIONS=false` until that review is complete. `/api/health` remains a public session-free JSON liveness check; HTTP 200 alone does not prove database/auth readiness.
+
+Validation for this fix: the full local Laravel suite passed **97 tests with 422 assertions**, with one native integration test skipped. POSIX shell syntax, Docker RUN shell syntax, PHP lint, Pint and targeted secret checks passed. Synthetic tests reproduced both the invalid-key header cascade and the inaccessible client-certificate lookup without contacting production PostgreSQL. A Docker build was not run locally because Docker is unavailable. The live public health endpoint returned 200 while session-backed routes returned 500 before the fix; live recovery still requires restoring the valid Render key and redeploying.
+
+For direct browser testing on the temporary `onrender.com` host, a `.devmasters.dev` cookie domain is not valid for that host. Leave `SESSION_DOMAIN` unset/empty if testing direct Render login. Website requests through the existing same-origin Vercel rewrites can also use host-only cookies. Set the shared `.devmasters.dev` domain when the custom API subdomain and desired cross-subdomain flow are in use. Do not change credentials, CSRF checks or cookie security flags to address a 500.
 
 ## Preparation validation — 11 November 2026
 

@@ -38,13 +38,15 @@ COPY render-php.ini /usr/local/etc/php/conf.d/zz-render.ini
 COPY render-apache.conf /etc/apache2/sites-available/render.conf
 COPY render-supervisord.conf /etc/supervisor/render.conf
 RUN a2ensite render \
+    && mkdir -p /var/www/.postgresql \
+    && chmod 755 /var/www/.postgresql \
     && chmod +x start-render.sh \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R ug+rwX storage bootstrap/cache
 
 # This image runs behind Render's ingress. The local Laravel default stays loopback-only.
 ENV APP_ENV=production APP_DEBUG=false LOG_CHANNEL=stderr LOG_LEVEL=info PORT=10000 \
-    TRUSTED_PROXIES="*"
+    TRUSTED_PROXIES="*" PGSSLCERT=/var/www/.postgresql/postgresql.crt
 EXPOSE 10000
 STOPSIGNAL SIGTERM
 CMD ["/var/www/html/start-render.sh"]

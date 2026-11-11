@@ -7,6 +7,9 @@ set -eu
 # Render terminates HTTPS at its ingress; preserve an explicit proxy allowlist.
 TRUSTED_PROXIES="${TRUSTED_PROXIES:-*}"
 export TRUSTED_PROXIES
+# libpq must not probe /root for an optional client certificate after setuid.
+PGSSLCERT="${PGSSLCERT:-/var/www/.postgresql/postgresql.crt}"
+export PGSSLCERT
 : "${DB_HOST:?Set the Neon hostname in Render}"
 : "${DB_DATABASE:?Set the Neon database in Render}"
 : "${DB_USERNAME:?Set the Neon role in Render}"
@@ -56,6 +59,7 @@ chmod -R ug+rwX storage bootstrap/cache
 
 # Build caches only after runtime secrets are available; never clear shared DB cache.
 runuser -u www-data -- php artisan config:clear --no-interaction
+runuser -u www-data -- php artisan devmasters:render-check --configuration-only --no-interaction
 case "${RUN_MIGRATIONS:-false}" in
     true) runuser -u www-data -- php artisan migrate --force --no-interaction ;;
     false) ;;
@@ -64,6 +68,7 @@ esac
 runuser -u www-data -- php artisan config:cache --no-interaction
 runuser -u www-data -- php artisan route:cache --no-interaction
 runuser -u www-data -- php artisan view:cache --no-interaction
+runuser -u www-data -- php artisan devmasters:render-check --no-interaction
 apache2ctl -t
 
 exec /usr/bin/supervisord -c /etc/supervisor/render.conf
