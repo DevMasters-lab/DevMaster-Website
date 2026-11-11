@@ -70,6 +70,7 @@ TRUSTED_PROXIES=*
 CACHE_STORE=database
 QUEUE_CONNECTION=sync
 RUN_MIGRATIONS=false
+RUN_ADMIN_SEED=false
 
 FILESYSTEM_DISK=private
 PRIVATE_STORAGE_DRIVER=s3
@@ -118,15 +119,64 @@ Use the **direct/unpooled** Neon hostname for migration administration. A pooled
    Ensure exported shell variables do not override this environment file. Do not run automated tests with production credentials. Remove the temporary production file securely when administration is finished.
 
 4. Alternatively, after the same review and backup, temporarily set Render `RUN_MIGRATIONS=true` for one deployment. Startup runs ordinary `migrate --force`, then starts the server. Set it back to `false` immediately after successful migration. This flag is an explicit opt-in and persists until changed; it is not automatically consumed. Avoid simultaneous migration runs or overlapping deployment administration.
-5. No seeder runs automatically. The existing `DatabaseSeeder` synchronizes built-in role permissions, so review its effects separately before any first-time role initialization. Verify the required roles exist before creating an administrator.
+5. Normal startup does not seed users. First-time administrator initialization is a separate explicit opt-in described below. `RolesAndPermissionsSeeder` now adds missing built-in permissions without removing existing grants; it does not reset users, passwords or MFA.
 
-For a new administrator, the existing command can run locally against the same isolated production environment:
+## Initialize the first production administrator once
 
-```sh
-php artisan devmasters:create-admin admin@example.com --env=production
+The previous `DatabaseSeeder` created only roles and permissions, and Docker startup did not execute a user seeder. The interactive `devmasters:create-admin` command is not a suitable unattended startup command. The production bootstrap class is now **`Database\Seeders\AdministratorSeeder`**, registered in `DatabaseSeeder` only when `RUN_ADMIN_SEED=true`.
+
+In Render → **devmasters-api → Environment**, retain the working application/database secrets and add these temporary settings privately:
+
+```dotenv
+RUN_ADMIN_SEED=true
+ADMIN_EMAIL=<your-initial-administrator-email>
+ADMIN_PASSWORD=<private-password-at-least-12-characters>
+ADMIN_NAME=DevMasters Administrator
 ```
 
-It prompts privately for the password; do not put passwords in command arguments. Use an actual administrator address and finish mandatory authenticator MFA setup at `/admin`. The local setup-link route intentionally remains unavailable in production.
+`ADMIN_NAME` is optional. Use a unique password; never put it in Git, a command argument, logs or chat. These values are read directly from the runtime environment, and the password is not stored in Laravel's configuration cache. For the deployed temporary hostname, use `APP_URL=https://devmasters-api.onrender.com`. Keep `APP_ENV=production`, `APP_DEBUG=false`, `DB_CONNECTION=pgsql`, `DB_DATABASE=neondb`, the actual `.neon.tech` host and `DB_SSLMODE=require`. Preserve the existing `APP_KEY` and legitimate previous keys. Leave `RUN_MIGRATIONS=false` if the existing migrations have already been applied.
+
+1. Save the environment changes and deploy the commit containing this seeder. Startup checks the runtime configuration and database schema before invoking only this administrator seeder with `--force --no-interaction`.
+2. The seeder verifies the effective PostgreSQL target is Neon `neondb` with SSL. It takes the existing first-admin advisory lock, creates missing canonical roles/permissions additively, hashes the password using the User model, creates an active verified user, assigns the `ADMIN` role with the `web` guard, and records `administrator.bootstrapped` in one transaction. Any failure rolls back these changes and prevents Apache from starting. No account setup HTTP endpoint is added; MFA remains required.
+3. Look for `Administrator initialized successfully` in the deployment logs. If the same active administrator already exists with `admin.access`, the seeder reports that initialization is already complete and leaves its password, MFA and permissions unchanged, even if `ADMIN_PASSWORD` has changed or is absent. A matching non-admin/inactive user, an inactive/conflicting ADMIN role, or an existing administrator with a different email causes a safe failure. Resolve that existing account through the normal administration/recovery process; this bootstrap will not promote or reset it.
+4. After success, set **`RUN_ADMIN_SEED=false`**, remove **`ADMIN_PASSWORD`**, and optionally remove `ADMIN_EMAIL`/`ADMIN_NAME`, then save and redeploy. The flag is not automatically consumed in Render; it otherwise remains enabled across restarts. Startup removes bootstrap variables from the server/scheduler child environment after the seeder succeeds.
+5. Sign in at `https://devmasters-api.onrender.com/admin/login` and complete mandatory authenticator MFA enrollment. For this direct temporary hostname, leave `SESSION_DOMAIN` unset/empty so the browser can retain its secure cookie. Keep CSRF and secure cookie settings enabled. Use `.devmasters.dev` when using the custom API subdomain and shared domain flow.
+
+The administrator resides in PostgreSQL and survives Render restarts. This code adds no migration. Missing application/authentication tables must be addressed by reviewing and applying the existing ordinary migrations above, not by resetting the database. Do not run broad or unrelated business seeders against production.
+
+### Local Mac alternative
+
+Use PHP 8.4 and the same checked-out commit/dependencies. Put the production connection and bootstrap variables above in the Git-ignored, user-only `backend/.env.production`, keeping the local `.env` unchanged. Confirm `DB_DATABASE=neondb`, the direct Neon host and SSL before proceeding. Clear any stale configuration cache and ensure exported shell variables do not override the file:
+
+```sh
+cd backend
+chmod 600 .env.production
+php artisan config:clear --env=production --no-interaction
+php artisan db:seed --class='Database\Seeders\AdministratorSeeder' --env=production --force --no-interaction
+```
+
+After success, disable the flag and remove the temporary password from the private environment file, or securely remove the file. Do not run tests using that environment. The seeder refuses non-production/local database targets outside the isolated test environment. Docker and a paid Render shell are unnecessary. Avoid overlapping local and Render administration runs.
+
+### Read-only administrator verification
+
+In the existing Neon SQL editor for the intended branch/database `neondb`, run this query using the actual email. It returns account/role status and the required permission without selecting passwords, hashes or MFA secrets:
+
+```sql
+SELECT u.email, u.status, r.name AS role, r.guard_name, r.is_active,
+       EXISTS (
+           SELECT 1 FROM role_permissions rp
+           JOIN permissions p ON p.id = rp.permission_id
+           WHERE rp.role_id = r.id AND p.name = 'admin.access' AND p.guard_name = 'web'
+       ) AS has_admin_access
+FROM users u
+JOIN user_roles ur ON ur.user_id = u.id AND ur.model_type = 'App\Models\User'
+JOIN roles r ON r.id = ur.role_id
+WHERE u.email = '<your-initial-administrator-email>' AND r.code = 'ADMIN';
+```
+
+Expect an `ACTIVE` user, active `ADMIN` role, `web` guard and `has_admin_access=true`. Keep the existing local setup-link route unavailable in production.
+
+Validation of this initialization change: **136 tests passed, 643 assertions, one external integration test skipped**. The new seeder tests use local PostgreSQL transactions and temporary tables. They cover password hashing, administrator access, additive grants, repeat-run password/MFA preservation, conflicting accounts/roles, rollback and sanitized errors. Shell tests verify that seeding failure stops server startup and bootstrap variables are removed before server launch. POSIX shell syntax, PHP lint, Pint and whitespace checks passed. No production seed/migration or Docker build was run; live account/role verification remains required after the explicitly enabled deployment.
 
 ## Persistent files and background work
 

@@ -1,6 +1,11 @@
 #!/bin/sh
 set -eu
 
+case "${RUN_ADMIN_SEED:-false}" in
+    true|false) ;;
+    *) echo 'RUN_ADMIN_SEED must be true or false.' >&2; exit 1 ;;
+esac
+
 if [ -z "${APP_KEY:-}" ]; then
     echo 'APP_KEY: present=no; format_valid=no; decoded_length_valid=no' >&2
     echo 'Missing APP_KEY. Set a persistent APP_KEY in Render secrets.' >&2
@@ -73,6 +78,11 @@ runuser -u www-data -- php artisan config:cache --no-interaction
 runuser -u www-data -- php artisan route:cache --no-interaction
 runuser -u www-data -- php artisan view:cache --no-interaction
 runuser -u www-data -- php artisan devmasters:render-check --no-interaction
+case "${RUN_ADMIN_SEED:-false}" in
+    true) runuser -u www-data -- php artisan db:seed --class='Database\Seeders\AdministratorSeeder' --force --no-interaction ;;
+    false) ;;
+esac
+unset ADMIN_PASSWORD ADMIN_EMAIL ADMIN_NAME RUN_ADMIN_SEED
 apache2ctl -t
 
 exec /usr/bin/supervisord -c /etc/supervisor/render.conf

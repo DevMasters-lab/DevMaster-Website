@@ -80,6 +80,47 @@ PHP;
         $this->assertStringContainsString('Set a persistent APP_KEY', $process->getErrorOutput());
     }
 
+    public function test_invalid_administrator_initialization_flag_blocks_startup_without_exposing_password(): void
+    {
+        $password = 'Synthetic-bootstrap-password!';
+        $process = $this->preflight(['RUN_ADMIN_SEED' => 'yes', 'ADMIN_PASSWORD' => $password]);
+
+        $process->run();
+
+        $this->assertNotSame(0, $process->getExitCode());
+        $this->assertStringContainsString('RUN_ADMIN_SEED must be true or false.', $process->getErrorOutput());
+        $this->assertStringNotContainsString($password, $process->getOutput().$process->getErrorOutput());
+    }
+
+    public function test_failed_administrator_initialization_prevents_server_startup(): void
+    {
+        $process = $this->initialization(['RUN_ADMIN_SEED' => 'true', 'SEED_EXIT_CODE' => '1']);
+
+        $process->run();
+
+        $this->assertSame(1, $process->getExitCode());
+        $this->assertStringContainsString('Database\\Seeders\\AdministratorSeeder', $process->getOutput());
+        $this->assertStringNotContainsString('apache-ready', $process->getOutput());
+    }
+
+    #[DataProvider('administratorInitializationFlags')]
+    public function test_bootstrap_secrets_are_removed_before_server_startup(string $flag, bool $seeded): void
+    {
+        $process = $this->initialization(['RUN_ADMIN_SEED' => $flag]);
+
+        $process->run();
+
+        $this->assertSame(0, $process->getExitCode(), $process->getErrorOutput());
+        $this->assertSame($seeded, str_contains($process->getOutput(), 'Database\\Seeders\\AdministratorSeeder'));
+        $this->assertStringContainsString('apache-ready;bootstrap-variables-unset', $process->getOutput());
+        $this->assertStringNotContainsString('synthetic-bootstrap-password', $process->getOutput().$process->getErrorOutput());
+    }
+
+    public static function administratorInitializationFlags(): array
+    {
+        return ['enabled' => ['true', true], 'disabled' => ['false', false]];
+    }
+
     public function test_neon_connections_without_required_ssl_still_block_startup(): void
     {
         $process = $this->preflight(['DB_SSLMODE' => 'prefer']);
@@ -113,6 +154,39 @@ PHP;
         ];
     }
 
+    private function initialization(array $environment): Process
+    {
+        // Exercise the real initialization sequence with Artisan/server commands replaced.
+        $script = strstr(file_get_contents(base_path('start-render.sh')), '# Build caches');
+        $this->assertNotFalse($script);
+        $script = strstr($script, "\nexec /usr/bin/supervisord", true);
+        $this->assertNotFalse($script);
+        $commands = <<<'SH'
+set -eu
+runuser() {
+    printf '%s\n' "$*"
+    case "$*" in
+        *'db:seed'*) return "${SEED_EXIT_CODE:-0}" ;;
+    esac
+}
+apache2ctl() {
+    test "${ADMIN_PASSWORD-unset}" = unset
+    test "${ADMIN_EMAIL-unset}" = unset
+    test "${ADMIN_NAME-unset}" = unset
+    test "${RUN_ADMIN_SEED-unset}" = unset
+    printf 'apache-ready;bootstrap-variables-unset\n'
+}
+SH;
+
+        return new Process(['/bin/sh', '-c', $commands."\n".$script], base_path(), array_replace([
+            'RUN_MIGRATIONS' => 'false',
+            'SEED_EXIT_CODE' => '0',
+            'ADMIN_PASSWORD' => 'synthetic-bootstrap-password',
+            'ADMIN_EMAIL' => 'bootstrap@example.test',
+            'ADMIN_NAME' => 'Bootstrap Test',
+        ], $environment));
+    }
+
     private function preflight(array $environment, ?string $command = null): Process
     {
         // Stop before filesystem writes and Artisan; exercise the real POSIX guards.
@@ -140,6 +214,7 @@ SH;
             'SESSION_TABLE' => 'laravel_sessions',
             'CACHE_STORE' => 'database',
             'QUEUE_CONNECTION' => 'sync',
+            'RUN_ADMIN_SEED' => false,
             'TRUSTED_PROXIES' => false,
             'PORT' => '17234',
         ], $environment));
