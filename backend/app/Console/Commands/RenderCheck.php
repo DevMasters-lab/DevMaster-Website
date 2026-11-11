@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Encryption\Encrypter;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -35,12 +36,7 @@ class RenderCheck extends Command
 
     private function configurationIsValid(): bool
     {
-        try {
-            $this->laravel->forgetInstance('encrypter');
-            $this->laravel->make('encrypter');
-        } catch (Throwable) {
-            $this->error('Invalid Laravel encryption configuration. Restore the correct persistent APP_KEY and valid previous keys; do not print or regenerate an existing key.');
-
+        if (! $this->encryptionIsValid()) {
             return false;
         }
 
@@ -68,6 +64,73 @@ class RenderCheck extends Command
         $cachePath = $this->laravel->bootstrapPath('cache');
         if (! is_dir($cachePath) || ! is_writable($cachePath)) {
             $this->error('Runtime directory is missing or not writable: bootstrap/cache.');
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function encryptionIsValid(): bool
+    {
+        $cipher = config('app.cipher');
+        if (! is_string($cipher) || (! Encrypter::supported(str_repeat("\0", 16), $cipher) && ! Encrypter::supported(str_repeat("\0", 32), $cipher))) {
+            $this->error('Unsupported Laravel encryption cipher. Restore the supported cipher used by existing encrypted data.');
+
+            return false;
+        }
+
+        $valid = $this->reportKeyStatus(config('app.key'), 'APP_KEY', $cipher);
+        $previousKeys = config('app.previous_keys', []);
+        if (! is_array($previousKeys)) {
+            $this->error('Invalid APP_PREVIOUS_KEYS configuration. Use comma-separated historical keys or leave it unset when no rotation history exists.');
+
+            return false;
+        }
+        if ($previousKeys === []) {
+            $this->line('APP_PREVIOUS_KEYS: present=no; format_valid=yes; decoded_length_valid=not_applicable');
+        }
+        foreach (array_values($previousKeys) as $index => $key) {
+            $valid = $this->reportKeyStatus($key, 'APP_PREVIOUS_KEYS['.($index + 1).']', $cipher) && $valid;
+        }
+        if (! $valid) {
+            return false;
+        }
+
+        try {
+            $this->laravel->forgetInstance('encrypter');
+            $this->laravel->make('encrypter');
+        } catch (Throwable) {
+            $this->error('Laravel encrypter initialization failed after key checks. Review the encryption provider and cached configuration without displaying secret values.');
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function reportKeyStatus(#[\SensitiveParameter] mixed $key, string $label, string $cipher): bool
+    {
+        $present = $key !== null && $key !== '';
+        $formatValid = is_string($key);
+        $decoded = $key;
+        if (is_string($key) && str_starts_with($key, 'base64:')) {
+            $encoded = substr($key, 7);
+            $formatValid = base64_decode($encoded, true) !== false;
+            // Match Laravel's decoding; format diagnostics must not change existing keys.
+            $decoded = base64_decode($encoded);
+        }
+        $lengthValid = is_string($decoded) && Encrypter::supported($decoded, $cipher);
+        $this->line($label.': present='.($present ? 'yes' : 'no').'; format_valid='.($formatValid ? 'yes' : 'no').'; decoded_length_valid='.($lengthValid ? 'yes' : 'no'));
+
+        if (! $present) {
+            $this->error('Missing '.$label.'. Restore the existing persistent key privately; do not generate a replacement.');
+
+            return false;
+        }
+        if (! $lengthValid) {
+            $reason = $formatValid ? 'decoded length is incompatible with the configured cipher' : 'key format is invalid';
+            $this->error('Invalid '.$label.': '.$reason.'. Preserve the base64: prefix for encoded keys and correct only this setting privately.');
 
             return false;
         }

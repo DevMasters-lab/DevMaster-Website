@@ -40,6 +40,8 @@ APP_NAME=DevMasters
 APP_ENV=production
 APP_DEBUG=false
 APP_KEY=<persistent-existing-production-key-or-generate-once>
+# APP_PREVIOUS_KEYS is optional: preserve real historical keys if rotation was used.
+# APP_PREVIOUS_KEYS=
 APP_URL=https://api.devmasters.dev
 FRONTEND_URL=https://website.devmasters.dev
 APP_LOCALE=km
@@ -202,6 +204,18 @@ The existing `2026_11_11_080217_create_render_runtime_tables` migration creates 
 Validation for this fix: the full local Laravel suite passed **97 tests with 422 assertions**, with one native integration test skipped. POSIX shell syntax, Docker RUN shell syntax, PHP lint, Pint and targeted secret checks passed. Synthetic tests reproduced both the invalid-key header cascade and the inaccessible client-certificate lookup without contacting production PostgreSQL. A Docker build was not run locally because Docker is unavailable. The live public health endpoint returned 200 while session-backed routes returned 500 before the fix; live recovery still requires restoring the valid Render key and redeploying.
 
 For direct browser testing on the temporary `onrender.com` host, a `.devmasters.dev` cookie domain is not valid for that host. Leave `SESSION_DOMAIN` unset/empty if testing direct Render login. Website requests through the existing same-origin Vercel rewrites can also use host-only cookies. Set the shared `.devmasters.dev` domain when the custom API subdomain and desired cross-subdomain flow are in use. Do not change credentials, CSRF checks or cookie security flags to address a 500.
+
+### Encryption startup diagnostics
+
+The startup command `php artisan devmasters:render-check --configuration-only` now distinguishes a missing `APP_KEY`, an invalid current key, an invalid indexed `APP_PREVIOUS_KEYS` entry, and an unsupported cipher. It emits only `present`, `format_valid`, and `decoded_length_valid` statuses for keys. No key values, fragments, hashes, actual lengths, passwords, connection strings or raw exception messages are printed. Laravel's encrypter remains the final authority; no key is generated, trimmed, replaced or removed by the check. The base64 format flag uses strict decoding for diagnostics, while final validation preserves Laravel's existing decoding behavior for compatibility.
+
+For the configured `AES-256-CBC` cipher, a normal Laravel key includes its literal `base64:` prefix and decodes to exactly 32 bytes. Laravel also accepts a raw 32-byte key. A base64-encoded key with its prefix removed is treated as raw text and typically fails the length check. In Render's value field, enter only the exact existing key value, not the entire `APP_KEY=...` assignment, a command, a placeholder or additional text. Do not rotate again just to diagnose a failure.
+
+An unset or empty `APP_PREVIOUS_KEYS` is valid when there is no rotation history. If rotation was used, preserve the actual historical keys as comma-separated values, without adding spaces around the entries. Placeholder text or a whitespace-only entry is not a historical key. Do not clear legitimate history simply to make startup pass: previously encrypted MFA data and queued payloads may still need it. If a new current key has already been installed, retain the relevant original key in the legitimate history rather than modifying encrypted data.
+
+For example, a valid current-key status followed by `Invalid APP_PREVIOUS_KEYS[1]` identifies the first historical entry as the failing setting. An empty-history status reports `decoded_length_valid=not_applicable` and does not block startup. The previous generic error could not identify which setting failed; a recurring failure after changing only `APP_KEY` does not establish that the new key is itself invalid.
+
+The normal startup sequence clears configuration before running this check, then rebuilds the cache from the runtime environment. Docker does not bake `APP_KEY` into the image and excludes `.env*` and local `bootstrap/cache` content. Save corrected Render environment settings and redeploy the latest commit; no production key generation or database migration is needed for this diagnostic update. Retain `APP_ENV=production`, `APP_DEBUG=false` and `RUN_MIGRATIONS=false` during investigation.
 
 ## Preparation validation — 11 November 2026
 

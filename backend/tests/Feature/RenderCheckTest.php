@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Illuminate\Database\Connection;
 use Illuminate\Database\Schema\Builder;
+use Illuminate\Encryption\Encrypter;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Mockery;
@@ -19,6 +20,8 @@ class RenderCheckTest extends TestCase
         DB::shouldReceive('connection')->never();
 
         $this->artisan('devmasters:render-check', ['--configuration-only' => true])
+            ->expectsOutput('APP_KEY: present=yes; format_valid=yes; decoded_length_valid=yes')
+            ->expectsOutput('APP_PREVIOUS_KEYS: present=no; format_valid=yes; decoded_length_valid=not_applicable')
             ->expectsOutput('Render configuration checks passed.')
             ->assertSuccessful();
     }
@@ -34,7 +37,8 @@ class RenderCheckTest extends TestCase
         $output = Artisan::output();
 
         $this->assertSame(1, $exitCode);
-        $this->assertStringContainsString('Invalid Laravel encryption configuration.', $output);
+        $this->assertStringContainsString('APP_KEY: present=yes; format_valid=yes; decoded_length_valid=no', $output);
+        $this->assertStringContainsString('Invalid APP_KEY:', $output);
         $this->assertStringNotContainsString($invalidKey, $output);
     }
 
@@ -49,8 +53,167 @@ class RenderCheckTest extends TestCase
         $output = Artisan::output();
 
         $this->assertSame(1, $exitCode);
-        $this->assertStringContainsString('Invalid Laravel encryption configuration.', $output);
+        $this->assertStringContainsString('APP_KEY: present=yes; format_valid=yes; decoded_length_valid=yes', $output);
+        $this->assertStringContainsString('APP_PREVIOUS_KEYS[1]: present=yes; format_valid=yes; decoded_length_valid=no', $output);
+        $this->assertStringContainsString('Invalid APP_PREVIOUS_KEYS[1]:', $output);
         $this->assertStringNotContainsString($previousKey, $output);
+    }
+
+    #[DataProvider('missingCurrentKeys')]
+    public function test_missing_current_key_is_distinguished_from_an_invalid_key(?string $key): void
+    {
+        $this->productionConfiguration();
+        config(['app.key' => $key]);
+        DB::shouldReceive('connection')->never();
+
+        $exitCode = Artisan::call('devmasters:render-check', ['--configuration-only' => true]);
+        $output = Artisan::output();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('APP_KEY: present=no;', $output);
+        $this->assertStringContainsString('Missing APP_KEY.', $output);
+        $this->assertStringNotContainsString('Invalid APP_KEY:', $output);
+    }
+
+    public static function missingCurrentKeys(): array
+    {
+        return ['unset' => [null], 'empty' => ['']];
+    }
+
+    public function test_valid_base64_previous_keys_preserve_old_decryption_and_use_the_current_key_for_new_values(): void
+    {
+        $this->productionConfiguration();
+        $oldKey = str_repeat('o', 32);
+        $olderKey = str_repeat('p', 32);
+        $previousKey = 'base64:'.base64_encode($oldKey);
+        config(['app.previous_keys' => [$previousKey, 'base64:'.base64_encode($olderKey)]]);
+        $oldCiphertext = (new Encrypter($oldKey, 'AES-256-CBC'))->encryptString('synthetic-old-encrypted-data');
+        DB::shouldReceive('connection')->never();
+
+        $exitCode = Artisan::call('devmasters:render-check', ['--configuration-only' => true]);
+        $output = Artisan::output();
+        $encrypter = app('encrypter');
+        $newCiphertext = $encrypter->encryptString('synthetic-new-encrypted-data');
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('APP_PREVIOUS_KEYS[1]: present=yes; format_valid=yes; decoded_length_valid=yes', $output);
+        $this->assertStringContainsString('APP_PREVIOUS_KEYS[2]: present=yes; format_valid=yes; decoded_length_valid=yes', $output);
+        $this->assertSame('synthetic-old-encrypted-data', $encrypter->decryptString($oldCiphertext));
+        $this->assertSame('synthetic-new-encrypted-data', (new Encrypter(str_repeat('r', 32), 'AES-256-CBC'))->decryptString($newCiphertext));
+        $this->assertStringNotContainsString($previousKey, $output);
+        $this->assertStringNotContainsString(base64_encode($oldKey), $output);
+        $this->assertStringNotContainsString($oldKey, $output);
+    }
+
+    #[DataProvider('rawKeys')]
+    public function test_valid_raw_keys_are_accepted_without_modification(string $key): void
+    {
+        $this->productionConfiguration();
+        config(['app.key' => $key]);
+        DB::shouldReceive('connection')->never();
+
+        $exitCode = Artisan::call('devmasters:render-check', ['--configuration-only' => true]);
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertSame($key, app('encrypter')->getKey());
+        $this->assertStringContainsString('APP_KEY: present=yes; format_valid=yes; decoded_length_valid=yes', $output);
+        $this->assertStringNotContainsString($key, $output);
+    }
+
+    public static function rawKeys(): array
+    {
+        return [
+            'ordinary raw key' => [str_repeat('s', 32)],
+            'raw key with significant edge whitespace' => [' '.str_repeat('s', 30).' '],
+        ];
+    }
+
+    #[DataProvider('invalidEncodedKeys')]
+    public function test_invalid_encoded_keys_report_only_safe_status_and_the_failing_field(string $key, bool $formatValid): void
+    {
+        $this->productionConfiguration();
+        config(['app.key' => $key]);
+        DB::shouldReceive('connection')->never();
+
+        $exitCode = Artisan::call('devmasters:render-check', ['--configuration-only' => true]);
+        $output = Artisan::output();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('APP_KEY: present=yes; format_valid='.($formatValid ? 'yes' : 'no').'; decoded_length_valid=no', $output);
+        $this->assertStringContainsString('Invalid APP_KEY:', $output);
+        $this->assertStringNotContainsString($key, $output);
+        $this->assertStringNotContainsString(str_replace('base64:', '', $key), $output);
+    }
+
+    public static function invalidEncodedKeys(): array
+    {
+        return [
+            'malformed base64' => ['base64:synthetic%%%invalid', false],
+            'valid base64 with wrong decoded length' => ['base64:'.base64_encode('synthetic-short-key'), true],
+            'base64 without required format prefix' => [base64_encode(str_repeat('s', 32)), true],
+        ];
+    }
+
+    public function test_legacy_base64_decoding_is_diagnosed_without_changing_laravel_acceptance(): void
+    {
+        $this->productionConfiguration();
+        $encoded = base64_encode(str_repeat('l', 32));
+        $key = 'base64:'.$encoded.'%';
+        config(['app.key' => $key]);
+        DB::shouldReceive('connection')->never();
+
+        $exitCode = Artisan::call('devmasters:render-check', ['--configuration-only' => true]);
+        $output = Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertSame(str_repeat('l', 32), app('encrypter')->getKey());
+        $this->assertStringContainsString('APP_KEY: present=yes; format_valid=no; decoded_length_valid=yes', $output);
+        $this->assertStringNotContainsString($key, $output);
+        $this->assertStringNotContainsString($encoded, $output);
+    }
+
+    #[DataProvider('invalidPreviousKeys')]
+    public function test_invalid_previous_keys_are_identified_without_exposing_history(string $previousKey, bool $formatValid): void
+    {
+        $this->productionConfiguration();
+        config(['app.previous_keys' => ['base64:'.base64_encode(str_repeat('p', 32)), $previousKey]]);
+        DB::shouldReceive('connection')->never();
+
+        $exitCode = Artisan::call('devmasters:render-check', ['--configuration-only' => true]);
+        $output = Artisan::output();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('APP_KEY: present=yes; format_valid=yes; decoded_length_valid=yes', $output);
+        $this->assertStringContainsString('APP_PREVIOUS_KEYS[2]: present=yes; format_valid='.($formatValid ? 'yes' : 'no').'; decoded_length_valid=no', $output);
+        $this->assertStringContainsString('Invalid APP_PREVIOUS_KEYS[2]:', $output);
+        $this->assertStringNotContainsString('Invalid APP_KEY:', $output);
+        if (trim($previousKey) !== '') {
+            $this->assertStringNotContainsString($previousKey, $output);
+            $this->assertStringNotContainsString(str_replace('base64:', '', $previousKey), $output);
+        }
+        $this->assertStringNotContainsString(base64_encode(str_repeat('p', 32)), $output);
+    }
+
+    public static function invalidPreviousKeys(): array
+    {
+        return [
+            'placeholder previous key' => ['REPLACE_WITH_PREVIOUS_KEY', true],
+            'whitespace-only previous key' => [' ', true],
+            'malformed base64 previous key' => ['base64:synthetic%%%invalid', false],
+            'wrong-length base64 previous key' => ['base64:'.base64_encode('synthetic-short-previous-key'), true],
+        ];
+    }
+
+    public function test_unsupported_cipher_is_distinguished_from_key_errors_without_database_access(): void
+    {
+        $this->productionConfiguration();
+        config(['app.cipher' => 'unsupported-synthetic-cipher']);
+        DB::shouldReceive('connection')->never();
+
+        $this->artisan('devmasters:render-check', ['--configuration-only' => true])
+            ->expectsOutput('Unsupported Laravel encryption cipher. Restore the supported cipher used by existing encrypted data.')
+            ->assertFailed();
     }
 
     public function test_production_debug_mode_is_rejected(): void

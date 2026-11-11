@@ -1,7 +1,11 @@
 #!/bin/sh
 set -eu
 
-: "${APP_KEY:?Set a persistent APP_KEY in Render secrets}"
+if [ -z "${APP_KEY:-}" ]; then
+    echo 'APP_KEY: present=no; format_valid=no; decoded_length_valid=no' >&2
+    echo 'Missing APP_KEY. Set a persistent APP_KEY in Render secrets.' >&2
+    exit 1
+fi
 : "${APP_URL:?Set the public HTTPS API URL in Render}"
 : "${FRONTEND_URL:?Set the public HTTPS frontend URL in Render}"
 # Render terminates HTTPS at its ingress; preserve an explicit proxy allowlist.
