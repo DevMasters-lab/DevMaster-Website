@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Pages\Security;
 use App\Http\Middleware\RenderAdminLogin;
 use App\Http\Middleware\ResolveLocale;
+use App\Livewire\AdminNotifications;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
@@ -44,8 +45,9 @@ class AdminPanelProvider extends PanelProvider
             ->favicon('/favicon.png')
             ->font('Inter', provider: LocalFontProvider::class)
             ->assets([Css::make('devmasters-typography', public_path('fonts/devmasters.css'))->html('/fonts/devmasters.css')])
-            ->renderHook('panels::topbar.end', fn () => view('filament.language-switcher'))
+            ->renderHook('panels::global-search.after', fn () => view('filament.language-switcher'))
             ->renderHook('panels::auth.login.form.before', fn () => view('filament.language-switcher'))
+            ->databaseNotifications(livewireComponent: AdminNotifications::class, isLazy: false)
             ->multiFactorAuthentication([AppAuthentication::make()->codeWindow(1)], isRequired: false)
             ->authenticatedRoutes(function (): void {
                 Route::get('/multi-factor-authentication/set-up', fn (): RedirectResponse => redirect()->to(Security::getUrl()))

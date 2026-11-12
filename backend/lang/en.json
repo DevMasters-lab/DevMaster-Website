@@ -1386,5 +1386,11 @@
   "If you're having trouble clicking the \":actionText\" button, copy and paste the URL below\ninto your web browser:": "If you're having trouble clicking the \":actionText\" button, copy and paste the URL below\ninto your web browser:",
   "Security": "Security",
   "Two-factor authentication": "Two-factor authentication",
-  "Add an extra verification step when you sign in. You can enable or disable it for your own account.": "Add an extra verification step when you sign in. You can enable or disable it for your own account."
+  "Add an extra verification step when you sign in. You can enable or disable it for your own account.": "Add an extra verification step when you sign in. You can enable or disable it for your own account.",
+  "Switch to English": "Switch to English",
+  "Switch to Khmer": "Switch to Khmer",
+  "Notifications (:count unread)": "Notifications (:count unread)",
+  "Mark all as read": "Mark all as read",
+  "No notifications yet": "No notifications yet",
+  "New notifications for your account will appear here.": "New notifications for your account will appear here."
 }
