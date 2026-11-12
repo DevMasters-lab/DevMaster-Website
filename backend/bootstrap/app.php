@@ -3,11 +3,13 @@
 use App\Http\Middleware\EnsureExpert;
 use App\Http\Middleware\PreventPublicCaching;
 use App\Http\Middleware\RedirectLegacyAdmin;
+use App\Http\Middleware\RenderAdminLogin;
 use App\Http\Middleware\ResolveLocale;
 use App\Http\Middleware\TrustFrontendProxies;
 use App\Support\Localization;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -29,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->replace(TrustProxies::class, TrustFrontendProxies::class);
         $middleware->prepend(PreventPublicCaching::class);
         $middleware->append(RedirectLegacyAdmin::class);
+        $middleware->prependToPriorityList(AuthenticatesRequests::class, RenderAdminLogin::class);
         $middleware->redirectGuestsTo(fn (Request $request): string => route('filament.admin.auth.login'));
         $middleware->encryptCookies(except: ['devmasters_locale']);
         $middleware->appendToGroup('web', ResolveLocale::class);

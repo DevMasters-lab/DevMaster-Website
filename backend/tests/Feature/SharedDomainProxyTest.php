@@ -27,10 +27,11 @@ class SharedDomainProxyTest extends TestCase
         DB::shouldReceive('connection')->never();
     }
 
-    public function test_forwarded_admin_redirect_stays_on_the_public_https_domain(): void
+    public function test_forwarded_admin_renders_the_existing_login_without_redirecting(): void
     {
         $this->get('http://devmasters-api.onrender.com/admin', $this->forwardedHeaders())
-            ->assertRedirect('https://devmasters.dev/admin/login')
+            ->assertOk()->assertHeaderMissing('Location')
+            ->assertSee('wire:snapshot', false)
             ->assertHeader('CDN-Cache-Control', 'no-store');
     }
 
@@ -42,7 +43,7 @@ class SharedDomainProxyTest extends TestCase
 
     public function test_proxy_markers_recover_the_public_origin_when_upstream_replaces_forwarded_host(): void
     {
-        $response = $this->get('http://devmasters-api.onrender.com/admin/login', [
+        $response = $this->get('http://devmasters-api.onrender.com/admin', [
             'X-Forwarded-Host' => 'devmasters-api.onrender.com',
             'X-Forwarded-Proto' => 'http',
             'X-Forwarded-Port' => '10000',
@@ -107,7 +108,7 @@ class SharedDomainProxyTest extends TestCase
         $this->app['env'] = 'production';
 
         $page = $this->withSession(['_token' => 'proxy-test-csrf-token'])
-            ->get('http://devmasters-api.onrender.com/admin/login', $this->forwardedHeaders())->assertOk();
+            ->get('http://devmasters-api.onrender.com/admin', $this->forwardedHeaders())->assertOk();
         preg_match('/wire:snapshot="([^"]+)"/', $page->getContent(), $matches);
         $snapshot = html_entity_decode($matches[1], ENT_QUOTES);
 

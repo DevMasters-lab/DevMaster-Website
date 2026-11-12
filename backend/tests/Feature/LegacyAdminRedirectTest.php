@@ -27,7 +27,7 @@ class LegacyAdminRedirectTest extends TestCase
     {
         $this->call($method, 'https://devmasters-api.onrender.com'.$path)
             ->assertStatus(302)
-            ->assertRedirect('https://devmasters.dev'.rtrim($path, '/'))
+            ->assertRedirect('https://devmasters.dev/admin')
             ->assertHeader('Referrer-Policy', 'no-referrer')
             ->assertHeader('CDN-Cache-Control', 'no-store')
             ->assertHeaderMissing('Set-Cookie');
@@ -106,27 +106,27 @@ class LegacyAdminRedirectTest extends TestCase
             .'&token=private&email=person%40example.com&_token=private&next=https%3A%2F%2Fattacker.example'
             .'&session_id=private&signature=private&otp=private&password=private&filters[name]=private'
             .'&invalid=a%0Db&oversized='.str_repeat('a', 257))
-            ->assertRedirect('https://devmasters.dev/admin/login?locale=en&ref=a%26b&page=2')
+            ->assertRedirect('https://devmasters.dev/admin?locale=en&ref=a%26b&page=2')
             ->assertHeader('Referrer-Policy', 'no-referrer');
     }
 
     public function test_legacy_hostname_matching_is_case_insensitive_and_accepts_the_standard_https_port(): void
     {
         $this->get('https://DEVMASTERS-API.ONRENDER.COM:443/admin/login')
-            ->assertRedirect('https://devmasters.dev/admin/login');
+            ->assertRedirect('https://devmasters.dev/admin');
     }
 
     public function test_public_request_and_both_trusted_proxy_header_formats_do_not_self_redirect(): void
     {
-        $this->get('https://devmasters.dev/admin/login')->assertOk()->assertHeaderMissing('Location');
+        $this->get('https://devmasters.dev/admin')->assertOk()->assertHeaderMissing('Location');
 
-        $this->get('http://devmasters-api.onrender.com/admin/login', [
+        $this->get('http://devmasters-api.onrender.com/admin', [
             'X-Forwarded-Host' => 'devmasters.dev',
             'X-Forwarded-Proto' => 'https',
             'X-Forwarded-Port' => '443',
         ])->assertOk()->assertHeaderMissing('Location');
 
-        $this->get('http://devmasters-api.onrender.com/admin/login', [
+        $this->get('http://devmasters-api.onrender.com/admin', [
             'X-Forwarded-Host' => 'devmasters-api.onrender.com',
             'X-Devmasters-Proxy-Host' => 'devmasters.dev',
             'X-Devmasters-Proxy-Proto' => 'https',
@@ -145,6 +145,27 @@ class LegacyAdminRedirectTest extends TestCase
             ->assertOk()->assertJsonPath('received', 'unchanged')->assertHeaderMissing('Location');
     }
 
+    public function test_public_login_alias_redirects_to_admin_for_direct_and_proxied_requests(): void
+    {
+        foreach (['GET', 'HEAD'] as $method) {
+            $this->call($method, 'https://devmasters.dev/admin/login?locale=en&token=private')
+                ->assertRedirect('https://devmasters.dev/admin?locale=en')
+                ->assertHeader('CDN-Cache-Control', 'no-store')
+                ->assertHeaderMissing('Set-Cookie');
+        }
+
+        $this->get('http://devmasters-api.onrender.com/admin/login', [
+            'X-Forwarded-Host' => 'devmasters.dev',
+            'X-Forwarded-Proto' => 'https',
+            'X-Forwarded-Port' => '443',
+        ])->assertRedirect('https://devmasters.dev/admin');
+
+        $this->get('http://devmasters-api.onrender.com/admin/login', [
+            'X-Devmasters-Proxy-Host' => 'devmasters.dev',
+            'X-Devmasters-Proxy-Proto' => 'https',
+        ])->assertRedirect('https://devmasters.dev/admin');
+    }
+
     public function test_health_api_and_csrf_endpoints_remain_available_on_the_render_origin(): void
     {
         $this->getJson('https://devmasters-api.onrender.com/api/health')
@@ -161,7 +182,7 @@ class LegacyAdminRedirectTest extends TestCase
         config(['app.url' => 'https://devmasters-api.onrender.com', 'devmasters.frontend_url' => 'http://localhost:3000']);
 
         $this->get('https://devmasters-api.onrender.com/admin/login')
-            ->assertRedirect('https://devmasters.dev/admin/login');
+            ->assertRedirect('https://devmasters.dev/admin');
 
         $this->get('https://devmasters.dev/admin/login', [
             'X-Forwarded-Host' => 'devmasters-api.onrender.com',

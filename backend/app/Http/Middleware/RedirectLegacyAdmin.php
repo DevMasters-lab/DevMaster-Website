@@ -16,16 +16,18 @@ class RedirectLegacyAdmin
     public function handle(Request $request, Closure $next): Response
     {
         $originHost = strtolower((string) parse_url('https://'.$request->header('Host'), PHP_URL_HOST));
+        $effectiveHost = $request->getHost();
+        $isLegacyOrigin = $originHost === 'devmasters-api.onrender.com' && $effectiveHost === 'devmasters-api.onrender.com';
+        $isPublicLogin = $effectiveHost === 'devmasters.dev' && $request->is('admin/login');
 
         if (! in_array($request->method(), ['GET', 'HEAD'], true)
-            || $originHost !== 'devmasters-api.onrender.com'
-            || $request->getHost() !== 'devmasters-api.onrender.com'
+            || (! $isLegacyOrigin && ! $isPublicLogin)
             || ! $request->is('/', 'admin', 'admin/login')) {
             return $next($request);
         }
 
         $query = $this->safeQuery($request);
-        $path = $request->is('/') ? 'admin' : $request->path();
+        $path = $request->is('/', 'admin/login') ? 'admin' : $request->path();
 
         return redirect()->away('https://devmasters.dev/'.$path.($query === '' ? '' : '?'.$query))
             ->header('Cache-Control', 'private, no-store')
