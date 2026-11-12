@@ -32,7 +32,7 @@ class AdminBrandLogoTest extends TestCase
         $contents = file_get_contents(base_path('public/logo.jpg'));
         Storage::disk('brand-logo')->put('logo.jpg', $contents);
         $this->assertSame('/admin/logo.jpg', Filament::getPanel('admin')->getBrandLogo());
-        $this->assertSame('2rem', Filament::getPanel('admin')->getBrandLogoHeight());
+        $this->assertSame('3.5rem', Filament::getPanel('admin')->getBrandLogoHeight());
 
         foreach (['https://devmasters.dev', 'http://devmasters-api.onrender.com'] as $origin) {
             $response = $this->get($origin.'/admin/logo.jpg', [
