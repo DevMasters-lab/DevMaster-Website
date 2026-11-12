@@ -2,9 +2,10 @@ import {test,expect} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {createHmac} from 'node:crypto';
 const fixture=()=>JSON.parse(readFileSync('../.runtime/e2e.json','utf8'));
-const pages=['','about','services','expertise','invite-us-to-bid','hire-our-team','be-our-team','contact','privacy','terms'];
+const pages=['','home','services','expertise','invite-us-to-bid','hire-our-team','be-our-team','contact','privacy','terms'];
 async function changeLanguage(page:import('@playwright/test').Page,locale:'km'|'en'){
- await page.locator('.language-control select').selectOption(locale);
+ if(await page.locator('html').getAttribute('lang')!==locale)await page.locator('.language-trigger').click();
+ await expect(page.getByRole('menu')).toHaveCount(0);
  await expect(page.locator('html')).toHaveAttribute('lang',locale);
  await expect.poll(async()=>{const response=await page.request.get('/api/v1/locale');return (await response.json()).data.locale;}).toBe(locale);
 }
@@ -19,7 +20,7 @@ test('both public languages, SEO, Khmer fonts and state-preserving mobile switch
  await page.evaluate(()=>{document.body.dataset.switchProbe='retained';});await changeLanguage(page,'km');
  await expect(page.getByLabel('ឈ្មោះរបស់អ្នក *')).toHaveValue('Original input — ខ្មែរ');expect(await file.evaluate((element:HTMLInputElement)=>element.files?.[0].name)).toBe('original-name.pdf');expect(await page.locator('body').getAttribute('data-switch-probe')).toBe('retained');await expect(page).toHaveURL(/\/km\/hire-our-team\?source=qa#brief$/);
  await page.reload();await expect(page.locator('html')).toHaveAttribute('lang','km');await expect(page.locator('link[rel=alternate][hreflang=en]')).toHaveAttribute('href',/\/en\/hire-our-team$/);await expect(page.locator('html')).toHaveAttribute('dir','ltr');
- const fonts=await page.evaluate(async()=>{await document.fonts.load('400 16px "Noto Sans Khmer"','ភាសាខ្មែរ');return document.fonts.check('400 16px "Noto Sans Khmer"','ភាសាខ្មែរ');});expect(fonts).toBe(true);await expect(page.locator('.language-control select')).toBeVisible();expect(await page.locator('body').evaluate(element=>element.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'../.runtime/khmer-public-mobile.png',fullPage:true});
+ const fonts=await page.evaluate(async()=>{await document.fonts.load('400 16px "Noto Sans Khmer"','ភាសាខ្មែរ');return document.fonts.check('400 16px "Noto Sans Khmer"','ភាសាខ្មែរ');});expect(fonts).toBe(true);await expect(page.locator('.language-trigger')).toBeVisible();expect(await page.locator('body').evaluate(element=>element.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'../.runtime/khmer-public-mobile.png',fullPage:true});
 });
 test('expert locale is saved across logout/login and all expert modules retain their business codes',async({page})=>{
  test.setTimeout(120000);const data=fixture();await page.goto('/en/login');await page.getByLabel('Email address').fill(data.expert_email);await page.getByLabel('Password',{exact:true}).fill(data.expert_password);await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page).toHaveURL(/\/en\/expert$/);

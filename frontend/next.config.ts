@@ -12,6 +12,8 @@ if (process.env.VERCEL && (backendUrl.protocol !== 'https:' || /^(?:localhost|.*
 const backend = backendUrl.origin;
 const config: NextConfig = {
   devIndicators: false,
+  // Preserve 127.0.0.1 when locale rewrites run alongside other localhost apps.
+  skipProxyUrlNormalize: true,
   // Match Laravel's post_max_size, including forms with five 10 MiB attachments.
   experimental: { proxyClientMaxBodySize: '64mb' },
   async rewrites() {

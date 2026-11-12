@@ -66,5 +66,26 @@ describe('Laravel reverse proxy', () => {
   it('uses the inbound authority when Next.js normalizes a local hostname', () => {
     const request = new NextRequest('http://localhost:13001/admin', { headers: { host: '127.0.0.1:13001' } });
     expect(proxy(request).headers.get('x-middleware-request-x-devmasters-proxy-host')).toBe('127.0.0.1:13001');
+    const frontend = new NextRequest('http://localhost:13001/en/home', { headers: { host: '127.0.0.1:13001' } });
+    expect(proxy(frontend).headers.get('x-middleware-rewrite')).toBe('http://127.0.0.1:13001/home');
+    const redirect = new NextRequest('http://localhost:13001/home', { headers: { host: '127.0.0.1:13001' } });
+    expect(proxy(redirect).headers.get('location')).toBe('http://127.0.0.1:13001/km/home');
+  });
+
+  it.each(['en', 'km'])('redirects the removed About page to /%s/home', locale => {
+    const response = proxy(new NextRequest(`${origin}/${locale}/about?source=bookmark`));
+    expect(response.status).toBe(308);
+    expect(response.headers.get('location')).toBe(`${origin}/${locale}/home?source=bookmark`);
+
+    const home = proxy(new NextRequest(`${origin}/${locale}/home`));
+    expect(home.headers.get('location')).toBeNull();
+    expect(home.headers.get('x-middleware-rewrite')).toBe(`${origin}/home`);
+  });
+
+  it('uses the saved language when redirecting an unprefixed About URL', () => {
+    const response = proxy(new NextRequest(`${origin}/about`, {
+      headers: { cookie: 'devmasters_locale=en' },
+    }));
+    expect(response.headers.get('location')).toBe(`${origin}/en/home`);
   });
 });

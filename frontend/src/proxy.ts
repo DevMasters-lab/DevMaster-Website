@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supported, stripLocale } from './i18n/config';
+import { supported, stripLocale, localePath } from './i18n/config';
 import { isLaravelPath } from './lib/laravel-proxy';
 
 export function proxy(request: NextRequest) {
@@ -22,17 +22,27 @@ export function proxy(request: NextRequest) {
   const cookie = request.cookies.get('devmasters_locale')?.value;
   const locale = supported(segment) ? segment : supported(cookie) ? cookie : 'km';
 
+  if (stripLocale(path) === '/about') {
+    const url = new URL(request.nextUrl.href);
+    url.host = request.headers.get('host') || url.host;
+    url.pathname = localePath('/home', locale);
+    return NextResponse.redirect(url, 308);
+  }
+
   if (!supported(segment) && supported(request.headers.get('x-devmasters-locale'))) {
     return NextResponse.next();
   }
 
   if (!supported(segment)) {
-    const url = request.nextUrl.clone();
+    const url = new URL(request.nextUrl.href);
+    url.host = request.headers.get('host') || url.host;
     url.pathname = '/' + locale + (path === '/' ? '' : path);
     return NextResponse.redirect(url);
   }
 
-  const url = request.nextUrl.clone();
+  const url = new URL(request.nextUrl.href);
+  // Keep the inbound authority: localhost may resolve to another local app.
+  url.host = request.headers.get('host') || url.host;
   url.pathname = stripLocale(path);
   const headers = new Headers(request.headers);
   headers.set('x-devmasters-locale', locale);
