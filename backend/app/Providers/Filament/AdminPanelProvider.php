@@ -35,6 +35,7 @@ class AdminPanelProvider extends PanelProvider
             ->databaseTransactions()
             ->passwordReset()
             ->brandName('DevMasters')
+            ->favicon('/Logo.jpg')
             ->font('Inter', provider: LocalFontProvider::class)
             ->assets([Css::make('devmasters-typography', public_path('fonts/devmasters.css'))->html('/fonts/devmasters.css')])
             ->renderHook('panels::topbar.end', fn () => view('filament.language-switcher'))
