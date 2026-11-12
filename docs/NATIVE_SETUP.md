@@ -26,7 +26,7 @@ The services script manages only workspace-owned Redis, Mailpit, ClamAV and Seaw
 |---|---|---|
 | Website | http://localhost:3000 | Public site and same-origin Laravel proxy |
 | Expert sign-in | http://localhost:3000/km/login | Approved, activated experts |
-| Administration | http://localhost:3000/admin | Filament; mandatory authenticator MFA |
+| Administration | http://localhost:3000/admin | Filament; optional authenticator MFA under Security |
 | Laravel | 127.0.0.1:8081 | API and Admin backend |
 | PostgreSQL | 127.0.0.1:5432 | Supplied application/test databases |
 | Redis | 127.0.0.1:56379 | Cache, sessions and queued jobs; AOF persistence |
@@ -39,9 +39,9 @@ Use `localhost:3000` consistently in the browser for session cookies. PHP 8.4 us
 
 ## Current workstation administrator
 
-The user-requested local administrator has been created: `devmasters.codex@gmail.com`, display name **DevMasters Administrator**, status ACTIVE. Its current password is saved only in ignored `.runtime/local-admin-credentials.json` with owner-only file permissions (0600). Open that file locally to retrieve the password, then sign in at http://localhost:3000/admin/login.
+The user-requested local administrator has been created: `devmasters.codex@gmail.com`, display name **DevMasters Administrator**, status ACTIVE. Its current password is saved only in ignored `.runtime/local-admin-credentials.json` with owner-only file permissions (0600). Open that file locally to retrieve the password, then sign in at http://localhost:3000/admin.
 
-Password sign-in has been verified in Chrome. At first sign-in choose **Set up** for the authenticator app, scan the QR code in your own authenticator, enter its six-digit code, enable it and save your recovery codes. The administrator cannot access protected resources before this enrollment. No authenticator secret or recovery codes were generated or retained by the setup procedure.
+Authenticator enrollment is optional. After signing in, open **Content and settings → Security** to enable it for your own account. Choose **Set up**, scan the QR code in your authenticator and confirm with your password and six-digit code. Enabled accounts still require an authenticator code at sign-in; disabling it on the Security page requires the current password and a valid code. Recovery codes are not enabled. The old forced-setup URL redirects to this page without blocking dashboard access for accounts without MFA.
 
 Local services and starter skill categories are initialized from the four disciplines in the supplied concept. The brand setting is DevMasters. Additional services/skills can be edited in the Admin Portal. Currencies remain USD/KHR development defaults. Privacy, terms and consent retain their clearly identified development wording; approved legal/business wording is deferred until production preparation.
 
@@ -63,9 +63,9 @@ cd backend
 php artisan devmasters:setup-link
 ```
 
-Open the printed link locally, choose your email and password, then enroll an authenticator at first login. Setup is disabled outside local mode and after the first administrator exists. The interactive alternative is `php artisan devmasters:create-admin your-email@example.com`.
+Open the printed link locally, choose your email and password, then optionally enroll an authenticator under **Content and settings → Security** after signing in. Setup is disabled outside local mode and after the first administrator exists. The interactive alternative is `php artisan devmasters:create-admin your-email@example.com`.
 
-Admins can invite staff and assign active custom roles. Staff invitations appear in Mailpit with a password setup link; privileged sign-in still requires MFA. Experts apply publicly, are reviewed and approved, then invited to activate. All development email is captured locally.
+Admins can invite staff and assign active custom roles. Staff invitations appear in Mailpit with a password setup link; sign-in requires the authenticator challenge for accounts with MFA enabled. Experts apply publicly, are reviewed and approved, then invited to activate. All development email is captured locally.
 
 ## Storage and recovery
 

@@ -27,7 +27,7 @@ python3 infra/scripts/native-app.py start
 
 Open `/km` for Khmer or `/en` for English; the language menu preserves the current page and entered form data. Filament remains at `/admin` with its own synchronized language menu.
 
-Use `python3 infra/scripts/native-app.py status` or `stop` in another terminal. The local administrator is `devmasters.codex@gmail.com`. Its current password is in ignored `.runtime/local-admin-credentials.json` (owner-only permissions). Sign in at `/admin/login` and enroll your authenticator. For another fresh installation, run `php artisan devmasters:setup-link` in `backend` to create the first administrator.
+Use `python3 infra/scripts/native-app.py status` or `stop` in another terminal. The local administrator is `devmasters.codex@gmail.com`. Its current password is in ignored `.runtime/local-admin-credentials.json` (owner-only permissions). Sign in at `/admin`; optional authenticator setup is under **Content and settings → Security**. For another fresh installation, run `php artisan devmasters:setup-link` in `backend` to create the first administrator.
 
 ## Prerequisites for another workstation
 
@@ -44,7 +44,7 @@ php artisan db:seed --force
 php artisan devmasters:create-admin your-email@example.com
 ```
 
-The administrator command prompts privately for a password; MFA enrollment is required at first sign-in. No default production credentials are seeded. Expert accounts are created only after application approval and a staff invitation. Approved applicants request a setup link from `/forgot-password`; the link activates the account after the password is set.
+The administrator command prompts privately for a password. Administrators can enable authenticator MFA under **Content and settings → Security**; enabled accounts still require an authenticator code at sign-in. No default production credentials are seeded. Expert accounts are created only after application approval and a staff invitation. Approved applicants request a setup link from `/forgot-password`; the link activates the account after the password is set.
 
 ```sh
 cd frontend

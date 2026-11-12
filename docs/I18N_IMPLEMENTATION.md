@@ -27,7 +27,7 @@ Public and Expert URLs use `/km` and `/en`, for example `/km/hire-our-team` and 
 
 The shared React locale provider changes dictionaries without remounting the current form. Native history updates retain the path, query and hash; selected files and entered values remain intact. The accessible select is available in desktop/mobile public navigation and the Expert topbar. Backend failures saving a preference show an error while keeping the local choice. Anonymous preference uses a one-year SameSite=Lax, non-secret cookie. Authenticated selections also update `users.preferred_locale`; login restores the saved preference and updates the current URL. Logout preserves the language cookie.
 
-Filament uses its installed package translation mechanisms, application translation resources and small Khmer vendor overrides. Its switcher posts a CSRF-protected preference update and refreshes Livewire components without a page reload. The custom hook reapplies the resolved locale after Livewire restores the previous snapshot's locale. Open modal form state is retained. Privileged MFA remains required.
+Filament uses its installed package translation mechanisms, application translation resources and small Khmer vendor overrides. Its switcher posts a CSRF-protected preference update and refreshes Livewire components without a page reload. The custom hook reapplies the resolved locale after Livewire restores the previous snapshot's locale. Open modal form state is retained. Optional MFA enrollment is available on the localized Security page; enabled accounts still require the authenticator challenge.
 
 ## Backend contract
 

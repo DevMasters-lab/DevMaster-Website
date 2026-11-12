@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Security;
 use App\Http\Middleware\RenderAdminLogin;
 use App\Http\Middleware\ResolveLocale;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
@@ -19,8 +20,10 @@ use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -43,7 +46,11 @@ class AdminPanelProvider extends PanelProvider
             ->assets([Css::make('devmasters-typography', public_path('fonts/devmasters.css'))->html('/fonts/devmasters.css')])
             ->renderHook('panels::topbar.end', fn () => view('filament.language-switcher'))
             ->renderHook('panels::auth.login.form.before', fn () => view('filament.language-switcher'))
-            ->multiFactorAuthentication([AppAuthentication::make()->codeWindow(1)], isRequired: true)
+            ->multiFactorAuthentication([AppAuthentication::make()->codeWindow(1)], isRequired: false)
+            ->authenticatedRoutes(function (): void {
+                Route::get('/multi-factor-authentication/set-up', fn (): RedirectResponse => redirect()->to(Security::getUrl()))
+                    ->name('auth.multi-factor-authentication.set-up-required');
+            })
             ->colors([
                 'primary' => Color::Violet,
             ])

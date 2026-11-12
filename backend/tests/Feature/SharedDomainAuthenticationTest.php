@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Pages\Security;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Filament\Actions\Testing\TestAction;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Auth\Pages\Login;
+use Filament\Facades\Filament;
 use Filament\Pages\Dashboard;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\Middleware\TrustProxies;
@@ -91,6 +94,93 @@ class SharedDomainAuthenticationTest extends TestCase
                 'calls' => [],
             ]],
         ], [...$this->forwardedHeaders(), 'X-Livewire' => 'true'])->assertUnauthorized();
+    }
+
+    public function test_admin_without_an_authenticator_can_sign_in_and_open_the_dashboard_without_forced_setup(): void
+    {
+        $admin = User::factory()->create(['app_authentication_secret' => null]);
+        $admin->assignRole('ADMIN');
+        $page = $this->get('http://devmasters-api.onrender.com/admin', $this->forwardedHeaders())->assertOk();
+
+        $this->authenticate($this->snapshot($page), [
+            'data.email' => $admin->email,
+            'data.password' => 'Test-only-password-123!',
+        ])->assertOk()->assertJsonPath('components.0.effects.redirect', 'https://devmasters.dev/admin');
+
+        $this->assertAuthenticatedAs($admin, 'web');
+        $dashboard = $this->get('http://devmasters-api.onrender.com/admin', $this->forwardedHeaders())
+            ->assertOk()->assertHeaderMissing('Location');
+        $this->snapshot($dashboard, Dashboard::class);
+        $this->assertNull($admin->fresh()->app_authentication_secret);
+    }
+
+    public function test_security_settings_require_admin_authentication_and_offer_optional_authenticator_setup(): void
+    {
+        $this->get('http://devmasters-api.onrender.com/admin/settings/security', $this->forwardedHeaders())
+            ->assertRedirect('https://devmasters.dev/admin/login');
+
+        $admin = User::factory()->create(['app_authentication_secret' => null]);
+        $admin->assignRole('ADMIN');
+        $this->actingAs($admin, 'web')
+            ->get('http://devmasters-api.onrender.com/admin/settings/security', $this->forwardedHeaders())
+            ->assertOk()->assertHeaderMissing('Location')
+            ->assertSee('Authenticator app')->assertSee('Set up');
+        $this->get('http://devmasters-api.onrender.com/admin', $this->forwardedHeaders())
+            ->assertOk()->assertSee('https://devmasters.dev/admin/settings/security', false);
+        $this->get('http://devmasters-api.onrender.com/admin/multi-factor-authentication/set-up', $this->forwardedHeaders())
+            ->assertRedirect('https://devmasters.dev/admin/settings/security');
+
+        $user = User::factory()->create();
+        $this->actingAs($user, 'web')
+            ->get('http://devmasters-api.onrender.com/admin/settings/security', $this->forwardedHeaders())
+            ->assertForbidden();
+    }
+
+    public function test_admin_can_opt_in_to_app_authentication_from_security_settings(): void
+    {
+        $admin = User::factory()->create(['app_authentication_secret' => null]);
+        $admin->assignRole('ADMIN');
+        $this->actingAs($admin, 'web');
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+        Filament::bootCurrentPanel();
+        $provider = AppAuthentication::make();
+        $component = Livewire::test(Security::class)
+            ->mountAction(TestAction::make('setUpAppAuthentication')->schemaComponent(true, 'content'));
+        $arguments = decrypt($component->instance()->getMountedAction()->getArguments()['encrypted']);
+
+        $component->setActionData([
+            'password' => 'Test-only-password-123!',
+            'code' => $provider->getCurrentCode($admin, $arguments['secret']),
+        ])->callMountedAction()->assertHasNoActionErrors();
+
+        $this->assertTrue($provider->isEnabled($admin->fresh()));
+    }
+
+    public function test_disabling_app_authentication_requires_the_current_password_and_valid_authenticator_code(): void
+    {
+        $provider = AppAuthentication::make();
+        $admin = User::factory()->create(['app_authentication_secret' => $provider->generateSecret()]);
+        $admin->assignRole('ADMIN');
+        $this->actingAs($admin, 'web');
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+        Filament::bootCurrentPanel();
+        $action = TestAction::make('disableAppAuthentication')->schemaComponent(true, 'content');
+        $component = Livewire::test(Security::class);
+
+        $component->callAction($action, ['password' => 'wrong-test-password', 'code' => '12345'])
+            ->assertHasActionErrors(['password']);
+        $this->assertTrue($provider->isEnabled($admin->fresh()));
+        $component->unmountAction();
+        $component->callAction($action, ['password' => 'Test-only-password-123!', 'code' => '12345'])
+            ->assertHasActionErrors(['code']);
+        $this->assertTrue($provider->isEnabled($admin->fresh()));
+        $component->unmountAction();
+        $component->callAction($action, [
+            'password' => 'Test-only-password-123!',
+            'code' => $provider->getCurrentCode($admin),
+        ])->assertHasNoActionErrors();
+
+        $this->assertNull($admin->fresh()->app_authentication_secret);
     }
 
     public function test_incorrect_credentials_keep_the_user_logged_out_and_show_native_validation(): void

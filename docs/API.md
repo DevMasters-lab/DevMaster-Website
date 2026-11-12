@@ -4,7 +4,7 @@ All endpoints use `/api/v1`. Responses use `{data: ...}`; paginated resource lis
 
 ## Authentication and CSRF
 
-Use the frontend's same-origin URLs. GET `/sanctum/csrf-cookie` with credentials first. Browser writes include the decoded `XSRF-TOKEN` cookie as `X-XSRF-TOKEN`, and all requests retain session credentials. Never expose `.env` or place session credentials in browser local storage. Public writes also require CSRF. The login endpoint is limited to eligible experts; staff use the MFA-protected Filament panel.
+Use the frontend's same-origin URLs. GET `/sanctum/csrf-cookie` with credentials first. Browser writes include the decoded `XSRF-TOKEN` cookie as `X-XSRF-TOKEN`, and all requests retain session credentials. Never expose `.env` or place session credentials in browser local storage. Public writes also require CSRF. The login endpoint is limited to eligible experts; staff use Filament, with an authenticator challenge when MFA is enabled on their account.
 
 | Method | Path | Access | Contract |
 |---|---|---|---|

@@ -765,7 +765,7 @@
   "Personal information": "ព័ត៌មានផ្ទាល់ខ្លួន",
   "Professional information": "ព័ត៌មានវិជ្ជាជីវៈ",
   "Create your local administrator": "បង្កើតអ្នកគ្រប់គ្រងមូលដ្ឋានរបស់អ្នក",
-  "This one-time signed link sets up the first administrator on this computer. Sign-in requires authenticator MFA after setup.": "តំណមានហត្ថលេខាប្រើម្តងនេះបង្កើតអ្នកគ្រប់គ្រងដំបូងនៅលើកុំព្យូទ័រនេះ។ ការចូលគណនីត្រូវការការផ្ទៀងផ្ទាត់ច្រើនកត្តាក្រោយការរៀបចំ។",
+  "This one-time signed link sets up the first administrator on this computer. After signing in, you can enable authenticator MFA under Security.": "តំណមានហត្ថលេខាប្រើម្តងនេះបង្កើតអ្នកគ្រប់គ្រងដំបូងនៅលើកុំព្យូទ័រនេះ។ បន្ទាប់ពីចូលប្រើ អ្នកអាចបើកការផ្ទៀងផ្ទាត់ច្រើនកត្តាតាមកម្មវិធីក្នុងផ្នែកសុវត្ថិភាពបាន។",
   "Your name": "ឈ្មោះរបស់អ្នក",
   "Password (at least 12 characters)": "ពាក្យសម្ងាត់ (យ៉ាងតិច ១២ តួអក្សរ)",
   "Create administrator": "បង្កើតអ្នកគ្រប់គ្រង",
@@ -1383,5 +1383,8 @@
   "Smtp reachable · no message sent by health check": "SMTP អាចតភ្ជាប់ · គ្មាន សារ បានផ្ញើ ដោយ សុខភាពប្រព័ន្ធ ពិនិត្យ",
   "User role": "អ្នកប្រើ តួនាទី",
   "User roles": "អ្នកប្រើ តួនាទី",
-  "If you're having trouble clicking the \":actionText\" button, copy and paste the URL below\ninto your web browser:": "ប្រសិនបើអ្នកមិនអាចចុចប៊ូតុង «:actionText» បាន សូមចម្លងតំណខាងក្រោម ហើយបិទភ្ជាប់ក្នុងកម្មវិធីរុករករបស់អ្នក៖"
+  "If you're having trouble clicking the \":actionText\" button, copy and paste the URL below\ninto your web browser:": "ប្រសិនបើអ្នកមិនអាចចុចប៊ូតុង «:actionText» បាន សូមចម្លងតំណខាងក្រោម ហើយបិទភ្ជាប់ក្នុងកម្មវិធីរុករករបស់អ្នក៖",
+  "Security": "សុវត្ថិភាព",
+  "Two-factor authentication": "ការផ្ទៀងផ្ទាត់ពីរជំហាន",
+  "Add an extra verification step when you sign in. You can enable or disable it for your own account.": "បន្ថែមជំហានផ្ទៀងផ្ទាត់នៅពេលចូលប្រើ។ អ្នកអាចបើក ឬបិទវាសម្រាប់គណនីរបស់អ្នកបាន។"
 }
