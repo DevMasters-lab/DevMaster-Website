@@ -35,6 +35,8 @@ class AdminPanelProvider extends PanelProvider
             ->databaseTransactions()
             ->passwordReset()
             ->brandName('DevMasters')
+            ->brandLogo(fn (): ?string => is_file(public_path('logo.jpg')) ? '/admin/logo.jpg' : null)
+            ->brandLogoHeight('2rem')
             ->favicon('/favicon.png')
             ->font('Inter', provider: LocalFontProvider::class)
             ->assets([Css::make('devmasters-typography', public_path('fonts/devmasters.css'))->html('/fonts/devmasters.css')])
