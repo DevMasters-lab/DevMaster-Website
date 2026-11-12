@@ -44,6 +44,62 @@ class LegacyAdminRedirectTest extends TestCase
         ];
     }
 
+    public function test_direct_render_root_redirects_to_public_admin_without_a_session_or_public_cache(): void
+    {
+        foreach (['GET', 'HEAD'] as $method) {
+            $response = $this->call($method, 'https://devmasters-api.onrender.com/');
+
+            $response->assertStatus(302)
+                ->assertRedirect('https://devmasters.dev/admin')
+                ->assertHeader('CDN-Cache-Control', 'no-store')
+                ->assertHeader('Vercel-CDN-Cache-Control', 'no-store')
+                ->assertHeader('Referrer-Policy', 'no-referrer')
+                ->assertHeaderMissing('Set-Cookie');
+            $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+        }
+    }
+
+    public function test_public_and_trusted_proxied_root_requests_return_empty_responses_without_redirect_loops(): void
+    {
+        $this->get('https://devmasters.dev/')->assertNoContent()->assertHeaderMissing('Location');
+
+        $this->get('http://devmasters-api.onrender.com/', [
+            'X-Forwarded-Host' => 'devmasters.dev',
+            'X-Forwarded-Proto' => 'https',
+            'X-Forwarded-Port' => '443',
+        ])->assertNoContent()->assertHeaderMissing('Location');
+
+        $this->get('http://devmasters-api.onrender.com/', [
+            'X-Forwarded-Host' => 'devmasters-api.onrender.com',
+            'X-Devmasters-Proxy-Host' => 'devmasters.dev',
+            'X-Devmasters-Proxy-Proto' => 'https',
+        ])->assertNoContent()->assertHeaderMissing('Location');
+
+        $this->get('https://another.onrender.com/')->assertNoContent()->assertHeaderMissing('Location');
+    }
+
+    public function test_unapproved_or_untrusted_root_forwarding_headers_do_not_bypass_the_origin_redirect(): void
+    {
+        $this->get('https://devmasters-api.onrender.com/', [
+            'X-Forwarded-Host' => 'attacker.example',
+            'X-Devmasters-Proxy-Host' => 'attacker.example',
+            'X-Devmasters-Proxy-Proto' => 'https',
+        ])->assertRedirect('https://devmasters.dev/admin');
+
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.10'])
+            ->get('https://devmasters-api.onrender.com/', [
+                'X-Forwarded-Host' => 'devmasters.dev',
+                'X-Devmasters-Proxy-Host' => 'devmasters.dev',
+                'X-Devmasters-Proxy-Proto' => 'https',
+            ])->assertRedirect('https://devmasters.dev/admin');
+    }
+
+    public function test_root_redirect_keeps_safe_context_and_drops_sensitive_query_parameters(): void
+    {
+        $this->get('https://devmasters-api.onrender.com/?locale=en&token=private&next=https%3A%2F%2Fattacker.example')
+            ->assertRedirect('https://devmasters.dev/admin?locale=en');
+    }
+
     public function test_safe_query_context_is_preserved_and_credentials_return_urls_and_complex_values_are_dropped(): void
     {
         $this->get('https://devmasters-api.onrender.com/admin/login?locale=en&ref=a%26b&page=2'

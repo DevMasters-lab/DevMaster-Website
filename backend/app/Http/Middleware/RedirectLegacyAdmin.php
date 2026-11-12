@@ -20,13 +20,17 @@ class RedirectLegacyAdmin
         if (! in_array($request->method(), ['GET', 'HEAD'], true)
             || $originHost !== 'devmasters-api.onrender.com'
             || $request->getHost() !== 'devmasters-api.onrender.com'
-            || ! $request->is('admin', 'admin/login')) {
+            || ! $request->is('/', 'admin', 'admin/login')) {
             return $next($request);
         }
 
         $query = $this->safeQuery($request);
+        $path = $request->is('/') ? 'admin' : $request->path();
 
-        return redirect()->away('https://devmasters.dev/'.$request->path().($query === '' ? '' : '?'.$query))
+        return redirect()->away('https://devmasters.dev/'.$path.($query === '' ? '' : '?'.$query))
+            ->header('Cache-Control', 'private, no-store')
+            ->header('CDN-Cache-Control', 'no-store')
+            ->header('Vercel-CDN-Cache-Control', 'no-store')
             ->header('Referrer-Policy', 'no-referrer');
     }
 
