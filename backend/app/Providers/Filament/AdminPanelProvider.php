@@ -46,7 +46,7 @@ class AdminPanelProvider extends PanelProvider
             ->font('Inter', provider: LocalFontProvider::class)
             ->assets([Css::make('devmasters-typography', public_path('fonts/devmasters.css'))->html('/fonts/devmasters.css')])
             ->renderHook('panels::global-search.after', fn () => view('filament.language-switcher'))
-            ->renderHook('panels::auth.login.form.before', fn () => view('filament.language-switcher'))
+            ->renderHook('panels::auth.login.form.after', fn () => view('filament.language-switcher', ['variant' => 'login']))
             ->databaseNotifications(livewireComponent: AdminNotifications::class, isLazy: false)
             ->multiFactorAuthentication([AppAuthentication::make()->codeWindow(1)], isRequired: false)
             ->authenticatedRoutes(function (): void {
