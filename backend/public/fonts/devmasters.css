@@ -235,8 +235,8 @@ html.fi :is(.fi-modal-heading, .fi-section-header-heading, .fi-no-notification-t
 .admin-notifications-trigger,
 .fi-topbar .fi-user-menu-trigger {
     display: inline-flex;
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
@@ -262,8 +262,8 @@ html.fi :is(.fi-modal-heading, .fi-section-header-heading, .fi-no-notification-t
 }
 .admin-language-flag {
     display: block;
-    width: 36px;
-    height: 36px;
+    width: 26px;
+    height: 26px;
     overflow: hidden;
     border-radius: 50%;
     box-shadow: 0 0 0 1px rgb(17 24 39 / .08);
@@ -289,21 +289,21 @@ html.fi :is(.fi-modal-heading, .fi-section-header-heading, .fi-no-notification-t
     box-shadow: 0 4px 12px rgb(17 24 39 / .08);
 }
 .fi-topbar .fi-user-menu-trigger .fi-user-avatar {
-    width: 44px;
-    height: 44px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     object-fit: cover;
 }
 .fi-topbar-end {
-    gap: 12px;
+    gap: 8px;
 }
 .admin-notifications-trigger {
     position: relative;
     color: #6b7280;
 }
 .admin-notifications-trigger > svg {
-    width: 23px;
-    height: 23px;
+    width: 20px;
+    height: 20px;
 }
 .admin-notifications-trigger .fi-icon-btn-badge-ctn {
     position: absolute;
@@ -319,17 +319,17 @@ html.fi :is(.fi-modal-heading, .fi-section-header-heading, .fi-no-notification-t
     top: 0;
     right: 0;
     display: flex;
-    min-width: 17px;
-    height: 17px;
+    min-width: 14px;
+    height: 14px;
     align-items: center;
     justify-content: center;
-    padding: 0 3px;
+    padding: 0 2px;
     border: 1px solid #dbeafe;
-    border-radius: 6px;
+    border-radius: 5px;
     background: #eff6ff;
     color: #2563eb;
     font-family: Inter, sans-serif;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 500;
     line-height: 1;
 }
@@ -460,6 +460,6 @@ html.fi :is(.fi-modal-heading, .fi-section-header-heading, .fi-no-notification-t
 }
 @media (max-width: 480px) {
     .fi-topbar-end {
-        gap: 8px;
+        gap: 6px;
     }
 }
