@@ -35,7 +35,7 @@ class AdminPanelProvider extends PanelProvider
             ->passwordReset()
             ->brandName('DevMasters')
             ->font('Inter', provider: LocalFontProvider::class)
-            ->assets([Css::make('devmasters-typography', asset('fonts/devmasters.css'))])
+            ->assets([Css::make('devmasters-typography', public_path('fonts/devmasters.css'))->html('/fonts/devmasters.css')])
             ->renderHook('panels::topbar.end', fn () => view('filament.language-switcher'))
             ->renderHook('panels::auth.login.form.before', fn () => view('filament.language-switcher'))
             ->multiFactorAuthentication([AppAuthentication::make()->codeWindow(1)], isRequired: true)

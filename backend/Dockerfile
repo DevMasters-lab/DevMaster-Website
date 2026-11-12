@@ -29,7 +29,8 @@ RUN mkdir -p storage/framework/cache/data storage/framework/cache/locks \
     && APP_ENV=production APP_DEBUG=false CACHE_STORE=array SESSION_DRIVER=array \
         QUEUE_CONNECTION=sync LOG_CHANNEL=stderr \
         composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader \
-    && composer check-platform-reqs --no-dev
+    && composer check-platform-reqs --no-dev \
+    && php artisan storage:link --no-interaction
 
 FROM runtime AS production
 COPY --from=build --chown=root:www-data /var/www/html /var/www/html

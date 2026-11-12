@@ -1,15 +1,19 @@
 <?php
 
 use App\Http\Middleware\EnsureExpert;
+use App\Http\Middleware\PreventPublicCaching;
 use App\Http\Middleware\ResolveLocale;
+use App\Http\Middleware\TrustFrontendProxies;
 use App\Support\Localization;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -21,11 +25,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_HOST | Request::HEADER_X_FORWARDED_PORT | Request::HEADER_X_FORWARDED_PROTO);
+        $middleware->replace(TrustProxies::class, TrustFrontendProxies::class);
+        $middleware->prepend(PreventPublicCaching::class);
+        $middleware->redirectGuestsTo(fn (Request $request): string => route('filament.admin.auth.login'));
         $middleware->encryptCookies(except: ['devmasters_locale']);
         $middleware->appendToGroup('web', ResolveLocale::class);
         $middleware->alias(['expert' => EnsureExpert::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->respond(fn (Response $response): Response => PreventPublicCaching::apply(request(), $response));
         $exceptions->render(function (Throwable $exception, Request $request) {
             if (! $request->is('api/*') && ! $request->expectsJson()) {
                 return null;

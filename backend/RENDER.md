@@ -1,6 +1,6 @@
 # DevMasters API on Render Free
 
-This runbook deploys the existing Laravel backend from `DevMasters-lab/DevMaster-Website` to `https://api.devmasters.dev`, using the existing Neon project `devmaster-website` in Singapore. It does not create or replace a database. Render builds Docker remotely; Docker Desktop is not required on the Mac.
+This runbook deploys the existing Laravel backend from `DevMasters-lab/DevMaster-Website` behind Vercel at `https://devmasters.dev/admin` and `https://devmasters.dev/api`, using the existing Neon project `devmaster-website` in Singapore. It does not create or replace a database. Render builds Docker remotely; Docker Desktop is not required on the Mac.
 
 ## Application and container
 
@@ -42,8 +42,8 @@ APP_DEBUG=false
 APP_KEY=<persistent-existing-production-key-or-generate-once>
 # APP_PREVIOUS_KEYS is optional: preserve real historical keys if rotation was used.
 # APP_PREVIOUS_KEYS=
-APP_URL=https://api.devmasters.dev
-FRONTEND_URL=https://website.devmasters.dev
+APP_URL=https://devmasters.dev
+FRONTEND_URL=https://devmasters.dev
 APP_LOCALE=km
 APP_FALLBACK_LOCALE=en
 LOG_CHANNEL=stderr
@@ -61,11 +61,12 @@ PGSSLCERT=/var/www/.postgresql/postgresql.crt
 SESSION_DRIVER=database
 SESSION_TABLE=laravel_sessions
 SESSION_LIFETIME=120
-SESSION_DOMAIN=.devmasters.dev
+SESSION_DOMAIN=null
+SESSION_PATH=/
 SESSION_SECURE_COOKIE=true
 SESSION_HTTP_ONLY=true
 SESSION_SAME_SITE=lax
-SANCTUM_STATEFUL_DOMAINS=website.devmasters.dev,api.devmasters.dev
+SANCTUM_STATEFUL_DOMAINS=devmasters.dev,devmasters-api.onrender.com
 TRUSTED_PROXIES=*
 CACHE_STORE=database
 QUEUE_CONNECTION=sync
@@ -140,7 +141,7 @@ ADMIN_NAME=DevMasters Administrator
 2. The seeder verifies the effective PostgreSQL target is Neon `neondb` with SSL. It takes the existing first-admin advisory lock, creates missing canonical roles/permissions additively, hashes the password using the User model, creates an active verified user, assigns the `ADMIN` role with the `web` guard, and records `administrator.bootstrapped` in one transaction. Any failure rolls back these changes and prevents Apache from starting. No account setup HTTP endpoint is added; MFA remains required.
 3. Look for `Administrator initialized successfully` in the deployment logs. If the same active administrator already exists with `admin.access`, the seeder reports that initialization is already complete and leaves its password, MFA and permissions unchanged, even if `ADMIN_PASSWORD` has changed or is absent. A matching non-admin/inactive user, an inactive/conflicting ADMIN role, or an existing administrator with a different email causes a safe failure. Resolve that existing account through the normal administration/recovery process; this bootstrap will not promote or reset it.
 4. After success, set **`RUN_ADMIN_SEED=false`**, remove **`ADMIN_PASSWORD`**, and optionally remove `ADMIN_EMAIL`/`ADMIN_NAME`, then save and redeploy. The flag is not automatically consumed in Render; it otherwise remains enabled across restarts. Startup removes bootstrap variables from the server/scheduler child environment after the seeder succeeds.
-5. Sign in at `https://devmasters-api.onrender.com/admin/login` and complete mandatory authenticator MFA enrollment. For this direct temporary hostname, leave `SESSION_DOMAIN` unset/empty so the browser can retain its secure cookie. Keep CSRF and secure cookie settings enabled. Use `.devmasters.dev` when using the custom API subdomain and shared domain flow.
+5. Sign in at `https://devmasters-api.onrender.com/admin/login` and complete mandatory authenticator MFA enrollment. For this direct temporary hostname, leave `SESSION_DOMAIN` unset/empty so the browser can retain its secure cookie. Keep CSRF and secure cookie settings enabled. Keep host-only cookies for the single-domain proxy too; the two hosts maintain independent sessions.
 
 The administrator resides in PostgreSQL and survives Render restarts. This code adds no migration. Missing application/authentication tables must be addressed by reviewing and applying the existing ordinary migrations above, not by resetting the database. Do not run broad or unrelated business seeders against production.
 
@@ -190,60 +191,15 @@ The image includes Bookworm's PostgreSQL 15 client for existing administration c
 
 ## Deploy and connect the frontend
 
-1. Commit and push only the reviewed deployment changes to the existing `main` branch. Preserve unrelated working-tree changes.
-2. Create the Render service with the settings above and fill its environment values. Complete migrations through the reviewed approach above before relying on session-backed routes.
-3. Deploy and inspect build/runtime logs. Confirm Apache and scheduler both start. Test `/api/health` using the **actual** hostname assigned by Render.
-4. Complete custom-domain DNS and TLS below.
-5. In Vercel, set production `LARAVEL_URL=https://api.devmasters.dev` and `FRONTEND_URL=https://website.devmasters.dev`, then redeploy the frontend so Next.js rewrites use the new destination. Do not add `NEXT_PUBLIC_API_URL`: this application already uses server-side `LARAVEL_URL` and same-origin browser paths.
+Follow [the shared-domain deployment guide](../docs/SHARED_DOMAIN.md) for the exact Render/Vercel environment changes, Hostinger DNS, route inventory, verification, and hosting limitations. The frontend stays on Vercel; the backend origin stays `https://devmasters-api.onrender.com`. Point the apex domain to Vercel and proxy Laravel paths through Next.js. No Render custom domain is required.
 
-The browser calls `/api/v1/*` and `/sanctum/csrf-cookie` on `website.devmasters.dev`; Next.js proxies them to Laravel. Existing code includes credentials, retrieves CSRF cookies, and sends `X-XSRF-TOKEN`. Shared `.devmasters.dev` cookies, HTTPS, exact-origin CORS with credentials, and the configured stateful domains support this flow. `SameSite=lax` permits these same-site HTTPS subdomains. Keep the API version prefix and existing JSON error handling unchanged.
-
-## Hostinger DNS for api.devmasters.dev
-
-1. Render → service → **Settings → Custom Domains**: add `api.devmasters.dev`.
-2. Hostinger → `devmasters.dev` → **DNS / Nameservers → DNS Zone Editor**: add the record below. Use the hostname Render actually assigned, which can differ from the service name.
-
-   | Type | Name | Target | TTL |
-   | --- | --- | --- | --- |
-   | CNAME | `api` | `<actual-assigned-service>.onrender.com` | Default |
-
-   Enter a hostname only in Target: no `https://` and no path. Replace conflicting `api` A/AAAA/CNAME records only. Preserve `website`, apex, mail and other DNS records; no nameserver change is required when Hostinger already hosts the authoritative zone. [Hostinger CNAME instructions](https://www.hostinger.com/support/4738777-how-to-manage-cname-records-at-hostinger/), [Render subdomain DNS instructions](https://render.com/docs/configure-other-dns).
-
-3. Return to Render and click **Verify** after propagation. Render provisions and renews the HTTPS certificate. Wait for both DNS verification and certificate readiness before switching Vercel. [Render custom domains](https://render.com/docs/custom-domains).
-
-## Deployment checks
-
-These commands display status and CORS headers without printing cookies or secret values:
-
-```sh
-curl --fail --silent --show-error https://api.devmasters.dev/api/health
-curl --silent --show-error --output /dev/null --write-out '%{http_code}\n' \
-  https://api.devmasters.dev/api/v1/reference-data
-curl --silent --show-error --output /dev/null --write-out '%{http_code}\n' \
-  https://website.devmasters.dev/api/v1/reference-data
-curl --silent --show-error --dump-header - --output /dev/null \
-  --request OPTIONS https://api.devmasters.dev/api/v1/auth/login \
-  --header 'Origin: https://website.devmasters.dev' \
-  --header 'Access-Control-Request-Method: POST' \
-  --header 'Access-Control-Request-Headers: content-type,x-xsrf-token' \
-  | awk 'BEGIN { IGNORECASE=1 } /^HTTP\// || /^[Aa]ccess-[Cc]ontrol-/ || /^[Vv]ary:/ { print }'
-curl --silent --show-error --output /dev/null --write-out '%{http_code}\n' \
-  --header 'Accept: application/json' \
-  https://website.devmasters.dev/sanctum/csrf-cookie
-dig +short CNAME api.devmasters.dev
-```
-
-Expect health JSON with HTTP 200, reference data HTTP 200, preflight HTTP 200/204 with the exact frontend origin and credentials allowed, and CSRF HTTP 204. A healthy liveness response alone does not verify database schema, email, scanner or object storage. Allow for cold starts, then repeat failed probes.
-
-In the browser, test expert login/logout, an unauthenticated `/api/v1/auth/me` response (401 JSON), invalid input (422 JSON), CSRF rejection for an unsafe request without a valid token, language selection, and the Filament admin login/MFA/assets. Submit a small test CV with an authorized test account, confirm it persists across redeploys, reaches a completed scan, and downloads only for an authorized user. Exercise report generation and a password-reset email with controlled test accounts. Never paste cookie headers, reset URLs or passwords into shared logs.
-
-If health works but reference data fails, check Neon credentials/SSL and pending migrations. Authentication failures usually require checking Vercel rewrites, shared cookie domain, CSRF headers, proxy trust and HTTPS. Pending outbox records require checking scheduler logs, SES configuration, scanner reachability and private bucket permissions. A Docker build and deployed end-to-end checks remain necessary when Docker is unavailable locally.
+Set `RUN_MIGRATIONS=false` and `RUN_ADMIN_SEED=false` before deployment of this existing installation. Preserve the original key and Neon credentials. The normal startup checks only inspect database readiness; this domain change requires no migrations or seeding.
 
 ### Confirmed HTTP 500 investigation
 
 The Render runtime logs showed `Unsupported cipher or incorrect key length` before the `headers already sent` fatal. The invalid encryption configuration fails when Laravel resolves cookie middleware, then fails again when middleware is resolved during termination after the first 500 body has been sent. `Response.php:393` is where that response body is echoed; it is not unexpected application output. Do not patch Symfony, disable warnings, enable public debugging or mask this with extra output buffering.
 
-Restore the original valid `APP_KEY` privately in Render. Do not paste it into chat, print it, commit it or generate a new key on every deployment. Existing encrypted MFA data and queued notifications require their original key. For the current service URL, set `APP_URL=https://devmasters-api.onrender.com`; switch to the custom API URL once its DNS/TLS is ready. Keep `APP_ENV=production`, `APP_DEBUG=false`, `LOG_CHANNEL=stderr`, `DB_CONNECTION=pgsql`, `DB_SSLMODE=require`, `SESSION_DRIVER=database` and `SESSION_TABLE=laravel_sessions`.
+Restore the original valid `APP_KEY` privately in Render. Do not paste it into chat, print it, commit it or generate a new key on every deployment. Existing encrypted MFA data and queued notifications require their original key. For the shared-domain deployment set `APP_URL=https://devmasters.dev`; direct Render requests still generate request-specific URLs. Keep `APP_ENV=production`, `APP_DEBUG=false`, `LOG_CHANNEL=stderr`, `DB_CONNECTION=pgsql`, `DB_SSLMODE=require`, `SESSION_DRIVER=database` and `SESSION_TABLE=laravel_sessions`.
 
 The scheduler logs also showed libpq trying to open `/root/.postgresql/postgresql.crt` as an unprivileged process. Supervisor changes UID without resetting the inherited environment. The image now provides a readable `/var/www/.postgresql` directory and exports `PGSSLCERT=/var/www/.postgresql/postgresql.crt`; the optional client certificate itself remains absent because Neon uses the configured role/password. Libpq permits a missing optional certificate, while an inaccessible path causes failure. Custom `PGSSLCERT` paths remain supported. This does not disable PostgreSQL TLS; keep `DB_SSLMODE=require`. [Supervisor environment](https://supervisord.org/subprocess.html#subprocess-environment), [libpq certificate environment variables](https://www.postgresql.org/docs/15/libpq-envars.html).
 
@@ -253,7 +209,7 @@ The existing `2026_11_11_080217_create_render_runtime_tables` migration creates 
 
 Validation for this fix: the full local Laravel suite passed **97 tests with 422 assertions**, with one native integration test skipped. POSIX shell syntax, Docker RUN shell syntax, PHP lint, Pint and targeted secret checks passed. Synthetic tests reproduced both the invalid-key header cascade and the inaccessible client-certificate lookup without contacting production PostgreSQL. A Docker build was not run locally because Docker is unavailable. The live public health endpoint returned 200 while session-backed routes returned 500 before the fix; live recovery still requires restoring the valid Render key and redeploying.
 
-For direct browser testing on the temporary `onrender.com` host, a `.devmasters.dev` cookie domain is not valid for that host. Leave `SESSION_DOMAIN` unset/empty if testing direct Render login. Website requests through the existing same-origin Vercel rewrites can also use host-only cookies. Set the shared `.devmasters.dev` domain when the custom API subdomain and desired cross-subdomain flow are in use. Do not change credentials, CSRF checks or cookie security flags to address a 500.
+For direct browser testing on the temporary `onrender.com` host, a `.devmasters.dev` cookie domain is not valid for that host. Leave `SESSION_DOMAIN` unset/empty if testing direct Render login. Website requests through the existing same-origin Vercel rewrites can also use host-only cookies. Keep `SESSION_DOMAIN=null` for this single-domain deployment; a shared domain cookie is unnecessary. Do not change credentials, CSRF checks or cookie security flags to address a 500.
 
 ### Encryption startup diagnostics
 
