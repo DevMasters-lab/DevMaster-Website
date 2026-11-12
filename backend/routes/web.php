@@ -8,12 +8,12 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 Route::get('/', fn (): Response => response()->noContent());
 
-Route::get('/admin/logo.jpg', function (): BinaryFileResponse {
-    $path = public_path('logo.jpg');
+Route::get('/admin/logo.{format}', function (string $format): BinaryFileResponse {
+    $path = public_path('logo.'.$format);
     abort_unless(is_file($path), 404);
 
     return response()->file($path);
-})->withoutMiddleware('web');
+})->whereIn('format', ['png', 'jpg'])->withoutMiddleware('web');
 
 Route::match(['get', 'post'], '/admin/setup', LocalSetupController::class)->middleware(['signed', 'throttle:recovery'])->name('local.setup');
 

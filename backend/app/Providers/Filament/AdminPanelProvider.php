@@ -16,7 +16,6 @@ use Filament\PanelProvider;
 use Filament\Support\Assets\Css;
 use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
-use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -36,8 +35,7 @@ class AdminPanelProvider extends PanelProvider
             ->databaseTransactions()
             ->passwordReset()
             ->brandName('DevMasters')
-            ->brandLogo(fn (): ?string => is_file(public_path('logo.jpg')) ? '/admin/logo.jpg' : null)
-            ->darkModeBrandLogo(fn (): ?Htmlable => is_file(public_path('logo.jpg')) ? view('filament.brand-logo-dark') : null)
+            ->brandLogo(fn (): ?string => is_file(public_path('logo.png')) ? '/admin/logo.png' : null)
             ->brandLogoHeight('3.5rem')
             ->favicon('/favicon.png')
             ->font('Inter', provider: LocalFontProvider::class)
