@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureExpert;
 use App\Http\Middleware\PreventPublicCaching;
+use App\Http\Middleware\RedirectLegacyAdmin;
 use App\Http\Middleware\ResolveLocale;
 use App\Http\Middleware\TrustFrontendProxies;
 use App\Support\Localization;
@@ -27,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_HOST | Request::HEADER_X_FORWARDED_PORT | Request::HEADER_X_FORWARDED_PROTO);
         $middleware->replace(TrustProxies::class, TrustFrontendProxies::class);
         $middleware->prepend(PreventPublicCaching::class);
+        $middleware->append(RedirectLegacyAdmin::class);
         $middleware->redirectGuestsTo(fn (Request $request): string => route('filament.admin.auth.login'));
         $middleware->encryptCookies(except: ['devmasters_locale']);
         $middleware->appendToGroup('web', ResolveLocale::class);

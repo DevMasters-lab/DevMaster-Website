@@ -34,10 +34,10 @@ class SharedDomainProxyTest extends TestCase
             ->assertHeader('CDN-Cache-Control', 'no-store');
     }
 
-    public function test_direct_render_admin_keeps_the_origin_domain(): void
+    public function test_direct_render_admin_redirects_to_the_equivalent_public_path(): void
     {
         $this->get('https://devmasters-api.onrender.com/admin')
-            ->assertRedirect('https://devmasters-api.onrender.com/admin/login');
+            ->assertRedirect('https://devmasters.dev/admin');
     }
 
     public function test_proxy_markers_recover_the_public_origin_when_upstream_replaces_forwarded_host(): void
@@ -60,7 +60,7 @@ class SharedDomainProxyTest extends TestCase
             'X-Forwarded-Host' => 'attacker.example',
             'X-Devmasters-Proxy-Host' => 'attacker.example',
             'X-Devmasters-Proxy-Proto' => 'https',
-        ])->assertRedirect('https://devmasters-api.onrender.com/admin/login');
+        ])->assertRedirect('https://devmasters.dev/admin');
     }
 
     public function test_markers_and_forwarded_headers_are_ignored_from_untrusted_clients(): void
@@ -70,7 +70,7 @@ class SharedDomainProxyTest extends TestCase
                 ...$this->forwardedHeaders(),
                 'X-Devmasters-Proxy-Host' => 'devmasters.dev',
                 'X-Devmasters-Proxy-Proto' => 'https',
-            ])->assertRedirect('https://devmasters-api.onrender.com/admin/login');
+            ])->assertRedirect('https://devmasters.dev/admin');
     }
 
     public function test_csrf_and_session_cookies_are_secure_host_only_and_not_cached(): void
