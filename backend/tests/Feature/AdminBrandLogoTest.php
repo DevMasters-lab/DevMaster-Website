@@ -24,27 +24,31 @@ class AdminBrandLogoTest extends TestCase
     {
         $this->assertNull(Filament::getPanel('admin')->getBrandLogo());
         $this->assertNull(Filament::getPanel('admin')->getDarkModeBrandLogo());
-        $this->get('https://devmasters.dev/admin/logo.png')
+        $this->get('https://devmasters.dev/admin/logo-light.png')
             ->assertNotFound()->assertHeaderMissing('Set-Cookie');
     }
 
     public function test_uploaded_logo_is_available_directly_and_through_the_existing_admin_proxy_without_a_session(): void
     {
         $contents = file_get_contents(base_path('public/logo.png'));
+        $lightContents = file_get_contents(base_path('public/logo-light.png'));
         Storage::disk('brand-logo')->put('logo.png', $contents);
-        $this->assertSame('/admin/logo.png', Filament::getPanel('admin')->getBrandLogo());
+        Storage::disk('brand-logo')->put('logo-light.png', $lightContents);
+        $this->assertSame('/admin/logo-light.png', Filament::getPanel('admin')->getBrandLogo());
         $this->assertSame('3.5rem', Filament::getPanel('admin')->getBrandLogoHeight());
-        $this->assertNull(Filament::getPanel('admin')->getDarkModeBrandLogo());
+        $this->assertSame('/admin/logo.png', Filament::getPanel('admin')->getDarkModeBrandLogo());
 
         foreach (['https://devmasters.dev', 'http://devmasters-api.onrender.com'] as $origin) {
-            $response = $this->get($origin.'/admin/logo.png', [
-                'X-Forwarded-Host' => 'devmasters.dev',
-                'X-Forwarded-Proto' => 'https',
-                'X-Forwarded-Port' => '443',
-            ])->assertOk()->assertHeaderMissing('Location')->assertHeaderMissing('Set-Cookie');
+            foreach (['logo.png' => $contents, 'logo-light.png' => $lightContents] as $filename => $expected) {
+                $response = $this->get($origin.'/admin/'.$filename, [
+                    'X-Forwarded-Host' => 'devmasters.dev',
+                    'X-Forwarded-Proto' => 'https',
+                    'X-Forwarded-Port' => '443',
+                ])->assertOk()->assertHeaderMissing('Location')->assertHeaderMissing('Set-Cookie');
 
-            $response->assertHeader('Content-Type', 'image/png');
-            $this->assertSame(hash('sha256', $contents), hash_file('sha256', $response->baseResponse->getFile()->getPathname()));
+                $response->assertHeader('Content-Type', 'image/png');
+                $this->assertSame(hash('sha256', $expected), hash_file('sha256', $response->baseResponse->getFile()->getPathname()));
+            }
         }
     }
 
