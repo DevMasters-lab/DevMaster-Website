@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use Filament\Facades\Filament;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -23,6 +24,7 @@ class AdminBrandLogoTest extends TestCase
     public function test_missing_logo_preserves_native_text_branding_and_returns_a_session_free_404(): void
     {
         $this->assertNull(Filament::getPanel('admin')->getBrandLogo());
+        $this->assertNull(Filament::getPanel('admin')->getDarkModeBrandLogo());
         $this->get('https://devmasters.dev/admin/logo.jpg')
             ->assertNotFound()->assertHeaderMissing('Set-Cookie');
     }
@@ -33,6 +35,9 @@ class AdminBrandLogoTest extends TestCase
         Storage::disk('brand-logo')->put('logo.jpg', $contents);
         $this->assertSame('/admin/logo.jpg', Filament::getPanel('admin')->getBrandLogo());
         $this->assertSame('3.5rem', Filament::getPanel('admin')->getBrandLogoHeight());
+        $darkLogo = Filament::getPanel('admin')->getDarkModeBrandLogo();
+        $this->assertInstanceOf(Htmlable::class, $darkLogo);
+        $this->assertStringContainsString('src="/admin/logo.jpg"', $darkLogo->toHtml());
 
         foreach (['https://devmasters.dev', 'http://devmasters-api.onrender.com'] as $origin) {
             $response = $this->get($origin.'/admin/logo.jpg', [
