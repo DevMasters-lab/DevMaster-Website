@@ -360,10 +360,11 @@ html.fi :is(.fi-modal-heading, .fi-section-header-heading, .fi-no-notification-t
     object-fit: cover;
 }
 .fi-topbar-end {
-    gap: 12px;
+    gap: 20px;
 }
 .admin-notifications-trigger {
     position: relative;
+    margin: 0;
     color: #6b7280;
 }
 .admin-notifications-trigger > svg {
@@ -525,6 +526,6 @@ html.fi :is(.fi-modal-heading, .fi-section-header-heading, .fi-no-notification-t
 }
 @media (max-width: 480px) {
     .fi-topbar-end {
-        gap: 8px;
+        gap: 12px;
     }
 }
