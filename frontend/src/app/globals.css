@@ -149,8 +149,4 @@ html[data-theme=dark] footer{background:#100d16}
 .logo-carousel .swiper-slide{display:flex;align-items:center;justify-content:center}
 .sample-logo{display:block;width:104px;height:104px;max-width:100%;object-fit:contain;border-radius:50%;user-select:none;-webkit-user-drag:none;box-shadow:0 4px 18px #24213206}
 .logo-carousel:focus-visible{outline:2px solid var(--purple);outline-offset:4px;border-radius:8px}
-.logo-controls{display:flex;justify-content:center;margin-top:28px}
-.logo-motion-button{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid var(--border);border-radius:24px;color:var(--muted);background:var(--paper);font-size:var(--dm-text-small);line-height:1.5}
-.logo-motion-button:hover{color:var(--ink);border-color:var(--purple)}
-.logo-motion-button:focus-visible{outline:2px solid var(--purple);outline-offset:3px}
-@media(max-width:620px){.logo-section{padding:44px 0 32px}.logo-heading{margin-bottom:28px}.sample-logo{width:88px;height:88px}.logo-controls{margin-top:22px}}
+@media(max-width:620px){.logo-section{padding:44px 0 32px}.logo-heading{margin-bottom:28px}.sample-logo{width:88px;height:88px}}

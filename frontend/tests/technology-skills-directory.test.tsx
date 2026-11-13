@@ -220,14 +220,16 @@ describe('hierarchical technology skills directory',()=>{
     await waitFor(()=>expect(screen.getByRole('combobox',{name:'Subcategory'})).toHaveValue('frontend-development'));
   });
 
-  it('keeps the original four service cards before the skills carousel and clients after it',()=>{
-    render(<LocaleProvider initialLocale="en"><Home/></LocaleProvider>);
-    const services=screen.getByRole('heading',{name:'Different disciplines. A shared standard.'}).closest('section')!;
-    const cards=services.querySelectorAll('.service-card');
-    expect(cards).toHaveLength(4);
-    expect(Array.from(cards,card=>card.querySelector('h3')?.textContent)).toEqual(['Software & digital products','Networks & infrastructure','Cybersecurity & resilience','Data & information systems']);
+  it('omits the removed services section and places the skills carousel directly after the hero',()=>{
+    const {container}=render(<LocaleProvider initialLocale="en"><Home/></LocaleProvider>);
+    expect(screen.queryByRole('heading',{name:'Different disciplines. A shared standard.'})).not.toBeInTheDocument();
+    expect(screen.queryByRole('link',{name:/Discover our services/})).not.toBeInTheDocument();
+    expect(container.querySelector('.services-section')).not.toBeInTheDocument();
+    expect(container.querySelectorAll('.service-card')).toHaveLength(0);
+    const hero=container.querySelector('.hero');
+    expect(hero).toBeInTheDocument();
     const carousel=screen.getByTestId('technology-skills-carousel');
-    expect(services.nextElementSibling).toBe(carousel);
+    expect(hero!.nextElementSibling).toBe(carousel);
     expect(carousel.nextElementSibling).toBe(screen.getByTestId('clients-carousel'));
   });
 });

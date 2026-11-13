@@ -56,9 +56,9 @@ beforeEach(()=>{
 
 afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 
-function renderCarousel(){
-  render(<LocaleProvider initialLocale="en"><LogoCarousel/><button type="button">Outside carousel</button></LocaleProvider>);
-  return screen.getByRole('group',{name:'Our Clients'});
+function renderCarousel(locale:'en'|'km'='en'){
+  render(<LocaleProvider initialLocale={locale}><LogoCarousel/><button type="button">Outside carousel</button></LocaleProvider>);
+  return screen.getByRole('group',{name:locale==='km'?'អតិថិជនរបស់យើង':'Our Clients'});
 }
 
 function moveMouse(viewport:HTMLElement,entering:boolean){
@@ -92,28 +92,17 @@ describe('logo carousel interaction policy',()=>{
     expect(engine.animating).toBe(false);
   });
 
-  it('lets the focused animation button pause and resume playback',async()=>{
-    renderCarousel();
-    const control=await screen.findByRole('button',{name:'Pause animation'});
-    act(()=>control.focus());
-    fireEvent.click(control);
-    expect(engine.autoplay.running).toBe(false);
-    expect(control).toHaveAttribute('aria-pressed','true');
-    expect(control).toHaveAccessibleName('Resume animation');
-    fireEvent.click(control);
-    expect(control).toHaveFocus();
-    expect(control).toHaveAttribute('aria-pressed','false');
-    expect(engine.autoplay.running).toBe(true);
+  it.each(['en','km'] as const)('autoplays without a pause button in %s',async(locale)=>{
+    renderCarousel(locale);
+    await waitFor(()=>expect(engine.autoplay.running).toBe(true));
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.getByRole('button',{name:'Outside carousel'})).toBeInTheDocument();
   });
 
-  it('keeps hover paused when the user toggles the animation preference',async()=>{
+  it('pauses on hover and resumes when the pointer leaves',async()=>{
     const viewport=renderCarousel();
-    const control=await screen.findByRole('button',{name:'Pause animation'});
+    await waitFor(()=>expect(engine.autoplay.running).toBe(true));
     moveMouse(viewport,true);
-    expect(engine.autoplay.running).toBe(false);
-    fireEvent.click(control);
-    fireEvent.click(control);
-    expect(control).toHaveAttribute('aria-pressed','false');
     expect(engine.autoplay.running).toBe(false);
     moveMouse(viewport,false);
     expect(engine.autoplay.running).toBe(true);

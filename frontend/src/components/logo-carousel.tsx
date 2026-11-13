@@ -1,7 +1,6 @@
 'use client';
 
 import {useEffect,useState} from 'react';
-import {Pause,Play} from 'lucide-react';
 import {A11y,Autoplay,Mousewheel} from 'swiper/modules';
 import {Swiper,SwiperSlide} from 'swiper/react';
 import type {Swiper as SwiperInstance} from 'swiper';
@@ -21,7 +20,6 @@ export function LogoCarousel(){
   const t=useText();
   const [swiper,setSwiper]=useState<SwiperInstance|null>(null);
   const [reducedMotion,setReducedMotion]=useState(true);
-  const [paused,setPaused]=useState(false);
   const [focused,setFocused]=useState(false);
   const [hovered,setHovered]=useState(false);
 
@@ -35,7 +33,7 @@ export function LogoCarousel(){
 
   useEffect(()=>{
     if(!swiper||swiper.destroyed)return;
-    if(reducedMotion||paused||focused||hovered){
+    if(reducedMotion||focused||hovered){
       swiper.autoplay.stop();
       if(swiper.animating){
         const position=swiper.getTranslate();
@@ -45,7 +43,7 @@ export function LogoCarousel(){
       }
     }else swiper.autoplay.start();
     return ()=>{if(!swiper.destroyed)swiper.autoplay.stop();};
-  },[swiper,reducedMotion,paused,focused,hovered]);
+  },[swiper,reducedMotion,focused,hovered]);
 
   return <section className="logo-section" aria-labelledby="logo-heading">
     <div className="section-wrap">
@@ -73,11 +71,6 @@ export function LogoCarousel(){
             alt={name} width={120} height={120} loading="lazy" draggable={false}/>
         </SwiperSlide>)}
       </Swiper>
-      {!reducedMotion&&<div className="logo-controls"><button type="button" className="logo-motion-button"
-        aria-pressed={paused} onClick={()=>setPaused(value=>!value)}>
-        {paused?<Play size={14} aria-hidden="true"/>:<Pause size={14} aria-hidden="true"/>}
-        {t(paused?'Resume animation':'Pause animation')}
-      </button></div>}
     </div>
   </section>;
 }
