@@ -1,6 +1,6 @@
 import React from 'react';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
-import {act,cleanup,fireEvent,render,screen} from '@testing-library/react';
+import {act,cleanup,render,screen,within} from '@testing-library/react';
 import {LocaleProvider} from '../src/i18n/provider';
 import {SiteFooter} from '../src/components/site-shell';
 
@@ -40,75 +40,80 @@ afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 function Footer({locale='en'}:{locale?:'en'|'km'}){
   return <LocaleProvider initialLocale={locale}><SiteFooter/></LocaleProvider>;
 }
-function observer(role:'entry'|'exit'){
-  const margin=role==='entry'?'0px':'48px';
-  const instance=ViewportObserver.instances.findLast(value=>value.active&&value.options?.rootMargin===margin);
-  if(!instance)throw new Error('Missing footer '+role+' observer');
+function observer(){
+  const instance=ViewportObserver.instances.findLast(value=>value.active);
+  if(!instance)throw new Error('Missing chase observer');
   return instance;
 }
 
-describe('footer scroll animation',()=>{
-  it('replays the footer heading when it leaves and re-enters the screen',()=>{
+describe('chase footer copyright bar',()=>{
+  it('keeps the copyright and policy links accessible below the decorative chase',()=>{
     render(<Footer/>);
-    const heading=screen.getByRole('heading',{level:2});
-    expect(heading).toHaveTextContent('Let’s make');
-    expect(heading).toHaveTextContent('what’s next.');
-    expect(screen.getByRole('link',{name:'Start a conversation'})).toHaveAttribute('href','/en/contact');
-
-    observer('entry').intersect(heading,true);
-    expect(heading).toHaveAttribute('data-reveal-state','revealed');
-    fireEvent.animationEnd(heading);
-    expect(heading).toHaveAttribute('data-reveal-state','visible');
-    observer('exit').intersect(heading,false);
-    observer('entry').intersect(heading,true);
-    expect(heading).toHaveAttribute('data-reveal-state','revealed');
+    const footer=screen.getByRole('contentinfo');
+    expect(footer).not.toHaveAttribute('aria-hidden','true');
+    const copyright=within(footer).getByText(/©/);
+    expect(copyright).toHaveTextContent(String(new Date().getFullYear()));
+    expect(copyright).toHaveTextContent('DevMasters. Built around people.');
+    expect(within(footer).getByRole('link',{name:'Privacy policy'})).toHaveAttribute('href','/en/privacy');
+    expect(within(footer).getByRole('link',{name:'Terms & conditions'})).toHaveAttribute('href','/en/terms');
+    expect(within(footer).getAllByRole('link')).toHaveLength(2);
+    expect(footer).toHaveTextContent(/DM\s*✳/);
+    expect(footer).not.toHaveTextContent('GOOD WORK STARTS WITH A CONVERSATION');
+    expect(footer.querySelector('button,h1,h2,h3')).toBeNull();
+    expect(footer.querySelector('svg')).toBeInTheDocument();
+    const chase=footer.querySelector('[data-running]')!;
+    expect(chase).toHaveAttribute('aria-hidden','true');
+    observer().intersect(chase,true);
+    expect(chase).toHaveAttribute('data-running','true');
   });
 
   it('attaches fresh observers when returning from the private portal',()=>{
     route.path='/en/expert';
     const view=render(<Footer/>);
-    expect(screen.queryByRole('contentinfo')).not.toBeInTheDocument();
+    expect(view.container.querySelector('footer')).toBeNull();
     expect(ViewportObserver.instances).toHaveLength(0);
 
     route.path='/en/home';
     view.rerender(<Footer/>);
-    const firstHeading=screen.getByRole('heading',{level:2});
-    const firstObserver=observer('entry');
-    firstObserver.intersect(firstHeading,true);
-    expect(firstHeading).toHaveAttribute('data-reveal-state','revealed');
+    const firstChase=view.container.querySelector('[data-running]')!;
+    const firstObserver=observer();
+    firstObserver.intersect(firstChase,true);
+    expect(firstChase).toHaveAttribute('data-running','true');
 
     route.path='/en/expert/profile';
     view.rerender(<Footer/>);
-    expect(screen.queryByRole('contentinfo')).not.toBeInTheDocument();
+    expect(view.container.querySelector('footer')).toBeNull();
     expect(firstObserver.active).toBe(false);
 
     route.path='/en/services';
     view.rerender(<Footer/>);
-    const newHeading=screen.getByRole('heading',{level:2});
-    expect(newHeading).not.toBe(firstHeading);
-    expect(observer('entry')).not.toBe(firstObserver);
-    observer('entry').intersect(newHeading,true);
-    expect(newHeading).toHaveAttribute('data-reveal-state','revealed');
+    const newChase=view.container.querySelector('[data-running]')!;
+    expect(newChase).not.toBe(firstChase);
+    expect(observer()).not.toBe(firstObserver);
+    observer().intersect(newChase,true);
+    expect(newChase).toHaveAttribute('data-running','true');
   });
 
-  it('keeps the footer readable without animation for reduced-motion users',()=>{
+  it('keeps the illustration still for reduced-motion users',()=>{
     reducedMotion=true;
-    render(<Footer/>);
-    expect(screen.getByRole('heading',{level:2})).not.toHaveAttribute('data-reveal-state');
+    const {container}=render(<Footer/>);
+    const chase=container.querySelector('[data-running]')!;
+    observer().intersect(chase,true);
+    expect(chase).toHaveAttribute('data-running','false');
     expect(screen.getByRole('link',{name:'Privacy policy'})).toHaveAttribute('href','/en/privacy');
-    expect(ViewportObserver.instances).toHaveLength(0);
   });
 
-  it('preserves Khmer text and locale links while revealing the footer',()=>{
+  it('localizes the copyright and policy links on Khmer pages while keeping the chase decorative',()=>{
     route.path='/km/home';
     render(<Footer locale="km"/>);
-    const heading=screen.getByRole('heading',{level:2});
-    expect(heading).toHaveTextContent('រួមគ្នាបង្កើត');
-    expect(heading).toHaveTextContent('អ្វីដែលថ្មីនៅថ្ងៃបន្ទាប់។');
-    expect(screen.getByRole('link',{name:'ចាប់ផ្តើមការពិភាក្សា'})).toHaveAttribute('href','/km/contact');
-    observer('entry').intersect(heading,true);
-    expect(heading).toHaveAttribute('data-reveal-state','revealed');
-    fireEvent.animationEnd(heading);
-    expect(heading).toHaveAttribute('data-reveal-state','visible');
+    const footer=screen.getByRole('contentinfo');
+    const copyright=within(footer).getByText(/©/);
+    expect(copyright).toHaveTextContent(String(new Date().getFullYear()));
+    expect(copyright).toHaveTextContent('DevMasters។ បង្កើតឡើងដោយផ្តោតលើមនុស្ស។');
+    expect(within(footer).getByRole('link',{name:'គោលការណ៍ឯកជនភាព'})).toHaveAttribute('href','/km/privacy');
+    expect(within(footer).getByRole('link',{name:'លក្ខខណ្ឌប្រើប្រាស់'})).toHaveAttribute('href','/km/terms');
+    expect(within(footer).getAllByRole('link')).toHaveLength(2);
+    expect(footer.querySelector('[data-running]')).toHaveAttribute('aria-hidden','true');
+    expect(footer.querySelector('svg')).toBeInTheDocument();
   });
 });

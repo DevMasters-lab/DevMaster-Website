@@ -1,0 +1,65 @@
+.footer{padding:0;overflow:hidden}
+.chaseArea{display:flex;height:200px;padding:16px 0}
+.footer .bottom{border-top:0;margin-inline:max(23px,calc((100% - 1152px)/2))}
+.scene{--chase-play-state:paused;--lap-offset:-5.6s;position:relative;flex:1 1 0%;min-width:0;align-self:stretch;overflow:hidden;isolation:isolate;pointer-events:none;user-select:none}
+.scene[data-running=true]{--chase-play-state:running}
+.scene::after{content:'';position:absolute;inset-inline:0;bottom:13px;height:1px;background:#c5a8ef21}
+.scene svg{position:absolute;inset:0 auto 0 0;display:block;width:440px;max-width:100%;height:100%;overflow:hidden;animation:chaseAcross 24s linear infinite;animation-delay:var(--lap-offset);animation-play-state:var(--chase-play-state)}
+.scene svg *{animation-play-state:var(--chase-play-state);transform-box:view-box;transform-origin:0 0}
+.runnerJump{animation:runnerJump 16s linear infinite;animation-delay:var(--lap-offset)}
+.runnerBounce{animation:runnerBounce .76s ease-in-out infinite}
+.runnerShadow{animation:shadow .76s ease-in-out infinite}
+.legBack{animation:stride .76s ease-in-out infinite;animation-delay:-.38s}
+.legFront{animation:stride .76s ease-in-out infinite}
+.kneeBack{animation:knee .76s ease-in-out infinite;animation-delay:-.38s}
+.kneeFront{animation:knee .76s ease-in-out infinite}
+.armBack{animation:arm .76s ease-in-out infinite}
+.armNet{animation:netSwing .76s ease-in-out infinite}
+.headNod{animation:headNod .76s ease-in-out infinite}
+.hair{animation:hair .76s ease-in-out infinite}
+.eyes{animation:blink 4.6s linear infinite}
+.smile{animation:smile 16s linear infinite;animation-delay:var(--lap-offset)}
+.oops{opacity:0;animation:oops 16s linear infinite;animation-delay:var(--lap-offset)}
+.dustOne,.dustTwo,.dustThree{animation:dust .9s linear infinite}
+.dustTwo{animation-delay:-.3s}.dustThree{animation-delay:-.6s}
+.speedLines{animation:speed .76s linear infinite}
+.symbolOne{opacity:.24;animation:floatSymbol 5s ease-in-out infinite}
+.symbolTwo{opacity:.19;animation:floatSymbol 6s ease-in-out infinite;animation-delay:-2s}
+.symbolThree{opacity:.2;animation:floatSymbol 5.5s ease-in-out infinite;animation-delay:-3s}
+.bugHop{animation:bugHop 16s linear infinite;animation-delay:var(--lap-offset)}
+.bugBody{animation:bugBounce .34s ease-in-out infinite}
+.bugHead{animation:lookBack 16s linear infinite;animation-delay:var(--lap-offset)}
+.bugPupils{animation:lookBackEyes 16s linear infinite;animation-delay:var(--lap-offset)}
+.bugLegRearLeft{animation:bugLeg .28s ease-in-out infinite}
+.bugLegRearRight{animation:bugLeg .28s ease-in-out infinite;animation-delay:-.14s}
+.bugLegMid{animation:bugLeg .28s ease-in-out infinite;animation-delay:-.07s}
+.bugLegFront{animation:bugLeg .28s ease-in-out infinite;animation-delay:-.21s}
+@keyframes chaseAcross{from{transform:translateX(-100%)}to{transform:translateX(100vw)}}
+@keyframes runnerBounce{0%,50%,100%{transform:translateY(0)}25%,75%{transform:translateY(-4px)}}
+@keyframes stride{0%,100%{transform:rotate(-28deg)}50%{transform:rotate(29deg)}}
+@keyframes knee{0%,100%{transform:rotate(6deg)}35%{transform:rotate(-12deg)}75%{transform:rotate(26deg)}}
+@keyframes arm{0%,100%{transform:rotate(18deg)}50%{transform:rotate(-24deg)}}
+@keyframes netSwing{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(7deg)}}
+@keyframes headNod{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(3deg)}}
+@keyframes hair{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+@keyframes blink{0%,43%,47%,89%,93%,100%{transform:scaleY(1)}45%,91%{transform:scaleY(.08)}}
+@keyframes runnerJump{0%,40%,52%,62%,72%,100%{transform:translateY(0) rotate(0)}44%{transform:translateY(-27px) rotate(-7deg)}48%{transform:translateY(-15px) rotate(3deg)}65%{transform:translateY(3px) rotate(12deg)}68%{transform:translateY(-8px) rotate(-5deg)}}
+@keyframes shadow{0%,50%,100%{transform:scaleX(1);opacity:.3}25%,75%{transform:scaleX(.85);opacity:.2}}
+@keyframes smile{0%,61%,73%,100%{opacity:1}64%,70%{opacity:0}}
+@keyframes oops{0%,61%,73%,100%{opacity:0}64%,70%{opacity:1}}
+@keyframes dust{0%{transform:translateX(12px) scale(.45);opacity:0}25%{opacity:.32}100%{transform:translateX(-25px) scale(1.4);opacity:0}}
+@keyframes speed{from{transform:translateX(8px);opacity:.4}to{transform:translateX(-18px);opacity:.05}}
+@keyframes floatSymbol{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@keyframes bugBounce{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-3px) rotate(2deg)}}
+@keyframes bugLeg{0%,100%{transform:rotate(-19deg)}50%{transform:rotate(20deg)}}
+@keyframes bugHop{0%,33%,46%,66%,78%,100%{transform:translateY(0) rotate(0)}38%{transform:translateY(-30px) rotate(-9deg)}42%{transform:translateY(-13px) rotate(8deg)}71%{transform:translateY(-19px) rotate(-7deg)}75%{transform:translateY(-8px) rotate(5deg)}}
+@keyframes lookBack{0%,35%,51%,78%,93%,100%{transform:rotate(0)}39%,47%,82%,89%{transform:rotate(-15deg)}}
+@keyframes lookBackEyes{0%,35%,51%,78%,93%,100%{transform:translateX(0)}39%,47%,82%,89%{transform:translateX(-4px)}}
+@media(max-width:620px){.chaseArea{height:170px}.scene::after{bottom:11px}.scene svg{animation-duration:16s}}
+@media(prefers-reduced-motion:reduce){
+  .scene svg{animation:none;left:50%;transform:translateX(-50%)}
+  .scene svg *{animation:none!important}
+  .oops{opacity:0}
+  .speedLines{opacity:.2}
+}
+@media print{.chaseArea{display:none}}
