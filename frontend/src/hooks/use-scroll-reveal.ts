@@ -5,6 +5,7 @@ import {useEffect,useRef} from 'react';
 const targetSelector='[data-reveal]';
 // Longer than the 720ms animation plus its maximum 360ms stagger.
 const completionTimeout=1400;
+const entryThreshold=.12;
 
 /** Replay entrance animations when content leaves and returns to the viewport. */
 export function useScrollReveal<T extends HTMLElement=HTMLDivElement>(){
@@ -17,9 +18,22 @@ export function useScrollReveal<T extends HTMLElement=HTMLDivElement>(){
 
     const targets=new Set<HTMLElement>();
     const completions=new Map<HTMLElement,number>();
+    const eligibility=new Map<HTMLElement,boolean>();
     let enabled=true;
     let entryObserver:IntersectionObserver|undefined;
     let exitObserver:IntersectionObserver|undefined;
+
+    function canReveal(target:HTMLElement){
+      return !target.closest('[inert],[aria-hidden="true"]');
+    }
+
+    function visiblyOverlaps(target:HTMLElement){
+      const rect=target.getBoundingClientRect();
+      if(rect.width<=0||rect.height<=0)return false;
+      const width=Math.max(0,Math.min(rect.right,window.innerWidth)-Math.max(rect.left,0));
+      const height=Math.max(0,Math.min(rect.bottom,window.innerHeight)-Math.max(rect.top,0));
+      return width*height/(rect.width*rect.height)>=entryThreshold;
+    }
 
     function cancelCompletion(target:HTMLElement){
       const timer=completions.get(target);
@@ -38,7 +52,7 @@ export function useScrollReveal<T extends HTMLElement=HTMLDivElement>(){
     }
 
     function reveal(target:HTMLElement){
-      if(target.dataset.revealState!=='pending')return;
+      if(target.dataset.revealState!=='pending'||!canReveal(target))return;
       if(target.contains(document.activeElement)){
         showImmediately(target);
         return;
@@ -55,9 +69,9 @@ export function useScrollReveal<T extends HTMLElement=HTMLDivElement>(){
         if(!enabled)return;
         for(const entry of entries){
           const target=entry.target as HTMLElement;
-          if(entry.isIntersecting&&targets.has(target))reveal(target);
+          if(entry.isIntersecting&&entry.intersectionRatio>=entryThreshold&&targets.has(target))reveal(target);
         }
-      },{rootMargin:'0px',threshold:0});
+      },{rootMargin:'0px',threshold:entryThreshold});
       // A wider exit area prevents entrance motion or hover from retriggering itself.
       exitObserver=new IntersectionObserver(entries=>{
         if(!enabled)return;
@@ -81,12 +95,22 @@ export function useScrollReveal<T extends HTMLElement=HTMLDivElement>(){
           entry.unobserve(target);
           exit.unobserve(target);
           targets.delete(target);
+          eligibility.delete(target);
           target.removeAttribute('data-reveal-state');
         }
       }
       for(const target of root!.querySelectorAll<HTMLElement>(targetSelector)){
-        if(targets.has(target))continue;
+        const eligible=canReveal(target);
+        if(targets.has(target)){
+          if(eligibility.get(target)!==eligible){
+            eligibility.set(target,eligible);
+            reset(target);
+            if(enabled&&eligible&&visiblyOverlaps(target))reveal(target);
+          }
+          continue;
+        }
         targets.add(target);
+        eligibility.set(target,eligible);
         if(!enabled)continue;
         reset(target);
         try{
@@ -99,8 +123,7 @@ export function useScrollReveal<T extends HTMLElement=HTMLDivElement>(){
           continue;
         }
         // Refresh can restore a scroll position before observers deliver their first entries.
-        const rect=target.getBoundingClientRect();
-        if(rect.width>0&&rect.height>0&&rect.bottom>0&&rect.top<window.innerHeight&&rect.right>0&&rect.left<window.innerWidth&&!target.closest('[inert],[aria-hidden="true"]'))reveal(target);
+        if(eligible&&visiblyOverlaps(target))reveal(target);
       }
     }
 
@@ -127,7 +150,7 @@ export function useScrollReveal<T extends HTMLElement=HTMLDivElement>(){
 
     scan();
     const mutations=typeof MutationObserver==='function'?new MutationObserver(scan):null;
-    mutations?.observe(root,{childList:true,subtree:true});
+    mutations?.observe(root,{childList:true,subtree:true,attributes:true,attributeFilter:['inert','aria-hidden']});
     root.addEventListener('focusin',revealFocused);
     root.addEventListener('animationend',finishAnimation);
     preference.addEventListener('change',respectMotionPreference);
@@ -145,6 +168,7 @@ export function useScrollReveal<T extends HTMLElement=HTMLDivElement>(){
         target.removeAttribute('data-reveal-state');
       }
       targets.clear();
+      eligibility.clear();
     };
   },[]);
 

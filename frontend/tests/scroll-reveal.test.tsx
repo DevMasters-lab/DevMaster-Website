@@ -16,10 +16,10 @@ class IntersectionHarness {
   constructor(private readonly callback:IntersectionObserverCallback,readonly options?:IntersectionObserverInit){
     IntersectionHarness.instances.push(this);
   }
-  intersect(target:Element,isIntersecting=true,edge:'above'|'below'='below'){
+  intersect(target:Element,isIntersecting=true,edge:'above'|'below'='below',ratio=isIntersecting?1:0){
     if(!this.active||!this.targets.has(target))return;
     const top=edge==='above'?-200:1200;
-    const entry={target,isIntersecting,boundingClientRect:{top,bottom:top+100},rootBounds:{top:0,bottom:900}};
+    const entry={target,isIntersecting,intersectionRatio:ratio,boundingClientRect:{top,bottom:top+100},rootBounds:{top:0,bottom:900}};
     act(()=>this.callback([entry as IntersectionObserverEntry],this as unknown as IntersectionObserver));
   }
 }
@@ -97,6 +97,48 @@ describe('scroll reveal progressive enhancement',()=>{
     first.unmount();
     render(<RevealContent/>);
     expect(screen.getByTestId('heading')).toHaveAttribute('data-reveal-state','revealed');
+  });
+
+  it('waits until content meaningfully enters the viewport instead of consuming motion at the first pixel',()=>{
+    render(<RevealContent/>);
+    const card=screen.getByTestId('card');
+    observerFor('entry').intersect(card,true,'below',.01);
+    expect(card).toHaveAttribute('data-reveal-state','pending');
+    observerFor('entry').intersect(card,true,'below',.12);
+    expect(card).toHaveAttribute('data-reveal-state','revealed');
+  });
+
+  it('also waits for meaningful overlap during refresh initialization',()=>{
+    const getRect=HTMLElement.prototype.getBoundingClientRect;
+    vi.spyOn(HTMLElement.prototype,'getBoundingClientRect').mockImplementation(function(this:HTMLElement){
+      return this.dataset.testid==='card'?new DOMRect(0,window.innerHeight-1,320,100):getRect.call(this);
+    });
+    render(<RevealContent/>);
+    const card=screen.getByTestId('card');
+    expect(card).toHaveAttribute('data-reveal-state','pending');
+    observerFor('entry').intersect(card,true,'below',.2);
+    expect(card).toHaveAttribute('data-reveal-state','revealed');
+  });
+
+  it.each(['inert','aria-hidden'] as const)('reserves hidden carousel motion until its %s slide becomes active',async kind=>{
+    const getRect=HTMLElement.prototype.getBoundingClientRect;
+    vi.spyOn(HTMLElement.prototype,'getBoundingClientRect').mockImplementation(function(this:HTMLElement){
+      return this.dataset.testid==='card'?new DOMRect(0,100,320,100):getRect.call(this);
+    });
+    const view=render(<RevealContent cardInert={kind==='inert'} cardHidden={kind==='aria-hidden'}/>);
+    const card=screen.getByTestId('card');
+    observerFor('entry').intersect(card);
+    expect(card).toHaveAttribute('data-reveal-state','pending');
+
+    view.rerender(<RevealContent/>);
+    await waitFor(()=>expect(card).toHaveAttribute('data-reveal-state','revealed'));
+    fireEvent.animationEnd(card);
+    expect(card).toHaveAttribute('data-reveal-state','visible');
+
+    view.rerender(<RevealContent cardInert={kind==='inert'} cardHidden={kind==='aria-hidden'}/>);
+    await waitFor(()=>expect(card).toHaveAttribute('data-reveal-state','pending'));
+    view.rerender(<RevealContent/>);
+    await waitFor(()=>expect(card).toHaveAttribute('data-reveal-state','revealed'));
   });
 
   it.each(['inert','aria-hidden'] as const)('waits for observer entry when an initially overlapping target has an %s ancestor',kind=>{

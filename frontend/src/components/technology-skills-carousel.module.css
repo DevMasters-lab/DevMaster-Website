@@ -8,13 +8,15 @@
 :global(html[data-theme=dark]) .band::before{background:var(--soft)}
 .carousel{padding:10px 1px 24px!important}
 .carousel :global(.swiper-wrapper){align-items:stretch}
-.carousel .slide{display:flex;height:auto}
-.card{display:flex;flex:1;flex-direction:column;position:relative;min-width:0;padding:24px 20px;border:1px solid var(--border);border-radius:14px;background:var(--dm-home-card-background,var(--paper));box-shadow:0 8px 25px #24213207;transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
+.carousel .slide{display:flex;min-width:0;height:auto}
+.card{display:flex;flex:1;flex-direction:column;position:relative;width:100%;min-width:0;padding:24px 20px;border:1px solid var(--border);border-radius:14px;background:var(--dm-home-card-background,var(--paper));box-shadow:0 8px 25px #24213207;transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
 .card::before{content:'';position:absolute;top:0;left:20px;right:20px;height:3px;border-radius:0 0 3px 3px;background:linear-gradient(90deg,var(--purple),var(--violet));opacity:0;transform:scaleX(.6);transition:opacity .22s ease,transform .22s ease;pointer-events:none}
 @supports(grid-template-rows:subgrid){
   .carousel :global(.swiper-wrapper){display:grid;grid-auto-flow:column;grid-template-rows:repeat(6,auto);grid-auto-columns:100%;column-gap:18px;align-items:stretch}
-  .carousel .slide{display:grid;grid-row:1/span 6;grid-template-rows:subgrid}
-  .card{display:grid;grid-row:1/span 6;grid-template-rows:subgrid}
+  /* Share row heights while keeping card width independent of implicit grid sizing. */
+  .carousel .slide{display:grid;grid-row:1/span 6;grid-template-rows:subgrid;grid-template-columns:minmax(0,1fr)}
+  .card{display:grid;grid-column:1;grid-row:1/span 6;grid-template-rows:subgrid;grid-template-columns:minmax(0,1fr)}
+  .card>*{grid-column:1}
   .card .count{margin-top:0}
 }
 @media(min-width:700px){@supports(grid-template-rows:subgrid){.carousel :global(.swiper-wrapper){grid-auto-columns:calc((100% - 18px)/2)}}}

@@ -10,5 +10,8 @@ import {NativeValidation} from '@/i18n/NativeValidation';
 import {SkipLink} from '@/components/LanguageSwitcher';
 import {themeInitScript} from '@/lib/theme';
 import {reloadScrollInitScript} from '@/lib/reload-scroll';
+import {PageContent} from '@/components/page-content';
+import {SiteLoader} from '@/components/site-loader';
+import {siteLoaderInitScript} from '@/lib/site-loader';
 export async function generateMetadata():Promise<Metadata>{return {...await pageMetadata('/'),metadataBase:new URL(process.env.FRONTEND_URL||'http://localhost:3000'),description:await serverText('Software, networks, cybersecurity and data. Connect with DevMasters for specialist teams, technical partnerships and an independent expert network.')};}
-export default async function RootLayout({children}:{children:React.ReactNode}){const locale=await getLocale() as Locale;return <html lang={locale} dir="ltr" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{__html:themeInitScript}}/><script dangerouslySetInnerHTML={{__html:reloadScrollInitScript}}/></head><body><LocaleProvider initialLocale={locale}><Providers><NativeValidation/><SkipLink/><SiteHeader/><main id="main">{children}</main><SiteFooter/></Providers></LocaleProvider></body></html>;}
+export default async function RootLayout({children}:{children:React.ReactNode}){const locale=await getLocale() as Locale;return <html lang={locale} dir="ltr" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{__html:themeInitScript}}/><script dangerouslySetInnerHTML={{__html:reloadScrollInitScript}}/><script dangerouslySetInnerHTML={{__html:siteLoaderInitScript}}/></head><body><LocaleProvider initialLocale={locale}><Providers><SiteLoader/><NativeValidation/><SkipLink/><SiteHeader/><PageContent>{children}</PageContent><SiteFooter/></Providers></LocaleProvider></body></html>;}

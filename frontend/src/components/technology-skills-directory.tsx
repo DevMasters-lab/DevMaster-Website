@@ -11,12 +11,12 @@ const INITIAL_SKILLS=8;
 const normalize=(value:string)=>value.normalize('NFKC').toLocaleLowerCase('en').trim().replace(/\s+/g,' ');
 type Props={initialCategory?:string;initialSubcategory?:string;fullPage?:boolean};
 
-function SubcategoryCard({subcategory,skills,fullPage}:{subcategory:TechnologySkillSubcategory;skills:readonly TechnologySkill[];fullPage:boolean}){
+function SubcategoryCard({subcategory,skills,fullPage,index}:{subcategory:TechnologySkillSubcategory;skills:readonly TechnologySkill[];fullPage:boolean;index:number}){
   const t=useText();
   const [expanded,setExpanded]=useState(false);
   const id=useId();
   const Heading=fullPage?'h3':'h4';
-  return <article className={styles.card} aria-labelledby={id+'-title'}>
+  return <article className={styles.card} aria-labelledby={id+'-title'} data-reveal="up" data-reveal-delay={index%4}>
     <div className={styles.cardHeading}><div>
       <Heading id={id+'-title'}>{t(subcategory.name)}</Heading>
       <p>{skills.length===1?t('1 skill'):t('{count} skills',{count:skills.length})}</p>
@@ -72,12 +72,12 @@ export function TechnologySkillsDirectory({initialCategory='',initialSubcategory
   return <section className={styles.section} aria-labelledby={id+'-title'}>
     <div className="section-wrap">
       <div className={styles.heading}>
-        <div className="eyebrow">{t(fullPage?'TECHNOLOGY SKILLS':'02 / TECHNOLOGY SKILLS')}</div>
-        <Heading id={id+'-title'}>{t(fullPage?'All Technology Skills':'Technology Skills & Expertise')}</Heading>
-        <p>{t('Choose a main category and subcategory, or search all available technology skills.')}</p>
-        <p className={styles.hierarchyGuide}>{t('Main Category → Subcategory → Individual Skills')}</p>
+        <div className="eyebrow" data-reveal="up">{t(fullPage?'TECHNOLOGY SKILLS':'02 / TECHNOLOGY SKILLS')}</div>
+        <Heading id={id+'-title'} data-reveal="up" data-reveal-delay="1">{t(fullPage?'All Technology Skills':'Technology Skills & Expertise')}</Heading>
+        <p data-reveal="up" data-reveal-delay="2">{t('Choose a main category and subcategory, or search all available technology skills.')}</p>
+        <p className={styles.hierarchyGuide} data-reveal="up" data-reveal-delay="3">{t('Main Category → Subcategory → Individual Skills')}</p>
       </div>
-      <div className={styles.toolbar}>
+      <div className={styles.toolbar} data-reveal="up">
         <label className={styles.field} htmlFor={id+'-search'}>{t('Search skills')}<span className={styles.searchField}>
           <Search size={18} aria-hidden="true"/><input ref={searchRef} id={id+'-search'} type="search" autoComplete="off" value={query} placeholder={t('Search a technology, tool or framework')} onChange={event=>setQuery(event.target.value)}/>
           {query&&<button type="button" className={styles.clearSearch} aria-label={t('Clear search')} onClick={()=>{setQuery('');searchRef.current?.focus();}}><X size={16} aria-hidden="true"/></button>}
@@ -103,13 +103,13 @@ export function TechnologySkillsDirectory({initialCategory='',initialSubcategory
         {groups.map(({category,subcategories,skillCount})=>{
           const Icon=getTechnologySkillIcon(category.name);
           return <section key={category.id} className={styles.mainGroup} aria-labelledby={id+'-'+category.id}>
-            <div className={styles.mainGroupHeading}><span className={styles.categoryIcon}><Icon size={24} strokeWidth={1.6} aria-hidden="true"/></span><div>
+            <div className={styles.mainGroupHeading} data-reveal="up"><span className={styles.categoryIcon}><Icon size={24} strokeWidth={1.6} aria-hidden="true"/></span><div>
               <MainHeading id={id+'-'+category.id}>{t(category.name)}</MainHeading>
               <p>{t(category.description)}</p>
               <p className={styles.mainMeta}>{subcategories.length===1?t('1 subcategory'):t('{count} subcategories',{count:subcategories.length})}<span aria-hidden="true"> · </span>{skillCount===1?t('1 skill'):t('{count} skills',{count:skillCount})}</p>
             </div></div>
             <div className={styles.grid} role="group" aria-label={t('Subcategories in {category}',{category:t(category.name)})}>
-              {subcategories.map(({subcategory,skills})=><SubcategoryCard key={[subcategory.id,categoryId,subcategoryId,needle].join(':')} subcategory={subcategory} skills={skills} fullPage={fullPage}/>)}
+              {subcategories.map(({subcategory,skills},index)=><SubcategoryCard key={[subcategory.id,categoryId,subcategoryId,needle].join(':')} subcategory={subcategory} skills={skills} fullPage={fullPage} index={index}/>)}
             </div>
           </section>;
         })}
