@@ -820,7 +820,11 @@
     "sfc43ea9804c7": "Switch to dark mode",
     "sbfa0cab91d75": "Switch to light mode",
     "sbc0863cd062d": "Switch to Khmer",
-    "s5f434646ab9e": "Switch to English"
+    "s5f434646ab9e": "Switch to English",
+    "our_clients": "Our Clients",
+    "logo_carousel_instructions": "Drag or swipe to explore the logos. Use the arrow keys when focused.",
+    "pause_logo_animation": "Pause animation",
+    "resume_logo_animation": "Resume animation"
   },
   "common": {
     "unspecified": "Not specified"

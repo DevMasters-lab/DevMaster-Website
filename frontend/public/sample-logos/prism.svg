@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">Prism sample logo</title>
+  <circle cx="60" cy="60" r="59" fill="#fff" stroke="#ebe8f1"/>
+  <path d="m60 20 29 47H31l29-47Z" fill="#9273aa"/>
+  <path d="m60 20 0 47H31l29-47Z" fill="#d0b5dc"/>
+  <path d="m60 20 29 47-29-13V20Z" fill="#6e4d88"/>
+  <path d="m31 67 29-13 29 13H31Z" fill="#b18fc6"/>
+  <text x="60" y="91" fill="#654e78" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="3">PRISM</text>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">Vertex sample logo</title>
+  <circle cx="60" cy="60" r="59" fill="#fff" stroke="#ebe8f1"/>
+  <path d="m60 22 29 46H74L60 45 46 68H31l29-46Z" fill="#386584"/>
+  <path d="m60 22 8 13-21 33H31l29-46Z" fill="#82a9b6"/>
+  <path d="m60 53 10 15H50l10-15Z" fill="#c3d7de"/>
+  <text x="60" y="91" fill="#344f65" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="2">VERTEX</text>
+</svg>

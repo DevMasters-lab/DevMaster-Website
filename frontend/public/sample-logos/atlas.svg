@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">Atlas sample logo</title>
+  <circle cx="60" cy="60" r="59" fill="#fff" stroke="#ebe8f1"/>
+  <circle cx="60" cy="45" r="24" fill="#edf3ef" stroke="#5b806a" stroke-width="2.8"/>
+  <ellipse cx="60" cy="45" rx="11" ry="24" fill="none" stroke="#5b806a" stroke-width="2.4"/>
+  <path d="M36 45h48M40 33h40M40 57h40" fill="none" stroke="#5b806a" stroke-width="2.4"/>
+  <path d="M60 21v48" stroke="#5b806a" stroke-width="2.4"/>
+  <text x="60" y="91" fill="#4d6b59" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="3">ATLAS</text>
+</svg>

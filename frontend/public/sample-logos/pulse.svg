@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">Pulse sample logo</title>
+  <circle cx="60" cy="60" r="59" fill="#fff" stroke="#ebe8f1"/>
+  <circle cx="60" cy="45" r="27" fill="#f6edf0"/>
+  <path d="M31 47h14l8-19 12 36 8-20h16" fill="none" stroke="#a45c77" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="89" cy="44" r="3.8" fill="#ca91a6"/>
+  <text x="60" y="91" fill="#844c63" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="3">PULSE</text>
+</svg>

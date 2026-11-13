@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">Nova sample logo</title>
+  <circle cx="60" cy="60" r="59" fill="#fff" stroke="#ebe8f1"/>
+  <path d="M58 20c3 17 8 22 25 25-17 3-22 8-25 25-3-17-8-22-25-25 17-3 22-8 25-25Z" fill="#6852aa"/>
+  <path d="M82 21c1 6 3 8 9 9-6 1-8 3-9 9-1-6-3-8-9-9 6-1 8-3 9-9Z" fill="#b7a4df"/>
+  <text x="60" y="91" fill="#453960" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="3">NOVA</text>
+</svg>

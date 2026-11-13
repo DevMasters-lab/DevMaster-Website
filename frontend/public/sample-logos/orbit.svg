@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" role="img" aria-labelledby="title">
+  <title id="title">Orbit sample logo</title>
+  <circle cx="60" cy="60" r="59" fill="#fff" stroke="#ebe8f1"/>
+  <circle cx="60" cy="46" r="19" fill="#dce3f6"/>
+  <circle cx="60" cy="46" r="12" fill="#526ab1"/>
+  <ellipse cx="60" cy="46" rx="32" ry="13" transform="rotate(-32 60 46)" fill="none" stroke="#526ab1" stroke-width="3.5"/>
+  <circle cx="85" cy="27" r="5" fill="#9eafe0" stroke="#fff" stroke-width="2"/>
+  <text x="60" y="91" fill="#45558a" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="3">ORBIT</text>
+</svg>
