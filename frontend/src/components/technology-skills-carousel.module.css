@@ -1,0 +1,45 @@
+.section{background:var(--paper)}
+.heading{max-width:850px;margin-bottom:36px}
+.heading :global(.eyebrow){margin-bottom:16px}
+.heading h2{letter-spacing:-1px}
+.heading>p{max-width:780px;margin-top:18px;font-size:var(--dm-text-body)}
+.band{position:relative;isolation:isolate;padding-bottom:56px}
+.band::before{content:'';position:absolute;inset:94px 0 0;z-index:-1;background:#102a56;border-top:1px solid #17396d}
+.carousel{padding:6px 1px 14px!important}
+.carousel :global(.swiper-wrapper){align-items:stretch}
+.carousel .slide{display:flex;height:auto}
+.card{display:flex;flex:1;flex-direction:column;min-width:0;padding:24px 20px;border:1px solid var(--border);border-radius:10px;background:var(--paper);box-shadow:0 8px 25px #24213207;transition:border-color .18s,box-shadow .18s}
+@supports(grid-template-rows:subgrid){
+  .carousel :global(.swiper-wrapper){display:grid;grid-auto-flow:column;grid-template-rows:repeat(6,auto);grid-auto-columns:100%;column-gap:18px;align-items:stretch}
+  .carousel .slide{display:grid;grid-row:1/span 6;grid-template-rows:subgrid}
+  .card{display:grid;grid-row:1/span 6;grid-template-rows:subgrid}
+  .card .count{margin-top:0}
+}
+@media(min-width:700px){@supports(grid-template-rows:subgrid){.carousel :global(.swiper-wrapper){grid-auto-columns:calc((100% - 18px)/2)}}}
+@media(min-width:1100px){@supports(grid-template-rows:subgrid){.carousel :global(.swiper-wrapper){grid-auto-columns:calc((100% - 54px)/4)}}}
+.card:hover{border-color:var(--purple);box-shadow:0 10px 28px #2421320d}
+.icon{display:flex;align-items:center;justify-content:center;width:47px;height:47px;margin-bottom:20px;border:1px solid var(--border);border-radius:10px;background:var(--soft);color:var(--purple)}
+.section .card .title{margin:0 0 12px;font-size:var(--dm-text-label);font-weight:600;line-height:var(--dm-body-leading);overflow-wrap:anywhere}
+.description{margin-bottom:16px;font-size:var(--dm-text-small);line-height:var(--dm-body-leading)}
+.count{margin-top:auto;padding-top:4px;color:var(--purple);font-size:var(--dm-text-small);font-weight:500}
+.skills{display:flex;flex-wrap:wrap;align-content:flex-start;align-items:flex-start;gap:6px;margin:12px 0 24px;padding:0;list-style:none}
+.skills>li{max-width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:5px;background:var(--soft);color:var(--ink);font-size:var(--dm-text-small);line-height:1.6;overflow-wrap:anywhere}
+.explore{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:43px;padding-top:15px;border-top:1px solid var(--border);color:var(--purple);font-size:var(--dm-text-small);font-weight:500}
+.explore>svg{flex-shrink:0}
+.controls{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:16px;margin-top:20px}
+.arrow{display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:10px;border:1px solid var(--border);border-radius:50%;background:var(--paper);color:var(--ink);transition:color .15s,border-color .15s}
+.arrow:hover:not(:disabled){border-color:var(--purple);color:var(--purple)}
+.arrow:disabled{cursor:default;opacity:.4}
+.dots{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px;min-height:44px}
+.dot{display:flex;align-items:center;justify-content:center;min-width:26px;height:32px;padding:8px 4px;border:0;border-radius:6px;background:transparent;color:var(--purple)}
+.dot>span{width:7px;height:7px;border:1px solid #cbd5e1;border-radius:10px;background:transparent;transition:background .15s,width .15s}
+.dot[aria-current=page]>span{width:20px;border-color:#fff;background:#fff}
+.carousel:focus-visible,.arrow:focus-visible,.dot:focus-visible,.explore:focus-visible{outline:2px solid var(--purple);outline-offset:3px}
+.viewAll{display:flex;justify-content:center;margin-top:28px}
+.controls .arrow:focus-visible,.dot:focus-visible{outline-color:#c7d2fe}
+.viewAll :global(.button){min-height:48px}
+.carousel:not(:global(.swiper-initialized)) .slide{width:100%;margin-right:18px;flex-shrink:0}
+@media(min-width:700px){.carousel:not(:global(.swiper-initialized)) .slide{width:calc((100% - 18px)/2)}}
+@media(min-width:1100px){.carousel:not(:global(.swiper-initialized)) .slide{width:calc((100% - 54px)/4)}}
+@media(max-width:699px){.heading{margin-bottom:28px}.band{padding-bottom:42px}.band::before{top:78px}.card{padding:24px}.controls{gap:8px;margin-top:14px}.viewAll{margin-top:22px}}
+@media(prefers-reduced-motion:reduce){.card,.arrow,.dot>span{transition:none}}
