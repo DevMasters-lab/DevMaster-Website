@@ -65,8 +65,8 @@ export function TechnologySkillsCarousel(){
 
   return <section className={styles.section} aria-labelledby={id+'-heading'}>
     <div className="section-wrap"><div className={styles.heading}>
-      <h2 id={id+'-heading'}>{t('Technology Skills & Expertise')}</h2>
-      <p>{t('Browse eight technology disciplines, then explore their specialisms and individual skills.')}</p>
+      <h2 id={id+'-heading'} data-reveal="up">{t('Technology Skills & Expertise')}</h2>
+      <p data-reveal="up" data-reveal-delay="1">{t('Browse eight technology disciplines, then explore their specialisms and individual skills.')}</p>
     </div></div>
     <div className={styles.band}><div className="section-wrap">
       <p id={id+'-instructions'} className="sr-only">{t('Use the arrow keys to browse technology categories.')}</p>
@@ -90,7 +90,7 @@ export function TechnologySkillsCarousel(){
           const Icon=getTechnologySkillIcon(category.name);
           const visible=index>=position.activeIndex&&index<position.activeIndex+position.perView;
           return <SwiperSlide key={category.id} className={styles.slide} inert={!visible} aria-hidden={!visible}>
-            <article className={styles.card} aria-labelledby={id+'-'+category.id}>
+            <article className={styles.card} aria-labelledby={id+'-'+category.id} data-reveal="down" data-reveal-delay={index%4}>
               <span className={styles.icon}><Icon size={25} strokeWidth={1.6} aria-hidden="true"/></span>
               <h3 id={id+'-'+category.id} className={styles.title}>{t(category.name)}</h3>
               <p className={styles.description}>{t(category.description)}</p>
@@ -105,7 +105,7 @@ export function TechnologySkillsCarousel(){
           </SwiperSlide>;
         })}
       </Swiper>
-      <div className={styles.controls}>
+      <div className={styles.controls} data-reveal="up">
         <button type="button" className={styles.arrow} aria-label={t('Previous skill categories')}
           aria-controls={id+'-carousel'} disabled={!position.ready||position.page===0}
           onClick={()=>swiper?.slidePrev(reducedMotion?0:320)}><ArrowLeft size={19} aria-hidden="true"/></button>
@@ -119,7 +119,7 @@ export function TechnologySkillsCarousel(){
           onClick={()=>swiper?.slideNext(reducedMotion?0:320)}><ArrowRight size={19} aria-hidden="true"/></button>
       </div>
       <p className="sr-only" role="status" aria-live={reducedMotion?'polite':'off'}>{position.ready?t('Skills page {page} of {pages}',{page:position.page+1,pages:position.pages}):''}</p>
-      <div className={styles.viewAll}><Link href="/technology-skills" className="button button-purple">{t('View All Skills')}<ArrowUpRight size={18} aria-hidden="true"/></Link></div>
+      <div className={styles.viewAll} data-reveal="up"><Link href="/technology-skills" className="button button-purple">{t('View All Skills')}<ArrowUpRight size={18} aria-hidden="true"/></Link></div>
     </div></div>
   </section>;
 }

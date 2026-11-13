@@ -1,3 +1,22 @@
 .home{--dm-home-background:#f3f6fc;--dm-home-card-background:#fff;background:var(--dm-home-background)}
 .home :global(.logo-section){background:var(--dm-home-background)}
 :global(html[data-theme=dark]) .home{--dm-home-background:var(--paper);--dm-home-card-background:var(--paper)}
+
+/* Content stays visible at rest; only the finite entrance animation changes opacity. */
+.home :global([data-reveal=down]){--reveal-distance:-28px}
+.home :global([data-reveal-delay="1"]){--reveal-delay:90ms}
+.home :global([data-reveal-delay="2"]){--reveal-delay:180ms}
+.home :global([data-reveal-delay="3"]){--reveal-delay:270ms}
+.home :global([data-reveal-delay="4"]){--reveal-delay:360ms}
+.home :global([data-reveal-state=revealed]){animation:reveal .72s cubic-bezier(.22,1,.36,1) var(--reveal-delay,0ms) backwards}
+.home :global([data-reveal]:focus-within){opacity:1;translate:none;animation:none}
+@keyframes reveal{
+  from{opacity:0;translate:0 var(--reveal-distance,28px)}
+  to{opacity:1;translate:0 0}
+}
+@media(prefers-reduced-motion:reduce){
+  .home :global([data-reveal]){opacity:1!important;translate:none!important;animation:none!important}
+}
+@media print{
+  .home :global([data-reveal]){opacity:1!important;translate:none!important;animation:none!important}
+}

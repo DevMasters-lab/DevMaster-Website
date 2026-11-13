@@ -47,9 +47,9 @@ export function LogoCarousel(){
 
   return <section className="logo-section" aria-labelledby="logo-heading">
     <div className="section-wrap">
-      <div className="logo-heading"><h2 id="logo-heading">{t('Our Clients')}</h2></div>
+      <div className="logo-heading"><h2 id="logo-heading" data-reveal="up">{t('Our Clients')}</h2></div>
       <p id="logo-instructions" className="sr-only">{t('Drag or swipe to explore the logos. Use the arrow keys when focused.')}</p>
-      <Swiper className="logo-carousel" modules={[A11y,Autoplay,Mousewheel]}
+      <Swiper className="logo-carousel" data-reveal="up" data-reveal-delay="1" modules={[A11y,Autoplay,Mousewheel]}
         onSwiper={setSwiper} slidesPerView={2} spaceBetween={16} breakpoints={breakpoints}
         loop speed={reducedMotion?0:3000} grabCursor
         autoplay={{delay:900,disableOnInteraction:false}}
