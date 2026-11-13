@@ -1,0 +1,3 @@
+.home{--dm-home-background:#f3f6fc;--dm-home-card-background:#fff;background:var(--dm-home-background)}
+.home :global(.logo-section){background:var(--dm-home-background)}
+:global(html[data-theme=dark]) .home{--dm-home-background:var(--paper);--dm-home-card-background:var(--paper)}

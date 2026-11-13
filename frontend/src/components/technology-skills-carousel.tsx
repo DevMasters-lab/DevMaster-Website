@@ -65,7 +65,6 @@ export function TechnologySkillsCarousel(){
 
   return <section className={styles.section} aria-labelledby={id+'-heading'}>
     <div className="section-wrap"><div className={styles.heading}>
-      <div className="eyebrow">{t('02 / TECHNOLOGY SKILLS')}</div>
       <h2 id={id+'-heading'}>{t('Technology Skills & Expertise')}</h2>
       <p>{t('Browse eight technology disciplines, then explore their specialisms and individual skills.')}</p>
     </div></div>
