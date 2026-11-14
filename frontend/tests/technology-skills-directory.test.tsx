@@ -8,7 +8,7 @@ import {getSkillsForCategory,getSkillsForSubcategory,getSubcategoriesForCategory
 
 vi.mock('@/components/cms-content',()=>({CmsContent:({children}:{children:React.ReactNode})=><>{children}</>}));
 vi.mock('@/components/logo-carousel',()=>({LogoCarousel:()=> <div data-testid="clients-carousel"/>}));
-vi.mock('@/components/technology-skills-carousel',()=>({TechnologySkillsCarousel:()=> <section data-testid="technology-skills-carousel"/>}));
+vi.mock('@/components/technology-skills-showcase',()=>({TechnologySkillsShowcase:()=> <section data-testid="technology-skills-showcase"/>}));
 
 beforeEach(()=>{window.history.replaceState(null,'','/en');});
 afterEach(cleanup);
@@ -220,7 +220,7 @@ describe('hierarchical technology skills directory',()=>{
     await waitFor(()=>expect(screen.getByRole('combobox',{name:'Subcategory'})).toHaveValue('frontend-development'));
   });
 
-  it('omits the removed services section and places the skills carousel directly after the hero',()=>{
+  it('omits the removed services section and places the skills showcase directly after the hero',()=>{
     const {container}=render(<LocaleProvider initialLocale="en"><Home/></LocaleProvider>);
     expect(screen.queryByRole('heading',{name:'Different disciplines. A shared standard.'})).not.toBeInTheDocument();
     expect(screen.queryByRole('link',{name:/Discover our services/})).not.toBeInTheDocument();
@@ -228,8 +228,8 @@ describe('hierarchical technology skills directory',()=>{
     expect(container.querySelectorAll('.service-card')).toHaveLength(0);
     const hero=container.querySelector('.hero');
     expect(hero).toBeInTheDocument();
-    const carousel=screen.getByTestId('technology-skills-carousel');
-    expect(hero!.nextElementSibling).toBe(carousel);
-    expect(carousel.nextElementSibling).toBe(screen.getByTestId('clients-carousel'));
+    const showcase=screen.getByTestId('technology-skills-showcase');
+    expect(hero!.nextElementSibling).toBe(showcase);
+    expect(showcase.nextElementSibling).toBe(screen.getByTestId('clients-carousel'));
   });
 });
