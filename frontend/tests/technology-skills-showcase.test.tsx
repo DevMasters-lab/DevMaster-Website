@@ -5,7 +5,7 @@ import {act,cleanup,createEvent,fireEvent,render,screen,within} from '@testing-l
 import {LocaleProvider} from '../src/i18n/provider';
 import {TechnologySkillsShowcase} from '../src/components/technology-skills-showcase';
 import {carouselMotion} from '../src/lib/carousel-motion';
-import {getSkillsForCategory,getSkillsForSubcategory,technologySkillCategories,technologySkillSubcategories,technologySkills} from '../src/data/technology-skills';
+import {getSkillsForCategory,technologySkillCategories,technologySkills} from '../src/data/technology-skills';
 
 type EngineCallback=(swiper:unknown)=>void;
 type EngineProps={onSwiper?:EngineCallback;onInit?:EngineCallback;onSlideChange?:EngineCallback;onUpdate?:EngineCallback;onAutoplay?:EngineCallback;children:React.ReactNode;[key:string]:unknown};
@@ -77,6 +77,7 @@ function renderShowcase(locale:'en'|'km'='en'){
 function technologyCards(){return screen.getAllByRole('article',{hidden:true});}
 function technologyIds(){return technologyCards().map(card=>technologySkills.find(skill=>skill.name===card.querySelector('h3')?.textContent)?.id);}
 function viewport(){return screen.getByRole('group',{name:'Technology skills slider'});}
+function expandCategories(){const more=screen.queryByRole('button',{name:/^Show more categories/});if(more)fireEvent.click(more);}
 function hover(element:HTMLElement,entering:boolean){const event=entering?createEvent.pointerOver(element):createEvent.pointerOut(element);Object.defineProperty(event,'pointerType',{value:'mouse'});fireEvent(element,event);}
 
 describe('technology skills slider',()=>{
@@ -96,7 +97,8 @@ describe('technology skills slider',()=>{
     expect(screen.queryByText('View technology')).not.toBeInTheDocument();
     expect(screen.queryByRole('button',{name:/Show (more|fewer) technologies/})).not.toBeInTheDocument();
     const filters=screen.getByRole('group',{name:'Technology categories'});
-    expect(within(filters).getAllByRole('button')).toHaveLength(9);
+    expect(within(filters).getAllByRole('button').map(button=>button.textContent)).toEqual(['All categories',...technologySkillCategories.slice(0,8).map(category=>category.name)]);
+    expect(screen.queryByRole('combobox',{name:'Subcategory'})).not.toBeInTheDocument();
     expect(within(filters).getByRole('button',{name:'All categories'})).toHaveAttribute('aria-pressed','true');
     expect(engine.props?.slidesPerView).toBe(2);
     expect(engine.props?.breakpoints).toEqual(expect.objectContaining({700:expect.objectContaining({slidesPerView:4}),1100:expect.objectContaining({slidesPerView:5})}));
@@ -107,14 +109,130 @@ describe('technology skills slider',()=>{
     expect(engine.props?.mousewheel).toEqual({forceToAxis:true,sensitivity:1});
     expect(engine.autoplay.running).toBe(true);
   });
-  it('keeps an odd filtered result complete and unique with one card in the final column',()=>{
+  it('expands and collapses categories with a persistent keyboard-accessible toggle',()=>{
     renderShowcase();
-    const subcategory=technologySkillSubcategories.find(item=>{
-      const count=getSkillsForSubcategory(item.id).length;
+    const filters=screen.getByRole('group',{name:'Technology categories'});
+    const toggle=screen.getByRole('button',{name:/^Show more categories/});
+    expect(toggle).toHaveAttribute('type','button');
+    expect(toggle).toHaveAttribute('aria-expanded','false');
+    expect(toggle).toHaveAttribute('aria-controls',filters.id);
+    expect(within(filters).getAllByRole('button')).toHaveLength(9);
+    fireEvent.click(screen.getByRole('button',{name:'Next technologies'}));
+    const position=engine.realIndex;
+    act(()=>toggle.focus());
+    // Native button keyboard activation dispatches a click with detail zero.
+    fireEvent.click(toggle,{detail:0});
+    expect(screen.getByRole('button',{name:/^Show fewer categories/})).toBe(toggle);
+    expect(toggle).toHaveFocus();
+    expect(toggle).toHaveAttribute('aria-expanded','true');
+    expect(within(filters).getAllByRole('button').map(button=>button.textContent)).toEqual(['All categories',...technologySkillCategories.map(category=>category.name)]);
+    expect(engine.realIndex).toBe(position);
+    fireEvent.click(toggle,{detail:0});
+    expect(screen.getByRole('button',{name:/^Show more categories/})).toBe(toggle);
+    expect(toggle).toHaveFocus();
+    expect(toggle).toHaveAttribute('aria-expanded','false');
+    expect(within(filters).getAllByRole('button')).toHaveLength(9);
+    expect(engine.realIndex).toBe(position);
+  });
+  it('keeps a selected late category and its search results when the category list folds',()=>{
+    renderShowcase();expandCategories();
+    const filters=screen.getByRole('group',{name:'Technology categories'});
+    const category=technologySkillCategories.at(-1)!;
+    const selected=within(filters).getByRole('button',{name:category.name});
+    fireEvent.click(selected);
+    const search=screen.getByRole('searchbox',{name:'Search skills'});
+    const query=getSkillsForCategory(category.id)[0].name;
+    fireEvent.change(search,{target:{value:query}});
+    const expected=getSkillsForCategory(category.id).filter(skill=>skill.name.toLowerCase().includes(query.toLowerCase()));
+    fireEvent.click(screen.getByRole('button',{name:/^Show fewer categories/}));
+    expect(within(filters).getAllByRole('button')).toHaveLength(9);
+    expect(within(filters).getByRole('button',{name:category.name})).toBe(selected);
+    expect(selected).toHaveAttribute('aria-pressed','true');
+    expect(within(filters).getAllByRole('button').map(button=>button.textContent)).toEqual(['All categories',...technologySkillCategories.slice(0,7).map(item=>item.name),category.name]);
+    expect(search).toHaveValue(query);
+    expect(new Set(technologyIds())).toEqual(new Set(expected.map(skill=>skill.id)));
+    fireEvent.click(screen.getByRole('button',{name:'Reset filters'}));
+    expect(search).toHaveValue('');expect(search).toHaveFocus();
+    expect(screen.getByRole('button',{name:/^Show more categories/})).toHaveAttribute('aria-expanded','false');
+    expect(within(filters).queryByRole('button',{name:category.name})).not.toBeInTheDocument();
+    expect(new Set(technologyIds())).toEqual(new Set(technologySkills.map(skill=>skill.id)));
+  });
+  it('shows all 344 skills in a static grid and returns to the running slider with the same toggle',()=>{
+    renderShowcase();
+    const toggle=screen.getByRole('button',{name:/^Show all skills/});
+    const target=document.getElementById(toggle.getAttribute('aria-controls')!);
+    expect(target).not.toBeNull();
+    expect(toggle).toHaveAttribute('type','button');
+    expect(toggle).toHaveAttribute('aria-expanded','false');
+    act(()=>toggle.focus());
+    fireEvent.click(toggle,{detail:0});
+    expect(screen.getByRole('button',{name:/^Show fewer skills/})).toBe(toggle);
+    expect(toggle).toHaveFocus();expect(toggle).toHaveAttribute('aria-expanded','true');
+    expect(screen.queryByRole('group',{name:'Technology skills slider'})).not.toBeInTheDocument();
+    expect(screen.queryAllByTestId('technology-column')).toHaveLength(0);
+    expect(target?.querySelectorAll('article')).toHaveLength(technologySkills.length);
+    expect(new Set(technologyIds())).toEqual(new Set(technologySkills.map(skill=>skill.id)));
+    expect(engine.autoplay.running).toBe(false);
+    fireEvent.click(toggle,{detail:0});
+    expect(screen.getByRole('button',{name:/^Show all skills/})).toBe(toggle);
+    expect(toggle).toHaveFocus();expect(toggle).toHaveAttribute('aria-expanded','false');
+    expect(viewport()).toBeInTheDocument();
+    expect(engine.realIndex).toBe(0);
+    ViewportObserver.instances.forEach(observer=>observer.intersect(true));
+    expect(engine.autoplay.running).toBe(true);
+    expect(location.pathname).toBe('/en/home');
+  });
+  it('limits the expanded grid to the selected category and query while leaving category disclosure alone',()=>{
+    renderShowcase();expandCategories();
+    fireEvent.click(screen.getByRole('button',{name:'Backend Development'}));
+    const search=screen.getByRole('searchbox',{name:'Search skills'});
+    fireEvent.change(search,{target:{value:'a'}});
+    fireEvent.click(screen.getByRole('button',{name:/^Show all skills/}));
+    const expected=getSkillsForCategory('backend-development').filter(skill=>skill.name.toLowerCase().includes('a'));
+    expect(technologyIds()).toHaveLength(expected.length);
+    expect(new Set(technologyIds())).toEqual(new Set(expected.map(skill=>skill.id)));
+    expect(screen.queryAllByTestId('technology-column')).toHaveLength(0);
+    expect(screen.getByRole('button',{name:'Backend Development'})).toHaveAttribute('aria-pressed','true');
+    expect(search).toHaveValue('a');
+    expect(screen.getByRole('button',{name:/^Show fewer categories/})).toHaveAttribute('aria-expanded','true');
+    fireEvent.click(screen.getByRole('button',{name:/^Show fewer categories/}));
+    expect(screen.getByRole('button',{name:/^Show fewer skills/})).toHaveAttribute('aria-expanded','true');
+    expect(screen.queryAllByTestId('technology-column')).toHaveLength(0);
+    expect(new Set(technologyIds())).toEqual(new Set(expected.map(skill=>skill.id)));
+    expandCategories();
+    fireEvent.change(search,{target:{value:'Laravel'}});
+    expect(screen.getByRole('button',{name:/^Show all skills/})).toHaveAttribute('aria-expanded','false');
+    expect(viewport()).toBeInTheDocument();
+    expect(technologyIds()).toEqual(['laravel']);
+    fireEvent.click(screen.getByRole('button',{name:/^Show all skills/}));
+    expect(screen.getByRole('button',{name:/^Show fewer skills/})).toHaveAttribute('aria-expanded','true');
+    expect(screen.queryByRole('group',{name:'Technology skills slider'})).not.toBeInTheDocument();
+    expect(technologyIds()).toEqual(['laravel']);
+  });
+  it('resets the expanded skill grid on category changes and reset without collapsing categories prematurely',()=>{
+    renderShowcase();expandCategories();
+    fireEvent.click(screen.getByRole('button',{name:/^Show all skills/}));
+    fireEvent.click(screen.getByRole('button',{name:'Frontend Development'}));
+    expect(viewport()).toBeInTheDocument();
+    expect(screen.getByRole('button',{name:/^Show all skills/})).toHaveAttribute('aria-expanded','false');
+    expect(screen.getByRole('button',{name:/^Show fewer categories/})).toHaveAttribute('aria-expanded','true');
+    expect(new Set(technologyIds())).toEqual(new Set(getSkillsForCategory('frontend-development').map(skill=>skill.id)));
+    fireEvent.click(screen.getByRole('button',{name:/^Show all skills/}));
+    fireEvent.click(screen.getByRole('button',{name:'Reset filters'}));
+    expect(viewport()).toBeInTheDocument();
+    expect(screen.getByRole('button',{name:/^Show all skills/})).toHaveAttribute('aria-expanded','false');
+    expect(screen.getByRole('button',{name:/^Show more categories/})).toHaveAttribute('aria-expanded','false');
+    expect(screen.getByRole('searchbox',{name:'Search skills'})).toHaveFocus();
+    expect(new Set(technologyIds())).toEqual(new Set(technologySkills.map(skill=>skill.id)));
+  });
+  it('keeps an odd filtered result complete and unique with one card in the final column',()=>{
+    renderShowcase();expandCategories();
+    const category=technologySkillCategories.find(item=>{
+      const count=getSkillsForCategory(item.id).length;
       return count>2&&count%2===1;
     })!;
-    fireEvent.change(screen.getByRole('combobox',{name:'Subcategory'}),{target:{value:subcategory.id}});
-    const expected=getSkillsForSubcategory(subcategory.id);
+    fireEvent.click(screen.getByRole('button',{name:category.name}));
+    const expected=getSkillsForCategory(category.id);
     const ids=technologyIds();
     expect(ids).toHaveLength(expected.length);
     expect(new Set(ids)).toEqual(new Set(expected.map(skill=>skill.id)));
@@ -139,43 +257,86 @@ describe('technology skills slider',()=>{
     fireEvent.keyDown(next,{key:'ArrowRight'});expect(engine.slideNext).toHaveBeenCalledTimes(2);
     expect(location.pathname).toBe('/en/home');
   });
-  it('uses each category’s complete shared catalogue and restarts when filters change',()=>{
-    renderShowcase();const filters=screen.getByRole('group',{name:'Technology categories'});
-    for(const category of technologySkillCategories){
-      fireEvent.click(screen.getByRole('button',{name:'Next technologies'}));const button=within(filters).getByRole('button',{name:category.name});act(()=>button.focus());fireEvent.click(button);
-      expect(button).toHaveFocus();expect(button).toHaveAttribute('aria-pressed','true');expect(within(filters).getAllByRole('button').filter(item=>item.getAttribute('aria-pressed')==='true')).toHaveLength(1);
-      expect(new Set(technologyIds())).toEqual(new Set(getSkillsForCategory(category.id).map(skill=>skill.id)));expect(engine.realIndex).toBe(0);
+  it('shows complete category results and restarts when category or search changes',()=>{
+    renderShowcase();expandCategories();
+    const filters=screen.getByRole('group',{name:'Technology categories'});
+    const representatives=['programming-languages','frontend-development','cloud-computing','network-security','gis-remote-sensing','graphic-design'];
+    for(const id of representatives){
+      fireEvent.click(screen.getByRole('button',{name:'Next technologies'}));
+      const category=technologySkillCategories.find(item=>item.id===id)!;
+      const button=within(filters).getByRole('button',{name:category.name});
+      act(()=>button.focus());fireEvent.click(button);
+      expect(button).toHaveFocus();expect(button).toHaveAttribute('aria-pressed','true');
+      expect(within(filters).getAllByRole('button').filter(item=>item.getAttribute('aria-pressed')==='true')).toHaveLength(1);
+      expect(new Set(technologyIds())).toEqual(new Set(getSkillsForCategory(id).map(skill=>skill.id)));
+      expect(engine.realIndex).toBe(0);
     }
-    fireEvent.click(within(filters).getByRole('button',{name:'All categories'}));fireEvent.click(screen.getByRole('button',{name:'Next technologies'}));
-    fireEvent.change(screen.getByRole('combobox',{name:'Subcategory'}),{target:{value:'frontend-development'}});
-    expect(engine.realIndex).toBe(0);expect(new Set(technologyIds())).toEqual(new Set(getSkillsForSubcategory('frontend-development').map(skill=>skill.id)));
-    fireEvent.click(screen.getByRole('button',{name:'Next technologies'}));fireEvent.change(screen.getByRole('searchbox',{name:'Search skills'}),{target:{value:'a'}});
-    expect(engine.realIndex).toBe(0);expect(new Set(technologyIds())).toEqual(new Set(getSkillsForSubcategory('frontend-development').filter(skill=>skill.name.toLowerCase().includes('a')).map(skill=>skill.id)));
+    fireEvent.click(within(filters).getByRole('button',{name:'All categories'}));
+    fireEvent.click(screen.getByRole('button',{name:'Next technologies'}));
+    fireEvent.change(screen.getByRole('searchbox',{name:'Search skills'}),{target:{value:'a'}});
+    expect(engine.realIndex).toBe(0);
+    expect(new Set(technologyIds())).toEqual(new Set(technologySkills.filter(skill=>skill.name.toLowerCase().includes('a')).map(skill=>skill.id)));
   });
   it('normalizes search, avoids duplicate shared skills, and stops navigation for one result',()=>{
     renderShowcase();const search=screen.getByRole('searchbox',{name:'Search skills'});fireEvent.change(search,{target:{value:'  ＮＥＸＴ．ｊｓ  '}});
     expect(technologyIds()).toEqual(['next-js']);expect(screen.getByRole('button',{name:'Previous technologies'})).toBeDisabled();expect(screen.getByRole('button',{name:'Next technologies'})).toBeDisabled();expect(engine.autoplay.running).toBe(false);
     fireEvent.change(search,{target:{value:'  NeTwOrK   SeCuRiTy  '}});expect(technologyIds()).toEqual(['network-security']);fireEvent.change(search,{target:{value:'C++'}});expect(technologyIds()).toEqual(['cpp']);
   });
-  it('intersects category, subcategory and search while clearing stale subcategories',()=>{
-    renderShowcase();const subcategory=screen.getByRole('combobox',{name:'Subcategory'});const search=screen.getByRole('searchbox',{name:'Search skills'});
-    expect(within(subcategory).getAllByRole('option').length).toBeGreaterThan(40);fireEvent.click(screen.getByRole('button',{name:'Software Development'}));expect(within(subcategory).getAllByRole('option')).toHaveLength(8);
-    fireEvent.change(subcategory,{target:{value:'frontend-development'}});fireEvent.change(search,{target:{value:'  ReAcT  '}});expect(technologyIds()).toEqual(['react']);
-    fireEvent.click(screen.getByRole('button',{name:'Cloud & DevOps'}));expect(subcategory).toHaveValue('');expect(search).toHaveValue('  ReAcT  ');expect(within(subcategory).getByRole('option',{name:'Cloud Computing'})).toBeInTheDocument();expect(screen.getByRole('heading',{name:'No matching skills'})).toBeInTheDocument();expect(screen.queryAllByRole('article')).toHaveLength(0);
+  it('intersects category and search without the previous main-category or subcategory controls',()=>{
+    renderShowcase();expandCategories();
+    const search=screen.getByRole('searchbox',{name:'Search skills'});
+    expect(screen.queryByRole('combobox',{name:'Subcategory'})).not.toBeInTheDocument();
+    expect(screen.queryByRole('button',{name:'Software Development'})).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button',{name:'Frontend Development'}));
+    fireEvent.change(search,{target:{value:'  ReAcT  '}});
+    expect(technologyIds()).toEqual(['react']);
+    fireEvent.click(screen.getByRole('button',{name:'Cloud Computing'}));
+    expect(search).toHaveValue('  ReAcT  ');
+    expect(screen.getByRole('heading',{name:'No matching skills'})).toBeInTheDocument();
+    expect(screen.queryAllByRole('article')).toHaveLength(0);
+    expect(screen.queryByRole('button',{name:/^Show all skills/})).not.toBeInTheDocument();
   });
   it('clears only search with focus retained and resets an empty result to every skill',()=>{
-    renderShowcase();const search=screen.getByRole('searchbox',{name:'Search skills'});const subcategory=screen.getByRole('combobox',{name:'Subcategory'});
-    fireEvent.click(screen.getByRole('button',{name:'Software Development'}));fireEvent.change(subcategory,{target:{value:'backend-development'}});fireEvent.change(search,{target:{value:'Laravel'}});expect(technologyIds()).toEqual(['laravel']);
-    fireEvent.click(screen.getByRole('button',{name:'Clear search'}));expect(search).toHaveValue('');expect(search).toHaveFocus();expect(subcategory).toHaveValue('backend-development');expect(new Set(technologyIds())).toEqual(new Set(getSkillsForSubcategory('backend-development').map(skill=>skill.id)));
-    fireEvent.change(search,{target:{value:'no-such-technology-xyz'}});expect(screen.getByRole('heading',{name:'No matching skills'})).toBeInTheDocument();expect(screen.getByText('Try another keyword or choose a different category.')).toBeInTheDocument();expect(screen.queryAllByRole('article')).toHaveLength(0);
-    fireEvent.click(screen.getByRole('button',{name:'Reset filters'}));expect(search).toHaveValue('');expect(search).toHaveFocus();expect(subcategory).toHaveValue('');expect(screen.getByRole('button',{name:'All categories'})).toHaveAttribute('aria-pressed','true');expect(new Set(technologyIds())).toEqual(new Set(technologySkills.map(skill=>skill.id)));expect(engine.realIndex).toBe(0);
+    renderShowcase();expandCategories();
+    const search=screen.getByRole('searchbox',{name:'Search skills'});
+    const category=screen.getByRole('button',{name:'Backend Development'});
+    fireEvent.click(category);
+    fireEvent.change(search,{target:{value:'Laravel'}});
+    expect(technologyIds()).toEqual(['laravel']);
+    fireEvent.click(screen.getByRole('button',{name:'Clear search'}));
+    expect(search).toHaveValue('');expect(search).toHaveFocus();
+    expect(category).toHaveAttribute('aria-pressed','true');
+    expect(new Set(technologyIds())).toEqual(new Set(getSkillsForCategory('backend-development').map(skill=>skill.id)));
+    fireEvent.change(search,{target:{value:'no-such-technology-xyz'}});
+    expect(screen.getByRole('heading',{name:'No matching skills'})).toBeInTheDocument();
+    expect(screen.getByText('Try another keyword or choose a different category.')).toBeInTheDocument();
+    expect(screen.queryAllByRole('article')).toHaveLength(0);
+    fireEvent.click(screen.getByRole('button',{name:'Reset filters'}));
+    expect(search).toHaveValue('');expect(search).toHaveFocus();
+    expect(screen.getByRole('button',{name:'All categories'})).toHaveAttribute('aria-pressed','true');
+    expect(new Set(technologyIds())).toEqual(new Set(technologySkills.map(skill=>skill.id)));
+    expect(engine.realIndex).toBe(0);
+    expect(screen.getByRole('button',{name:/^Show more categories/})).toHaveAttribute('aria-expanded','false');
+    expect(within(screen.getByRole('group',{name:'Technology categories'})).getAllByRole('button')).toHaveLength(9);
   });
-  it('renders all skill names on the server without interactive cards or a show-more toggle',()=>{
+  it('renders all skill names on the server with noninteractive cards',()=>{
     const container=document.createElement('div');container.innerHTML=renderToString(<LocaleProvider initialLocale="en"><TechnologySkillsShowcase/></LocaleProvider>);
     expect(container.querySelectorAll('article')).toHaveLength(technologySkills.length);expect(container.querySelector('a')).toBeNull();expect(container.querySelector('article[tabindex],article [tabindex]')).toBeNull();expect(container.textContent).not.toContain('View technology');expect(container.textContent).not.toContain('Show more technologies');
   });
   it('translates Khmer controls while retaining canonical technology names',()=>{
     renderShowcase('km');expect(screen.getByRole('heading',{level:2,name:'ជំនាញ និងឯកទេសបច្ចេកវិទ្យា'})).toBeInTheDocument();const filters=screen.getByRole('group',{name:'ប្រភេទបច្ចេកវិទ្យា'});expect(within(filters).getByRole('button',{name:'ប្រភេទទាំងអស់'})).toHaveAttribute('aria-pressed','true');
+    const more=screen.getByRole('button',{name:/^បង្ហាញប្រភេទបន្ថែម/});
+    fireEvent.click(more);expect(within(filters).getAllByRole('button')).toHaveLength(47);
+    const fewer=screen.getByRole('button',{name:/^បង្ហាញប្រភេទតិចជាងមុន/});
+    expect(fewer).toBe(more);expect(fewer).toHaveAttribute('aria-expanded','true');
+    fireEvent.click(fewer);expect(within(filters).getAllByRole('button')).toHaveLength(9);
+    const allSkills=screen.getByRole('button',{name:/^បង្ហាញជំនាញទាំងអស់/});
+    fireEvent.click(allSkills);
+    const fewerSkills=screen.getByRole('button',{name:/^បង្ហាញជំនាញតិចជាងមុន/});
+    expect(fewerSkills).toBe(allSkills);expect(fewerSkills).toHaveAttribute('aria-expanded','true');
+    expect(screen.queryAllByTestId('technology-column')).toHaveLength(0);
+    fireEvent.click(fewerSkills);
+    expect(allSkills).toHaveAttribute('aria-expanded','false');
     fireEvent.click(screen.getByRole('button',{name:'បច្ចេកវិទ្យាបន្ទាប់'}));expect(engine.slideNext).toHaveBeenCalled();fireEvent.click(screen.getByRole('button',{name:'បច្ចេកវិទ្យាមុន'}));expect(engine.slidePrev).toHaveBeenCalled();expect(screen.queryAllByRole('link')).toHaveLength(0);
     const search=screen.getByRole('searchbox',{name:'ស្វែងរកជំនាញ'});fireEvent.change(search,{target:{value:'  LaRaVeL  '}});expect(technologyCards()).toHaveLength(1);expect(screen.getByRole('article',{name:'Laravel'})).toBeInTheDocument();fireEvent.click(screen.getByRole('button',{name:'កំណត់តម្រងឡើងវិញ'}));expect(search).toHaveValue('');expect(search).toHaveFocus();
   });

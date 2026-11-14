@@ -1,12 +1,12 @@
 'use client';
 
 import {useCallback,useEffect,useId,useRef,useState,type CSSProperties} from 'react';
-import {Atom,Box,ChevronDown,ChevronLeft,ChevronRight,Search,X} from 'lucide-react';
+import {ArrowDown,ArrowUp,Atom,Box,ChevronLeft,ChevronRight,Search,X} from 'lucide-react';
 import {A11y,Autoplay,Mousewheel} from 'swiper/modules';
 import {Swiper,SwiperSlide} from 'swiper/react';
 import type {Swiper as SwiperInstance} from 'swiper';
 import {useText} from '@/i18n/provider';
-import {getSubcategoriesForCategory,technologySkillCategories,technologySkillSubcategories,type TechnologySkill} from '@/data/technology-skills';
+import {technologySkillCategories,type TechnologySkill} from '@/data/technology-skills';
 import {getShowcaseSkills,getTechnologyTileAppearance} from '@/data/technology-skill-tiles';
 import {carouselMotion} from '@/lib/carousel-motion';
 import styles from './technology-skills-showcase.module.css';
@@ -14,6 +14,7 @@ import 'swiper/css';
 import 'swiper/css/a11y';
 
 const breakpoints={700:{slidesPerView:4,spaceBetween:14},1100:{slidesPerView:5,spaceBetween:14}};
+const CATEGORY_PREVIEW_COUNT=8;
 const normalizeSearch=(value:string)=>value.normalize('NFKC').toLocaleLowerCase('en').trim().replace(/\s+/g,' ');
 
 export function TechnologySkillTile({skill}:{skill:TechnologySkill}){
@@ -139,31 +140,59 @@ export function TechnologySkillsShowcase(){
   const t=useText();
   const id=useId();
   const searchRef=useRef<HTMLInputElement>(null);
+  const categoryToggleRef=useRef<HTMLButtonElement>(null);
+  const skillsToggleRef=useRef<HTMLButtonElement>(null);
+  const collapseRequested=useRef(false);
+  const skillsCollapseRequested=useRef(false);
   const [categoryId,setCategoryId]=useState('');
-  const [subcategoryId,setSubcategoryId]=useState('');
+  const [categoriesExpanded,setCategoriesExpanded]=useState(false);
+  const [skillsExpanded,setSkillsExpanded]=useState(false);
   const [query,setQuery]=useState('');
+  const initialCategories=technologySkillCategories.slice(0,CATEGORY_PREVIEW_COUNT);
+  const selectedCategory=technologySkillCategories.find(category=>category.id===categoryId);
+  const previewCategories=selectedCategory&&!initialCategories.some(category=>category.id===categoryId)
+    ?[...initialCategories.slice(0,CATEGORY_PREVIEW_COUNT-1),selectedCategory]:initialCategories;
+  const visibleCategories=categoriesExpanded?technologySkillCategories:previewCategories;
+  const hiddenCategoryCount=technologySkillCategories.length-previewCategories.length;
   const needle=normalizeSearch(query);
-  const subcategories=categoryId?getSubcategoriesForCategory(categoryId):technologySkillSubcategories;
-  const skills=getShowcaseSkills(categoryId).filter(skill=>(!subcategoryId||skill.subcategoryIds.includes(subcategoryId))&&(!needle||normalizeSearch(skill.name).includes(needle)));
-  const filtered=Boolean(categoryId||subcategoryId||needle);
-  function selectCategory(value:string){setCategoryId(value);setSubcategoryId('');}
-  function changeQuery(value:string){setQuery(value);}
-  function selectSubcategory(value:string){setSubcategoryId(value);}
-  function resetFilters(){setCategoryId('');setSubcategoryId('');setQuery('');searchRef.current?.focus();}
+  const skills=getShowcaseSkills(categoryId).filter(skill=>!needle||normalizeSearch(skill.name).includes(needle));
+  const filtered=Boolean(categoryId||needle);
+  function selectCategory(value:string){setCategoryId(value);setSkillsExpanded(false);skillsCollapseRequested.current=false;}
+  function changeQuery(value:string){setQuery(value);setSkillsExpanded(false);skillsCollapseRequested.current=false;}
+  function resetFilters(){setCategoryId('');setQuery('');setCategoriesExpanded(false);setSkillsExpanded(false);collapseRequested.current=false;skillsCollapseRequested.current=false;searchRef.current?.focus();}
+  function toggleCategories(){collapseRequested.current=categoriesExpanded;setCategoriesExpanded(previous=>!previous);}
+  function toggleSkills(){skillsCollapseRequested.current=skillsExpanded;setSkillsExpanded(previous=>!previous);}
+  useEffect(()=>{
+    if(!categoriesExpanded&&collapseRequested.current){
+      collapseRequested.current=false;
+      categoryToggleRef.current?.scrollIntoView?.({block:'nearest',behavior:'instant'});
+    }
+  },[categoriesExpanded]);
+  useEffect(()=>{
+    if(!skillsExpanded&&skillsCollapseRequested.current){
+      skillsCollapseRequested.current=false;
+      skillsToggleRef.current?.scrollIntoView?.({block:'nearest',behavior:'instant'});
+    }
+  },[skillsExpanded]);
 
   return <section className={styles.section} aria-labelledby={id+'-heading'}>
     <div className="section-wrap">
       <div className={styles.heading}>
         <h2 id={id+'-heading'} data-reveal="up">{t('Technology Skills & Expertise')}</h2>
-        <p data-reveal="up" data-reveal-delay="1">{t('Browse eight technology disciplines, then explore their specialisms and individual skills.')}</p>
+        <p data-reveal="up" data-reveal-delay="1">{t('Browse technology categories and search the skills that match your interests.')}</p>
       </div>
       <div className={styles.content}>
         <div className={styles.filters} data-reveal="up">
           <div className={styles.filterHeading}><p className={styles.filterLabel}>{t('Explore by category')}</p><span className={styles.total}>{skills.length===1?t('1 skill'):t('{count} skills',{count:skills.length})}</span></div>
-          <div className={styles.filterList} role="group" aria-label={t('Technology categories')}>
+          <div id={id+'-categories'} className={styles.filterList} role="group" aria-label={t('Technology categories')}>
             <button type="button" className={styles.filter} aria-pressed={!categoryId} aria-controls={id+'-skills'} onClick={()=>selectCategory('')}>{t('All categories')}</button>
-            {technologySkillCategories.map(category=><button type="button" key={category.id} className={styles.filter} aria-pressed={categoryId===category.id} aria-controls={id+'-skills'} onClick={()=>selectCategory(category.id)}>{t(category.name)}</button>)}
+            {visibleCategories.map(category=><button type="button" key={category.id} className={styles.filter} aria-pressed={categoryId===category.id} aria-controls={id+'-skills'} onClick={()=>selectCategory(category.id)}>{t(category.name)}</button>)}
           </div>
+          {hiddenCategoryCount>0&&<button ref={categoryToggleRef} type="button" className={styles.categoryToggle} aria-expanded={categoriesExpanded} aria-controls={id+'-categories'} onClick={toggleCategories}>
+            {t(categoriesExpanded?'Show fewer categories':'Show more categories')}
+            {!categoriesExpanded&&<span aria-hidden="true">(+{hiddenCategoryCount})</span>}
+            {categoriesExpanded?<ArrowUp size={16} aria-hidden="true"/>:<ArrowDown size={16} aria-hidden="true"/>}
+          </button>}
           <div className={styles.filterControls}>
             <label className={styles.filterField} htmlFor={id+'-search'}>{t('Search skills')}
               <span className={styles.searchField}><Search size={18} aria-hidden="true"/>
@@ -171,23 +200,24 @@ export function TechnologySkillsShowcase(){
                 {query&&<button type="button" className={styles.clearSearch} aria-label={t('Clear search')} onClick={()=>{changeQuery('');searchRef.current?.focus();}}><X size={16} aria-hidden="true"/></button>}
               </span>
             </label>
-            <label className={styles.filterField} htmlFor={id+'-subcategory'}>{t('Subcategory')}
-              <span className={styles.selectField}><select id={id+'-subcategory'} value={subcategoryId} aria-controls={id+'-skills'} onChange={event=>selectSubcategory(event.target.value)}>
-                <option value="">{t('All subcategories')}</option>
-                {categoryId?subcategories.map(subcategory=><option key={subcategory.id} value={subcategory.id}>{t(subcategory.name)}</option>):technologySkillCategories.map(category=><optgroup key={category.id} label={t(category.name)}>
-                  {subcategories.filter(subcategory=>subcategory.categoryId===category.id).map(subcategory=><option key={subcategory.id} value={subcategory.id}>{t(subcategory.name)}</option>)}
-                </optgroup>)}
-              </select><ChevronDown size={18} aria-hidden="true"/></span>
-            </label>
             {filtered&&<button type="button" className={styles.reset} onClick={resetFilters}>{t('Reset filters')}</button>}
           </div>
         </div>
         <div id={id+'-skills'}>
-          {skills.length?<TechnologySkillsSlider key={JSON.stringify([categoryId,subcategoryId,needle])} skills={skills} id={id+'-slider'}/>:<>
+          {skills.length?(skillsExpanded?<>
+            <ul className={styles.skillsGrid} aria-labelledby={id+'-heading'}>
+              {skills.map((skill,index)=><li key={skill.id} data-reveal="up" data-reveal-delay={index%4}><TechnologySkillTile skill={skill}/></li>)}
+            </ul>
+            <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{skills.length===1?t('1 skill'):t('{count} skills',{count:skills.length})}</p>
+          </>:<TechnologySkillsSlider key={JSON.stringify([categoryId,needle])} skills={skills} id={id+'-slider'}/>):<>
             <div className={styles.empty}><Search size={25} aria-hidden="true"/><h3>{t('No matching skills')}</h3><p>{t('Try another keyword or choose a different category.')}</p></div>
             <p className="sr-only" role="status">{t('{count} skills',{count:0})}</p>
           </>}
         </div>
+        {skills.length>0&&<button ref={skillsToggleRef} type="button" className={styles.categoryToggle} aria-expanded={skillsExpanded} aria-controls={id+'-skills'} onClick={toggleSkills}>
+          {t(skillsExpanded?'Show fewer skills':'Show all skills')}
+          {skillsExpanded?<ArrowUp size={16} aria-hidden="true"/>:<ArrowDown size={16} aria-hidden="true"/>}
+        </button>}
       </div>
     </div>
   </section>;

@@ -1,5 +1,8 @@
 {
   "ui": {
+    "s232f49c6ecbc": "Show all skills",
+    "s0fc44940c084": "Show more categories",
+    "s768ce4aa11c5": "Browse technology categories and search the skills that match your interests.",
     "sa7950979886d": "Previous technologies",
     "sec4afc65b1bd": "Next technologies",
     "s62bec906c940": "Technology skills slider",
@@ -966,7 +969,6 @@
     "skills_hierarchy_3b17f2775010": "{count} subcategories",
     "skills_hierarchy_91b6037d1352": "Subcategories in {category}",
     "skills_hierarchy_46fc5a4ecd8b": "Main Category → Subcategory → Individual Skills",
-    "skills_hierarchy_cc9fd898a153": "Browse eight technology disciplines, then explore their specialisms and individual skills.",
     "skills_hierarchy_8f6ebd0980aa": "Choose a main category and subcategory, or search all available technology skills.",
     "skills_hierarchy_86555c2fc588": "Languages, frameworks and testing tools for building dependable web, mobile, desktop and connected applications.",
     "skills_hierarchy_c12503bc9b02": "Analytics, data platforms and intelligent systems that turn information into practical insights and useful products.",
