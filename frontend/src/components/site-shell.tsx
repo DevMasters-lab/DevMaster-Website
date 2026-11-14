@@ -15,7 +15,7 @@ export function SiteFooter(){
       <span className={chaseStyles.copyright}>© {new Date().getFullYear()} {t('DevMasters. Built around people.')}</span>
       <div className={chaseStyles.bottomRight}>
         <div className={chaseStyles.legalLinks}><Link href="/privacy">{t('Privacy policy')}</Link><Link href="/terms">{t('Terms & conditions')}</Link></div>
-        <span className={'footer-mark '+chaseStyles.mark}>{t('DM')}<span>✳</span></span>
+        <span className={chaseStyles.logo}><img src="/logo-light.png" alt={t('DevMasters')} width="216" height="74"/></span>
       </div>
     </div>
   </footer>;

@@ -57,7 +57,12 @@ describe('chase footer copyright bar',()=>{
     expect(within(footer).getByRole('link',{name:'Privacy policy'})).toHaveAttribute('href','/en/privacy');
     expect(within(footer).getByRole('link',{name:'Terms & conditions'})).toHaveAttribute('href','/en/terms');
     expect(within(footer).getAllByRole('link')).toHaveLength(2);
-    expect(footer).toHaveTextContent(/DM\s*✳/);
+    const logo=within(footer).getByRole('img',{name:'DevMasters'});
+    expect(logo).toHaveAttribute('src','/logo-light.png');
+    expect(logo).toHaveAttribute('alt','DevMasters');
+    expect(logo).toHaveAttribute('width','216');
+    expect(logo).toHaveAttribute('height','74');
+    expect(footer).not.toHaveTextContent(/DM\s*✳/);
     expect(footer).not.toHaveTextContent('GOOD WORK STARTS WITH A CONVERSATION');
     expect(footer.querySelector('button,h1,h2,h3')).toBeNull();
     expect(footer.querySelector('svg')).toBeInTheDocument();

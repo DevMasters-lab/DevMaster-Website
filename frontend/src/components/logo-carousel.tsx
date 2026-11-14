@@ -5,6 +5,7 @@ import {A11y,Autoplay,Mousewheel} from 'swiper/modules';
 import {Swiper,SwiperSlide} from 'swiper/react';
 import type {Swiper as SwiperInstance} from 'swiper';
 import {useText} from '@/i18n/provider';
+import {carouselMotion} from '@/lib/carousel-motion';
 import 'swiper/css';
 import 'swiper/css/a11y';
 
@@ -51,8 +52,8 @@ export function LogoCarousel(){
       <p id="logo-instructions" className="sr-only">{t('Drag or swipe to explore the logos. Use the arrow keys when focused.')}</p>
       <Swiper className="logo-carousel" data-reveal="up" data-reveal-delay="1" modules={[A11y,Autoplay,Mousewheel]}
         onSwiper={setSwiper} slidesPerView={2} spaceBetween={16} breakpoints={breakpoints}
-        loop speed={reducedMotion?0:3000} grabCursor
-        autoplay={{delay:900,disableOnInteraction:false}}
+        loop speed={reducedMotion?0:carouselMotion.speed} grabCursor
+        autoplay={{delay:carouselMotion.delay,disableOnInteraction:false}}
         mousewheel={{forceToAxis:true,sensitivity:1}}
         a11y={{slideLabelMessage:'{{index}} / {{slidesLength}}'}}
         tabIndex={0} role="group" aria-label={t('Our Clients')} aria-describedby="logo-instructions"
@@ -63,8 +64,8 @@ export function LogoCarousel(){
         onKeyDown={event=>{
           if(event.key!=='ArrowLeft'&&event.key!=='ArrowRight')return;
           event.preventDefault();
-          if(event.key==='ArrowRight')swiper?.slideNext(reducedMotion?0:300);
-          else swiper?.slidePrev(reducedMotion?0:300);
+          if(event.key==='ArrowRight')swiper?.slideNext(reducedMotion?0:carouselMotion.interactionSpeed);
+          else swiper?.slidePrev(reducedMotion?0:carouselMotion.interactionSpeed);
         }}>
         {logos.map(name=><SwiperSlide key={name}>
           <img className="sample-logo" src={'/sample-logos/'+name.toLowerCase()+'.svg'}
