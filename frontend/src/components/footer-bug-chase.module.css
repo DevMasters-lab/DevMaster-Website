@@ -1,6 +1,10 @@
 .footer{padding:0;overflow:hidden}
 .chaseArea{display:flex;height:200px;padding:16px 0}
-.footer .bottom{border-top:0;margin-inline:max(23px,calc((100% - 1152px)/2))}
+.footer .bottom{border-top:0;margin:0;padding:22px 24px;gap:24px}
+.copyright{flex:1;min-width:0;text-align:start}
+.footer .bottomRight{display:flex;flex-wrap:nowrap;align-items:center;justify-content:flex-end;gap:24px;margin-inline-start:auto}
+.legalLinks{display:flex;flex-direction:column;align-items:flex-end;gap:6px;text-align:end}
+.footer .mark{display:inline-flex;align-items:baseline;flex-shrink:0}
 .scene{--chase-play-state:paused;--lap-offset:-5.6s;position:relative;flex:1 1 0%;min-width:0;align-self:stretch;overflow:hidden;isolation:isolate;pointer-events:none;user-select:none}
 .scene[data-running=true]{--chase-play-state:running}
 .scene::after{content:'';position:absolute;inset-inline:0;bottom:13px;height:1px;background:#c5a8ef21}
@@ -55,7 +59,7 @@
 @keyframes bugHop{0%,33%,46%,66%,78%,100%{transform:translateY(0) rotate(0)}38%{transform:translateY(-30px) rotate(-9deg)}42%{transform:translateY(-13px) rotate(8deg)}71%{transform:translateY(-19px) rotate(-7deg)}75%{transform:translateY(-8px) rotate(5deg)}}
 @keyframes lookBack{0%,35%,51%,78%,93%,100%{transform:rotate(0)}39%,47%,82%,89%{transform:rotate(-15deg)}}
 @keyframes lookBackEyes{0%,35%,51%,78%,93%,100%{transform:translateX(0)}39%,47%,82%,89%{transform:translateX(-4px)}}
-@media(max-width:620px){.chaseArea{height:170px}.scene::after{bottom:11px}.scene svg{animation-duration:16s}}
+@media(max-width:620px){.chaseArea{height:170px}.scene::after{bottom:11px}.scene svg{animation-duration:16s}.footer .bottom{row-gap:18px}.copyright{flex-basis:100%}.footer .bottomRight{gap:20px}}
 @media(prefers-reduced-motion:reduce){
   .scene svg{animation:none;left:50%;transform:translateX(-50%)}
   .scene svg *{animation:none!important}

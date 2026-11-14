@@ -162,16 +162,7 @@ describe('website loading lifecycle',()=>{
     expect(active()).toBe(false);
   });
 
-  it.each(['/en/expert','/km/expert/profile'])('keeps the private portal free of the public loader at %s',path=>{
-    history.replaceState(null,'',path);
-    initialize();
-    ready();
-    loaded();
-    expect(active()).toBe(false);
-    expect(vi.getTimerCount()).toBe(0);
-  });
-
-  it('still loads the public expertise page despite its similar route name',()=>{
+  it('loads the public expertise page',()=>{
     history.replaceState(null,'','/en/expertise');
     initialize();
     expect(active()).toBe(true);

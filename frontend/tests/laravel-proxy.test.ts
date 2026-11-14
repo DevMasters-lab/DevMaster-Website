@@ -7,6 +7,23 @@ import { proxy } from '../src/proxy';
 
 const origin = 'https://devmasters.dev';
 const backend = 'https://laravel-origin.example';
+const retiredRoutes = [
+  {
+    route: 'application-corrections',
+    suffixes: ['', '/', '/example-token', '/example-token/nested', '/example.token'],
+    boundaries: ['application-corrections-guide'],
+  },
+  {
+    route: 'expert',
+    suffixes: ['', '/', '/profile', '/offers/private', '/documents/resume.pdf'],
+    boundaries: ['expertise', 'expert-guide'],
+  },
+  {
+    route: 'technology-skills',
+    suffixes: ['', '/', '/software', '/software/typescript', '/logos/typescript.svg'],
+    boundaries: ['technology-skills-guide'],
+  },
+];
 vi.hoisted(() => vi.stubEnv('LARAVEL_URL', 'https://laravel-origin.example'));
 afterAll(() => vi.unstubAllEnvs());
 
@@ -14,6 +31,9 @@ describe('Laravel reverse proxy', () => {
   it.each([
     '/admin', '/admin/login', '/admin/logout', '/admin/password-reset/request',
     '/api', '/api/health', '/api/v1/auth/login', '/api/v1/auth/logout',
+    '/api/v1/application-corrections/example-token',
+    '/api/v1/expert', '/api/v1/expert/profile',
+    '/api/v1/technology-skills',
     '/sanctum/csrf-cookie', '/locale', '/livewire/update', '/livewire/livewire.js',
     '/livewire-1234abcd/upload-file', '/livewire-1234abcd/preview-file/example.jpg',
     '/livewire-1234abcd/js/component.js', '/css/filament/filament/app.css',
@@ -87,5 +107,41 @@ describe('Laravel reverse proxy', () => {
       headers: { cookie: 'devmasters_locale=en' },
     }));
     expect(response.headers.get('location')).toBe(`${origin}/en/home`);
+  });
+
+  describe.each(retiredRoutes)('retired /$route URLs', ({ route, suffixes, boundaries }) => {
+    it.each(['en', 'km'].flatMap(locale => suffixes.map(suffix => ({ locale, suffix }))))('redirects /$locale$suffix without forwarding private URL data', ({ locale, suffix }) => {
+      const response = proxy(new NextRequest(`${origin}/${locale}/${route}${suffix}?token=private-token&source=bookmark#private-fragment`));
+      expect(response.status).toBe(308);
+      expect(response.headers.get('location')).toBe(`${origin}/${locale}/home`);
+      expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+    });
+
+    it.each([
+      { suffix: '', cookie: undefined, locale: 'km' },
+      { suffix: suffixes.at(-1), cookie: undefined, locale: 'km' },
+      { suffix: '', cookie: 'devmasters_locale=en', locale: 'en' },
+      { suffix: suffixes.at(-1), cookie: 'devmasters_locale=en', locale: 'en' },
+    ])('redirects the unprefixed URL $suffix using $locale', ({ suffix, cookie, locale }) => {
+      const response = proxy(new NextRequest(`${origin}/${route}${suffix}?token=private-token#private-fragment`, {
+        headers: cookie ? { cookie } : {},
+      }));
+      expect(response.status).toBe(308);
+      expect(response.headers.get('location')).toBe(`${origin}/${locale}/home`);
+      expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+    });
+
+    it.each(['en', 'km'].flatMap(locale => boundaries.map(slug => ({ locale, slug }))))('preserves the prefix boundary for /$locale/$slug', ({ locale, slug }) => {
+      const response = proxy(new NextRequest(`${origin}/${locale}/${slug}`));
+      expect(response.headers.get('location')).toBeNull();
+      expect(response.headers.get('x-middleware-rewrite')).toBe(`${origin}/${slug}`);
+    });
+
+    it('keeps the inbound authority when redirecting', () => {
+      const response = proxy(new NextRequest(`http://localhost:13001/en/${route}${suffixes[2]}?token=private-token`, {
+        headers: { host: '127.0.0.1:13001' },
+      }));
+      expect(response.headers.get('location')).toBe('http://127.0.0.1:13001/en/home');
+    });
   });
 });

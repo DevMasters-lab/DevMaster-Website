@@ -7,7 +7,6 @@ import revealStyles from './scroll-reveal.module.css';
 
 export function PageContent({children}:{children:ReactNode}){
   const path=usePathname();
-  if(path==='/expert'||path.startsWith('/expert/'))return <main id="main">{children}</main>;
   return <AnimatedPage key={path}>{children}</AnimatedPage>;
 }
 

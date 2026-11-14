@@ -37,7 +37,7 @@ afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 function Content({title='Technology expertise'}:{title?:string}){
   return <LocaleProvider initialLocale="en"><PageContent>
     <h1 data-reveal="up">{title}</h1>
-    <article data-reveal="up"><h2>Software Development</h2><a href="/en/technology-skills">Explore skills</a></article>
+    <article data-reveal="up"><h2>Software Development</h2><a href="/en/expertise">Explore expertise</a></article>
   </PageContent></LocaleProvider>;
 }
 
@@ -54,7 +54,7 @@ describe('public page scroll animation',()=>{
     expect(html).toContain('<main');
     expect(html).toContain('id="main"');
     expect(html).toContain('Technology expertise');
-    expect(html).toContain('Explore skills');
+    expect(html).toContain('Explore expertise');
     expect(html).not.toContain('data-reveal-state');
     expect(ViewportObserver.instances).toHaveLength(0);
   });
@@ -89,32 +89,5 @@ describe('public page scroll animation',()=>{
     expect(observer('entry')).not.toBe(firstObserver);
     observer('entry').intersect(nextHeading,true);
     expect(nextHeading).toHaveAttribute('data-reveal-state','revealed');
-  });
-
-  it('leaves private portal content unenhanced and reconnects on public routes',()=>{
-    route.path='/en/expert/profile';
-    const view=render(<Content/>);
-    expect(screen.getByRole('main')).toHaveAttribute('id','main');
-    expect(screen.getByRole('heading',{level:1})).not.toHaveAttribute('data-reveal-state');
-    expect(ViewportObserver.instances).toHaveLength(0);
-
-    route.path='/en/home';
-    view.rerender(<Content/>);
-    const publicObserver=observer('entry');
-    const publicHeading=screen.getByRole('heading',{level:1});
-    publicObserver.intersect(publicHeading,true);
-    expect(publicHeading).toHaveAttribute('data-reveal-state','revealed');
-
-    route.path='/en/expert';
-    view.rerender(<Content/>);
-    expect(publicObserver.active).toBe(false);
-    expect(screen.getByRole('heading',{level:1})).not.toHaveAttribute('data-reveal-state');
-    expect(ViewportObserver.instances.filter(value=>value.active)).toHaveLength(0);
-
-    route.path='/en/technology-skills';
-    view.rerender(<Content/>);
-    expect(observer('entry')).not.toBe(publicObserver);
-    observer('entry').intersect(screen.getByRole('article'),true);
-    expect(screen.getByRole('article')).toHaveAttribute('data-reveal-state','revealed');
   });
 });

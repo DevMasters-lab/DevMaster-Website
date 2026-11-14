@@ -67,33 +67,6 @@ describe('chase footer copyright bar',()=>{
     expect(chase).toHaveAttribute('data-running','true');
   });
 
-  it('attaches fresh observers when returning from the private portal',()=>{
-    route.path='/en/expert';
-    const view=render(<Footer/>);
-    expect(view.container.querySelector('footer')).toBeNull();
-    expect(ViewportObserver.instances).toHaveLength(0);
-
-    route.path='/en/home';
-    view.rerender(<Footer/>);
-    const firstChase=view.container.querySelector('[data-running]')!;
-    const firstObserver=observer();
-    firstObserver.intersect(firstChase,true);
-    expect(firstChase).toHaveAttribute('data-running','true');
-
-    route.path='/en/expert/profile';
-    view.rerender(<Footer/>);
-    expect(view.container.querySelector('footer')).toBeNull();
-    expect(firstObserver.active).toBe(false);
-
-    route.path='/en/services';
-    view.rerender(<Footer/>);
-    const newChase=view.container.querySelector('[data-running]')!;
-    expect(newChase).not.toBe(firstChase);
-    expect(observer()).not.toBe(firstObserver);
-    observer().intersect(newChase,true);
-    expect(newChase).toHaveAttribute('data-running','true');
-  });
-
   it('keeps the illustration still for reduced-motion users',()=>{
     reducedMotion=true;
     const {container}=render(<Footer/>);

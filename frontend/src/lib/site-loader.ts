@@ -4,10 +4,9 @@ export const siteLoaderMaxDuration=2500;
 // Start before paint. This independent watchdog also releases the page if
 // hydration or an asset fails; the loader never waits for backend requests.
 export const siteLoaderInitScript=`(()=>{
-  const path=location.pathname.replace(/^\\/(km|en)(?=\\/|$)/,'')||'/';
   const navigation=typeof performance.getEntriesByType==='function'?performance.getEntriesByType('navigation')[0]:undefined;
   const historyVisit=navigation?navigation.type==='back_forward':performance.navigation?.type===2;
-  if(historyVisit||path==='/expert'||path.startsWith('/expert/'))return;
+  if(historyVisit)return;
 
   const root=document.documentElement;
   const started=performance.now();

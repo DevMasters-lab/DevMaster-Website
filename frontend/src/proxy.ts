@@ -14,15 +14,27 @@ export function proxy(request: NextRequest) {
     return NextResponse.next({ request: { headers } });
   }
 
+  const segment = path.split('/')[1];
+  const cookie = request.cookies.get('devmasters_locale')?.value;
+  const locale = supported(segment) ? segment : supported(cookie) ? cookie : 'km';
+  const normalized = stripLocale(path);
+
+  if (['/application-corrections', '/expert', '/technology-skills'].some(route => normalized === route || normalized.startsWith(route + '/'))) {
+    const url = new URL(request.nextUrl.href);
+    url.host = request.headers.get('host') || url.host;
+    url.pathname = localePath('/home', locale);
+    url.search = '';
+    url.hash = '';
+    const response = NextResponse.redirect(url, 308);
+    response.headers.set('Referrer-Policy', 'no-referrer');
+    return response;
+  }
+
   if (path.startsWith('/_next/') || path.includes('.') || /^\/(?:css|js|fonts)(?:\/|$)/.test(path)) {
     return NextResponse.next();
   }
 
-  const segment = path.split('/')[1];
-  const cookie = request.cookies.get('devmasters_locale')?.value;
-  const locale = supported(segment) ? segment : supported(cookie) ? cookie : 'km';
-
-  if (stripLocale(path) === '/about') {
+  if (normalized === '/about') {
     const url = new URL(request.nextUrl.href);
     url.host = request.headers.get('host') || url.host;
     url.pathname = localePath('/home', locale);
