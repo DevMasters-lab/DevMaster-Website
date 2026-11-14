@@ -78,6 +78,6 @@ describe('Khmer and English localization',()=>{
   expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
  });
  it('keeps backend/admin routes and exact supported locale identifiers intact',()=>{
-  expect(localePath('/admin/login','km')).toBe('/admin/login');expect(localePath('/api/v1/reference-data','en')).toBe('/api/v1/reference-data');expect(localePath('/km/services','en')).toBe('/en/services');expect(stripLocale('/km/contact')).toBe('/contact');expect(supported('fr')).toBe(false);
+  expect(localePath('/admin/login','km')).toBe('/admin/login');expect(localePath('/api/v1/reference-data','en')).toBe('/api/v1/reference-data');expect(localePath('/km/expertise','en')).toBe('/en/expertise');expect(stripLocale('/km/contact')).toBe('/contact');expect(supported('fr')).toBe(false);
  });
 });

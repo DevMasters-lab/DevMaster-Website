@@ -23,6 +23,11 @@ const retiredRoutes = [
     suffixes: ['', '/', '/software', '/software/typescript', '/logos/typescript.svg'],
     boundaries: ['technology-skills-guide'],
   },
+  {
+    route: 'services',
+    suffixes: ['', '/', '/software', '/software/integration', '/catalogue.json'],
+    boundaries: ['services-guide'],
+  },
 ];
 vi.hoisted(() => vi.stubEnv('LARAVEL_URL', 'https://laravel-origin.example'));
 afterAll(() => vi.unstubAllEnvs());
@@ -33,7 +38,7 @@ describe('Laravel reverse proxy', () => {
     '/api', '/api/health', '/api/v1/auth/login', '/api/v1/auth/logout',
     '/api/v1/application-corrections/example-token',
     '/api/v1/expert', '/api/v1/expert/profile',
-    '/api/v1/technology-skills',
+    '/api/v1/technology-skills', '/api/v1/services',
     '/sanctum/csrf-cookie', '/locale', '/livewire/update', '/livewire/livewire.js',
     '/livewire-1234abcd/upload-file', '/livewire-1234abcd/preview-file/example.jpg',
     '/livewire-1234abcd/js/component.js', '/css/filament/filament/app.css',
@@ -107,6 +112,13 @@ describe('Laravel reverse proxy', () => {
       headers: { cookie: 'devmasters_locale=en' },
     }));
     expect(response.headers.get('location')).toBe(`${origin}/en/home`);
+  });
+
+  it.each(['en', 'km'])('keeps the %s Expertise page available after retiring Services', locale => {
+    const response = proxy(new NextRequest(`${origin}/${locale}/expertise?category=software`));
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-rewrite')).toBe(`${origin}/expertise?category=software`);
+    expect(response.headers.get('set-cookie')).toContain(`devmasters_locale=${locale}`);
   });
 
   describe.each(retiredRoutes)('retired /$route URLs', ({ route, suffixes, boundaries }) => {

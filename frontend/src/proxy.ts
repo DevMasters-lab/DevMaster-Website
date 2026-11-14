@@ -19,7 +19,7 @@ export function proxy(request: NextRequest) {
   const locale = supported(segment) ? segment : supported(cookie) ? cookie : 'km';
   const normalized = stripLocale(path);
 
-  if (['/application-corrections', '/expert', '/technology-skills'].some(route => normalized === route || normalized.startsWith(route + '/'))) {
+  if (['/application-corrections', '/expert', '/technology-skills', '/services'].some(route => normalized === route || normalized.startsWith(route + '/'))) {
     const url = new URL(request.nextUrl.href);
     url.host = request.headers.get('host') || url.host;
     url.pathname = localePath('/home', locale);

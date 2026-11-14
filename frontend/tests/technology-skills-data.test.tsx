@@ -71,6 +71,8 @@ describe('homepage technology skills placement',()=>{
     const {container}=render(<LocaleProvider initialLocale="en"><Home/></LocaleProvider>);
     expect(screen.queryByRole('heading',{name:'Different disciplines. A shared standard.'})).not.toBeInTheDocument();
     expect(screen.queryByRole('link',{name:/Discover our services/})).not.toBeInTheDocument();
+    expect(screen.queryByRole('link',{name:/Explore our services/})).not.toBeInTheDocument();
+    expect(screen.getByRole('link',{name:/Build your team/})).toHaveAttribute('href','/en/hire-our-team');
     expect(container.querySelector('.services-section')).not.toBeInTheDocument();
     expect(container.querySelectorAll('.service-card')).toHaveLength(0);
     const hero=container.querySelector('.hero');

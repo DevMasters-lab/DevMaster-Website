@@ -2,7 +2,7 @@ import {test,expect} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {createHmac} from 'node:crypto';
 const fixture=()=>JSON.parse(readFileSync('../.runtime/e2e.json','utf8'));
-const pages=['','home','services','expertise','invite-us-to-bid','hire-our-team','be-our-team','contact','privacy','terms'];
+const pages=['','home','expertise','invite-us-to-bid','hire-our-team','be-our-team','contact','privacy','terms'];
 async function changeLanguage(page:import('@playwright/test').Page,locale:'km'|'en'){
  if(await page.locator('html').getAttribute('lang')!==locale)await page.locator('.language-trigger').click();
  await expect(page.getByRole('menu')).toHaveCount(0);
