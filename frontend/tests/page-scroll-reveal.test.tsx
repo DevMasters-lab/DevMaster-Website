@@ -38,7 +38,7 @@ afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 function Content({title='Technology expertise'}:{title?:string}){
   return <LocaleProvider initialLocale="en"><PageContent>
     <h1 data-reveal="up">{title}</h1>
-    <article data-reveal="up"><h2>Software Development</h2><a href="/en/expertise">Explore expertise</a></article>
+    <article data-reveal="up"><h2>Software Development</h2><a href="/en/privacy">Privacy policy</a></article>
   </PageContent></LocaleProvider>;
 }
 
@@ -55,7 +55,7 @@ describe('public page scroll animation',()=>{
     expect(html).toContain('<main');
     expect(html).toContain('id="main"');
     expect(html).toContain('Technology expertise');
-    expect(html).toContain('Explore expertise');
+    expect(html).toContain('Privacy policy');
     expect(html).not.toContain('data-reveal-state');
     expect(ViewportObserver.instances).toHaveLength(0);
   });
@@ -116,18 +116,18 @@ describe('public page scroll animation',()=>{
   });
 
   it('cleans up the previous page and enhances same-shaped content on a new path',()=>{
-    const view=render(<Content title="Our services"/>);
+    const view=render(<Content title="Privacy policy"/>);
     const firstHeading=screen.getByRole('heading',{level:1});
     const firstObserver=observer('entry');
     firstObserver.intersect(firstHeading,true);
 
-    route.path='/en/expertise';
-    view.rerender(<Content title="Our expertise"/>);
+    route.path='/en/terms';
+    view.rerender(<Content title="Terms and conditions"/>);
     const nextHeading=screen.getByRole('heading',{level:1});
     expect(firstObserver.active).toBe(false);
     expect(firstHeading).not.toHaveAttribute('data-reveal-state');
     expect(nextHeading).not.toBe(firstHeading);
-    expect(nextHeading).toHaveTextContent('Our expertise');
+    expect(nextHeading).toHaveTextContent('Terms and conditions');
     expect(observer('entry')).not.toBe(firstObserver);
     observer('entry').intersect(nextHeading,true);
     expect(nextHeading).toHaveAttribute('data-reveal-state','revealed');

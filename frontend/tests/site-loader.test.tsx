@@ -162,8 +162,8 @@ describe('website loading lifecycle',()=>{
     expect(active()).toBe(false);
   });
 
-  it('loads the public expertise page',()=>{
-    history.replaceState(null,'','/en/expertise');
+  it('loads the public privacy page',()=>{
+    history.replaceState(null,'','/en/privacy');
     initialize();
     expect(active()).toBe(true);
   });

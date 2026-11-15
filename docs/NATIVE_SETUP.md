@@ -24,8 +24,7 @@ The services script manages only workspace-owned Redis, Mailpit, ClamAV and Seaw
 
 | Component | Endpoint | Purpose |
 |---|---|---|
-| Website | http://localhost:3000 | Public site and same-origin Laravel proxy |
-| Expert sign-in | http://localhost:3000/km/login | Approved, activated experts |
+| Website | http://localhost:3000/km/home | Home, Privacy and Terms; homepage intake popups and same-origin Laravel proxy |
 | Administration | http://localhost:3000/admin | Filament; optional authenticator MFA under Security |
 | Laravel | 127.0.0.1:8081 | API and Admin backend |
 | PostgreSQL | 127.0.0.1:5432 | Supplied application/test databases |

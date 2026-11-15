@@ -2,7 +2,7 @@ import {test,expect} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {createHmac} from 'node:crypto';
 const fixture=()=>JSON.parse(readFileSync('../.runtime/e2e.json','utf8'));
-const pages=['','home','expertise','invite-us-to-bid','hire-our-team','be-our-team','contact','privacy','terms'];
+const pages=['home','privacy','terms'];
 async function changeLanguage(page:import('@playwright/test').Page,locale:'km'|'en'){
  if(await page.locator('html').getAttribute('lang')!==locale)await page.locator('.language-trigger').click();
  await expect(page.getByRole('menu')).toHaveCount(0);
@@ -10,16 +10,20 @@ async function changeLanguage(page:import('@playwright/test').Page,locale:'km'|'
  await expect.poll(async()=>{const response=await page.request.get('/api/v1/locale');return (await response.json()).data.locale;}).toBe(locale);
 }
 function totp(secret:string){let value=0,bits=0;const bytes:number[]=[];for(const letter of secret){value=(value<<5)|'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.indexOf(letter);bits+=5;if(bits>=8){bits-=8;bytes.push((value>>>bits)&255);}}const counter=Buffer.alloc(8);counter.writeBigUInt64BE(BigInt(Math.floor(Date.now()/30000)));const digest=createHmac('sha1',Buffer.from(bytes)).update(counter).digest();return String((digest.readUInt32BE(digest[19]&15)&0x7fffffff)%1000000).padStart(6,'0');}
-test('both public languages, SEO, Khmer fonts and state-preserving mobile switcher',async({page})=>{
- test.setTimeout(120000);await page.goto('/');await expect(page).toHaveURL(/\/km$/);await expect(page.locator('html')).toHaveAttribute('lang','km');
- for(const locale of ['km','en']){for(const slug of pages){await page.goto('/'+locale+(slug?'/'+slug:''));await expect(page.locator('h1')).toBeVisible();await expect(page.locator('html')).toHaveAttribute('lang',locale);if(locale==='km')expect(await page.locator('h1').innerText()).toMatch(/[\u1780-\u17ff]/);}}
- await page.goto('/km/login');await page.locator('form button').click();await expect.poll(()=>page.locator('input[type=email]').evaluate((input:HTMLInputElement)=>input.validationMessage)).toBe('សូមបំពេញព័ត៌មាននេះ។');await changeLanguage(page,'en');await expect.poll(()=>page.locator('input[type=email]').evaluate((input:HTMLInputElement)=>input.validationMessage)).toBe('This field is required.');
+test('both public languages, SEO, Khmer fonts and state-preserving popup language switcher',async({page})=>{
+ test.setTimeout(120000);await page.goto('/');await expect(page).toHaveURL(/\/km\/home$/);await expect(page.locator('html')).toHaveAttribute('lang','km');
+ for(const locale of ['km','en']){for(const slug of pages){await page.goto('/'+locale+'/'+slug);await expect(page.locator('h1')).toHaveCount(1);await expect(page.locator('html')).toHaveAttribute('lang',locale);if(locale==='km')expect(await page.locator('h1').innerText()).toMatch(/[\u1780-\u17ff]/);}}
  const missing=await page.goto('/km/missing-localized-page');expect(missing?.status()).toBe(404);expect(await page.locator('h1').innerText()).toMatch(/[\u1780-\u17ff]/);
- await page.setViewportSize({width:390,height:844});await page.goto('/en/hire-our-team?source=qa#brief');
- await page.getByLabel('Your name *').fill('Original input — ខ្មែរ');const file=page.locator('input[type=file]');await file.setInputFiles({name:'original-name.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4\n%%EOF')});
- await page.evaluate(()=>{document.body.dataset.switchProbe='retained';});await changeLanguage(page,'km');
- await expect(page.getByLabel('ឈ្មោះរបស់អ្នក *')).toHaveValue('Original input — ខ្មែរ');expect(await file.evaluate((element:HTMLInputElement)=>element.files?.[0].name)).toBe('original-name.pdf');expect(await page.locator('body').getAttribute('data-switch-probe')).toBe('retained');await expect(page).toHaveURL(/\/km\/hire-our-team\?source=qa#brief$/);
- await page.reload();await expect(page.locator('html')).toHaveAttribute('lang','km');await expect(page.locator('link[rel=alternate][hreflang=en]')).toHaveAttribute('href',/\/en\/hire-our-team$/);await expect(page.locator('html')).toHaveAttribute('dir','ltr');
+ await page.setViewportSize({width:390,height:844});await page.goto('/en/home?source=qa#brief');
+ await page.getByRole('button',{name:/Invite Us to Bid/}).click();
+ const dialog=page.getByRole('dialog',{name:'Invite DevMasters to Bid'});
+ await dialog.getByLabel('Your name *').fill('Original input — ខ្មែរ');const file=page.locator('dialog[open] input[type=file]');await file.setInputFiles({name:'original-name.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4\n%%EOF')});
+ await page.evaluate(()=>{document.body.dataset.switchProbe='retained';});
+ await dialog.getByRole('button',{name:'Close project invitation'}).click();await changeLanguage(page,'km');
+ await page.getByRole('button',{name:/អញ្ជើញយើងចូលរួមដេញថ្លៃ/}).click();
+ const khmerDialog=page.getByRole('dialog',{name:'អញ្ជើញ DevMasters ចូលរួមដេញថ្លៃ'});
+ await expect(khmerDialog.getByLabel('ឈ្មោះរបស់អ្នក *')).toHaveValue('Original input — ខ្មែរ');expect(await file.evaluate((element:HTMLInputElement)=>element.files?.[0].name)).toBe('original-name.pdf');expect(await page.locator('body').getAttribute('data-switch-probe')).toBe('retained');await expect(page).toHaveURL(/\/km\/home\?source=qa#brief$/);
+ await khmerDialog.getByRole('button',{name:'បិទការអញ្ជើញចូលរួមគម្រោង'}).click();await page.reload();await expect(page.locator('html')).toHaveAttribute('lang','km');await expect(page.locator('link[rel=alternate][hreflang=en]')).toHaveAttribute('href',/\/en\/home$/);await expect(page.locator('html')).toHaveAttribute('dir','ltr');
  const fonts=await page.evaluate(async()=>{await document.fonts.load('400 16px "Noto Sans Khmer"','ភាសាខ្មែរ');return document.fonts.check('400 16px "Noto Sans Khmer"','ភាសាខ្មែរ');});expect(fonts).toBe(true);await expect(page.locator('.language-trigger')).toBeVisible();expect(await page.locator('body').evaluate(element=>element.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'../.runtime/khmer-public-mobile.png',fullPage:true});
 });
 test('Filament switches actual resource and modal translations without losing pending inputs',async({page,context})=>{

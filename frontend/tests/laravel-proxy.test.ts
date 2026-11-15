@@ -16,7 +16,7 @@ const retiredRoutes = [
   {
     route: 'expert',
     suffixes: ['', '/', '/profile', '/offers/private', '/documents/resume.pdf'],
-    boundaries: ['expertise', 'expert-guide'],
+    boundaries: ['expertise-guide', 'expert-guide'],
   },
   {
     route: 'technology-skills',
@@ -27,6 +27,46 @@ const retiredRoutes = [
     route: 'services',
     suffixes: ['', '/', '/software', '/software/integration', '/catalogue.json'],
     boundaries: ['services-guide'],
+  },
+  {
+    route: 'hire-our-team',
+    suffixes: ['', '/', '/experts', '/experts/private', '/roles/data.json'],
+    boundaries: ['hire-our-team-guide'],
+  },
+  {
+    route: 'expertise',
+    suffixes: ['', '/', '/details', '/details/private', '/documents/info.pdf'],
+    boundaries: ['expertise-guide'],
+  },
+  {
+    route: 'invite-us-to-bid',
+    suffixes: ['', '/', '/details', '/details/private', '/documents/info.pdf'],
+    boundaries: ['invite-us-to-bid-guide'],
+  },
+  {
+    route: 'be-our-team',
+    suffixes: ['', '/', '/details', '/details/private', '/documents/info.pdf'],
+    boundaries: ['be-our-team-guide'],
+  },
+  {
+    route: 'contact',
+    suffixes: ['', '/', '/details', '/details/private', '/documents/info.pdf'],
+    boundaries: ['contact-guide'],
+  },
+  {
+    route: 'login',
+    suffixes: ['', '/', '/details', '/details/private', '/documents/info.pdf'],
+    boundaries: ['login-guide'],
+  },
+  {
+    route: 'forgot-password',
+    suffixes: ['', '/', '/details', '/details/private', '/documents/info.pdf'],
+    boundaries: ['forgot-password-guide'],
+  },
+  {
+    route: 'reset-password',
+    suffixes: ['', '/', '/details', '/details/private', '/documents/info.pdf'],
+    boundaries: ['reset-password-guide'],
   },
 ];
 vi.hoisted(() => vi.stubEnv('LARAVEL_URL', 'https://laravel-origin.example'));
@@ -68,16 +108,16 @@ describe('Laravel reverse proxy', () => {
     expect(response.headers.get('x-vercel-enable-rewrite-caching')).toBe('0');
   });
 
-  it.each(['/', '/login', '/logout', '/expert/profile', '/en/login', '/km/hire-our-team', '/administrator', '/apiary', '/filament/gallery', '/_next/static/app.js', '/Logo.jpg', '/fonts/devmasters.css', '/fonts/Inter.ttf'])('keeps Next.js path %s out of Laravel', async path => {
+  it.each(['/', '/home', '/privacy', '/terms', '/en/home', '/km/terms', '/administrator', '/apiary', '/filament/gallery', '/_next/static/app.js', '/Logo.jpg', '/fonts/devmasters.css', '/fonts/Inter.ttf'])('keeps Next.js path %s out of Laravel', async path => {
     const response = await unstable_getResponseFromNextConfig({ url: `${origin}${path}`, nextConfig });
     expect(getRewrittenUrl(response)).toBeNull();
   });
 
   it('preserves localization, frontend assets and security headers', async () => {
-    const login = proxy(new NextRequest(`${origin}/login`));
-    expect(login.headers.get('location')).toBe(`${origin}/km/login`);
-    const localized = proxy(new NextRequest(`${origin}/en/login`));
-    expect(localized.headers.get('x-middleware-rewrite')).toBe(`${origin}/login`);
+    const home = proxy(new NextRequest(`${origin}/home`));
+    expect(home.headers.get('location')).toBe(`${origin}/km/home`);
+    const localized = proxy(new NextRequest(`${origin}/en/home`));
+    expect(localized.headers.get('x-middleware-rewrite')).toBe(`${origin}/home`);
     expect(localized.headers.get('set-cookie')).toContain('devmasters_locale=en');
 
     const font = proxy(new NextRequest(`${origin}/fonts/Inter.ttf`));
@@ -97,27 +137,28 @@ describe('Laravel reverse proxy', () => {
     expect(proxy(redirect).headers.get('location')).toBe('http://127.0.0.1:13001/km/home');
   });
 
-  it.each(['en', 'km'])('redirects the removed About page to /%s/home', locale => {
-    const response = proxy(new NextRequest(`${origin}/${locale}/about?source=bookmark`));
-    expect(response.status).toBe(308);
-    expect(response.headers.get('location')).toBe(`${origin}/${locale}/home?source=bookmark`);
-
-    const home = proxy(new NextRequest(`${origin}/${locale}/home`));
+  it.each(['en', 'km'])('normalizes root and About aliases to /%s/home',locale=>{
+    for(const alias of ['', '/', '/about']){
+      const response=proxy(new NextRequest(`${origin}/${locale}${alias}?source=bookmark`));
+      expect(response.status).toBe(308);
+      expect(response.headers.get('location')).toBe(`${origin}/${locale}/home?source=bookmark`);
+    }
+    const home=proxy(new NextRequest(`${origin}/${locale}/home`));
     expect(home.headers.get('location')).toBeNull();
     expect(home.headers.get('x-middleware-rewrite')).toBe(`${origin}/home`);
   });
 
-  it('uses the saved language when redirecting an unprefixed About URL', () => {
-    const response = proxy(new NextRequest(`${origin}/about`, {
-      headers: { cookie: 'devmasters_locale=en' },
-    }));
-    expect(response.headers.get('location')).toBe(`${origin}/en/home`);
+  it('uses the saved language when redirecting an unprefixed root or About URL',()=>{
+    for(const alias of ['/', '/about']){
+      const response=proxy(new NextRequest(`${origin}${alias}`,{headers:{cookie:'devmasters_locale=en'}}));
+      expect(response.headers.get('location')).toBe(`${origin}/en/home`);
+    }
   });
 
-  it.each(['en', 'km'])('keeps the %s Expertise page available after retiring Services', locale => {
-    const response = proxy(new NextRequest(`${origin}/${locale}/expertise?category=software`));
+  it.each(['en','km'].flatMap(locale=>['privacy','terms'].map(slug=>({locale,slug}))))('keeps /$locale/$slug available after other public pages are retired',({locale,slug})=>{
+    const response=proxy(new NextRequest(`${origin}/${locale}/${slug}?source=legal`));
     expect(response.headers.get('location')).toBeNull();
-    expect(response.headers.get('x-middleware-rewrite')).toBe(`${origin}/expertise?category=software`);
+    expect(response.headers.get('x-middleware-rewrite')).toBe(`${origin}/${slug}?source=legal`);
     expect(response.headers.get('set-cookie')).toContain(`devmasters_locale=${locale}`);
   });
 

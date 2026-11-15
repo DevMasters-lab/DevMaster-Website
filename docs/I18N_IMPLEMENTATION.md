@@ -7,7 +7,7 @@ Implemented on 2 November 2026 for the existing native local application. Khmer 
 | Reviewed area | Implementation and verification |
 |---|---|
 | Locale infrastructure | next-intl 4.14.9; matching English/Khmer catalogues; server metadata and client hooks; supported-locale validation |
-| Public interface | Homepage, About, Services, Expertise, Invite Us to Bid, Hire Our Team, Be Our Team, Contact, Privacy and Terms; header/footer/mobile menus |
+| Public interface | Home, Privacy and Terms; homepage bid, partner and expert application popups; header/footer controls |
 | Intake | Company, application and scoped correction forms; labels, placeholders, client/API validation, localized native constraint prompts, acknowledgements, translated file-picker controls |
 | Expert authentication | Sign-in, recovery, activation/reset, saved account preference, logout and ownership errors |
 | Expert interface | Dashboard, profile/personal/professional data, skills, availability, documents, exact offers/responses, histories, notifications, consent and account security |
@@ -23,7 +23,7 @@ The 30 Admin resources reviewed are Users, Roles, Permissions, Organizations, Co
 
 ## URLs, preference and forms
 
-Public and Expert URLs use `/km` and `/en`, for example `/km/hire-our-team` and `/en/expert/offers`. Existing App Router routes are retained through a Next.js proxy rewrite. Unprefixed public URLs redirect to the supported cookie or Khmer default. API, Filament, Livewire, asset and Sanctum paths retain their existing URLs. Canonical and `hreflang` links cover both languages with Khmer as `x-default`; private authentication/correction content retains its privacy settings.
+The public frontend has three pages in `/km` and `/en`: `/home`, `/privacy` and `/terms`. Homepage bid, partner and expert application forms open as popups. Retired standalone pages and frontend authentication URLs redirect to the localized homepage; unknown CMS slugs return 404. Root URLs also redirect to `/home`, using the supported language cookie or Khmer default. API, Filament, Livewire, asset and Sanctum paths retain their existing URLs. Canonical and `hreflang` links cover both languages with Khmer as `x-default`.
 
 The shared React locale provider changes dictionaries without remounting the current form. Native history updates retain the path, query and hash; selected files and entered values remain intact. The accessible select is available in desktop/mobile public navigation and the Expert topbar. Backend failures saving a preference show an error while keeping the local choice. Anonymous preference uses a one-year SameSite=Lax, non-secret cookie. Authenticated selections also update `users.preferred_locale`; login restores the saved preference and updates the current URL. Logout preserves the language cookie.
 
