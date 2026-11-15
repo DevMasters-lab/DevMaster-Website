@@ -1,4 +1,5 @@
 .actions{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:1fr;gap:16px;width:100%;max-width:550px}
+.reveal{display:grid;min-width:0}
 .card{position:relative;display:grid;grid-template-columns:43px minmax(0,1fr) 100px;align-items:center;gap:16px;min-width:0;min-height:124px;padding:20px 22px;border:1px solid transparent;border-radius:16px;font-family:inherit;text-align:left;text-decoration:none;box-shadow:0 7px 20px #2432470b;isolation:isolate;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
 .card::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:linear-gradient(110deg,transparent 34%,#ffffff66 48%,transparent 62%);background-size:250% 100%;background-position:150% 50%;opacity:0;pointer-events:none}
 .card::after{content:"";position:absolute;inset:0;z-index:-2;border-radius:inherit;opacity:0;pointer-events:none}
@@ -30,7 +31,7 @@
   .expert:hover{border-color:#74b6c0}
   .card:hover .artwork{transform:translateX(3px)}
 }
-/* The wrapper owns scroll reveal; these loops run only while the scene is visible. */
+/* Each outer card wrapper owns scroll reveal independently of these loops. */
 @media(prefers-reduced-motion:no-preference){
   .actions[data-running=true] .card::before{animation:cardShimmer 4.8s ease-in-out infinite}
   .actions[data-running=true] .bid::after{animation:bidGlow 3.5s ease-in-out infinite}

@@ -4,6 +4,7 @@ import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import {act,cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {LocaleProvider} from '../src/i18n/provider';
 import {PageContent} from '../src/components/page-content';
+import {HomeEngagementActions} from '../src/components/home-engagement-actions';
 
 const route=vi.hoisted(()=>({path:'/en/home'}));
 vi.mock('next/navigation',()=>({usePathname:()=>route.path}));
@@ -71,6 +72,47 @@ describe('public page scroll animation',()=>{
       observer('entry').intersect(target,true);
       expect(target).toHaveAttribute('data-reveal-state','revealed');
     }
+  });
+
+  it('reveals the real engagement cards independently, replays them, and preserves focused content',()=>{
+    render(<LocaleProvider initialLocale="en"><PageContent><HomeEngagementActions/></PageContent></LocaleProvider>);
+    const links=screen.getAllByRole('link');
+    const cards=links.map(link=>link.parentElement!);
+    expect(new Set(cards).size).toBe(3);
+    expect(cards.map(card=>card.getAttribute('data-reveal'))).toEqual(['left','right','left']);
+    expect(cards.map(card=>card.getAttribute('data-reveal-delay'))).toEqual(['0','2','4']);
+    for(const card of cards){
+      expect(observer('entry').targets.has(card)).toBe(true);
+      expect(observer('exit').targets.has(card)).toBe(true);
+      expect(card).toHaveAttribute('data-reveal-state','pending');
+    }
+    expect(observer('entry').targets.size).toBe(3);
+    observer('entry').intersect(cards[0],true);
+    expect(cards[0]).toHaveAttribute('data-reveal-state','revealed');
+    expect(cards[1]).toHaveAttribute('data-reveal-state','pending');
+    expect(cards[2]).toHaveAttribute('data-reveal-state','pending');
+    fireEvent.animationEnd(links[0]);
+    expect(cards[0]).toHaveAttribute('data-reveal-state','revealed');
+    fireEvent.animationEnd(cards[0]);
+    expect(cards[0]).toHaveAttribute('data-reveal-state','visible');
+    for(let pass=0;pass<2;pass++){
+      for(const card of cards){
+        observer('exit').intersect(card,false);
+        expect(card).toHaveAttribute('data-reveal-state','pending');
+        observer('entry').intersect(card,true);
+        expect(card).toHaveAttribute('data-reveal-state','revealed');
+        fireEvent.animationEnd(card);
+        expect(card).toHaveAttribute('data-reveal-state','visible');
+        observer('exit').intersect(card,false);
+      }
+    }
+    act(()=>links[1].focus());
+    expect(cards[1]).toHaveAttribute('data-reveal-state','visible');
+    observer('entry').intersect(cards[1],true);
+    observer('exit').intersect(cards[1],false);
+    expect(cards[1]).toHaveAttribute('data-reveal-state','visible');
+    expect(cards[0]).toHaveAttribute('data-reveal-state','pending');
+    expect(cards[2]).toHaveAttribute('data-reveal-state','pending');
   });
 
   it('cleans up the previous page and enhances same-shaped content on a new path',()=>{

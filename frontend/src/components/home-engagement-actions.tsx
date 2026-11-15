@@ -107,14 +107,16 @@ export function HomeEngagementActions(){
     };
   },[]);
 
-  return <div ref={ref} className={styles.actions} data-running={running?'true':'false'} data-reveal="up">
-    {engagements.map(({kind,href,Icon,title,description})=><Link key={kind} href={href} className={`${styles.card} ${styles[kind]}`}>
-      <span className={styles.leadingIcon}><Icon size={23} aria-hidden="true"/></span>
-      <span className={styles.copy}>
-        <span className={styles.title}>{t(title)}</span>
-        <span className={styles.description}>{t(description)}</span>
-      </span>
-      <EngagementArtwork kind={kind}/>
-    </Link>)}
+  return <div ref={ref} className={styles.actions} data-running={running?'true':'false'}>
+    {engagements.map(({kind,href,Icon,title,description},index)=><div key={kind} className={styles.reveal} data-reveal={index%2===0?'left':'right'} data-reveal-delay={index*2}>
+      <Link href={href} className={`${styles.card} ${styles[kind]}`}>
+        <span className={styles.leadingIcon}><Icon size={23} aria-hidden="true"/></span>
+        <span className={styles.copy}>
+          <span className={styles.title}>{t(title)}</span>
+          <span className={styles.description}>{t(description)}</span>
+        </span>
+        <EngagementArtwork kind={kind}/>
+      </Link>
+    </div>)}
   </div>;
 }
