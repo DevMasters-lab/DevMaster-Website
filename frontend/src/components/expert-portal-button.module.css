@@ -1,0 +1,16 @@
+.trigger{--dm-text-control:14px;display:inline-flex;align-items:center;justify-content:center;gap:14px;flex-shrink:1;min-width:0;min-height:44px;max-width:100%;padding:10px 18px;border:1px solid var(--ink);border-radius:999px;background:transparent;color:var(--ink);font-family:var(--dm-font-body);font-size:var(--dm-text-control);font-weight:600;line-height:1.5;text-align:center;white-space:normal;overflow-wrap:anywhere;cursor:pointer;transition:background .18s ease,border-color .18s ease,color .18s ease}
+.trigger>svg{flex-shrink:0;width:18px;height:18px;transition:transform .18s ease}
+.trigger:focus-visible{outline:2px solid var(--purple);outline-offset:4px}
+.tools{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;min-height:28px;padding-inline-start:16px;border-inline-start:1px solid var(--border)}
+@media(hover:hover) and (pointer:fine){
+  .trigger:hover{border-color:var(--purple);background:var(--soft);color:var(--purple)}
+  .trigger:hover>svg{transform:translateX(3px)}
+}
+@media(max-width:620px){
+  .trigger{--dm-text-control:13px;gap:10px;padding:8px 12px}
+  .trigger>svg{width:16px;height:16px}
+  .tools{gap:4px;padding-inline-start:10px}
+}
+@media(max-width:400px){.tools{gap:2px;padding-inline-start:8px}}
+:global(html[lang=km]) .trigger{letter-spacing:0;line-height:1.8}
+@media(prefers-reduced-motion:reduce){.trigger,.trigger>svg{transition:none}}

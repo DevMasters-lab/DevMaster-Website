@@ -63,7 +63,7 @@
 .dialog .form :global(.specialist-fields) textarea{height:100px;min-height:90px}
 .dialog .form :global(.remove-role),.dialog .form :global(.add-role){display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;gap:8px;min-height:44px;padding:9px 12px;border:1px solid var(--bid-border);border-radius:8px;font-size:13px;font-weight:600;line-height:1.65;text-align:center;white-space:normal;cursor:pointer;transition:border-color .18s ease,background .18s ease,color .18s ease}
 .dialog .form :global(.remove-role){background:var(--bid-paper);color:#a5304e}
-.dialog .form :global(.add-role){margin-top:14px;padding-inline:14px;border-style:dashed;background:transparent;color:var(--bid-teal)}
+.dialog .form :global(.add-role){display:flex;width:fit-content;max-width:100%;margin:18px auto 0;padding-inline:18px;border-style:solid;border-color:#6741d9;background:#6741d9;color:#fff;overflow-wrap:anywhere}
 .dialog .form :global(.remove-role):disabled,.dialog .form :global(.add-role):disabled{opacity:.45;cursor:not-allowed}
 .dialog .form :global(.remove-role):focus-visible,.dialog .form :global(.add-role):focus-visible{outline:2px solid var(--purple);outline-offset:3px}
 .dialog .form :global(.application-intro){--dm-text-body:12.5px;margin:0 0 16px;color:var(--bid-muted);font-size:var(--dm-text-body);line-height:1.75;overflow-wrap:anywhere}
@@ -78,7 +78,7 @@
   .closeButton:hover{border-color:var(--bid-teal);background:var(--bid-paper);color:var(--bid-teal)}
   .dialog .form :global(.button-purple):hover{background:#bee760;border-color:#a5cc50}
   .dialog .form :global(.remove-role):hover:not(:disabled){border-color:#c47489;background:var(--bid-field)}
-  .dialog .form :global(.add-role):hover:not(:disabled){border-color:var(--bid-teal);background:var(--bid-field)}
+  .dialog .form :global(.add-role):hover:not(:disabled){border-color:#5530be;background:#5530be}
 }
 @media(max-height:720px) and (min-width:801px){
   .sideArt{display:none}
@@ -100,7 +100,6 @@
   .dialog .title{font-size:26px;letter-spacing:-.4px}
   .dialog .form :global(.form-grid){grid-template-columns:minmax(0,1fr);gap:14px}
   .dialog .form :global(.specialist-role){padding:14px}
-  .dialog .form :global(.add-role){width:100%}
   .dialog .form :global(.request-fields){padding-right:8px}
   .dialog .form :global(.form-bottom){flex-direction:column;align-items:stretch;gap:10px;padding-top:12px}
   .dialog .form :global(.button-purple){width:100%;min-height:46px;justify-content:center;font-size:15px}
@@ -124,3 +123,149 @@
 @media(prefers-reduced-motion:reduce){
   .closeButton,.dialog .form :global(.field) :is(input,select,textarea),.dialog .form :global(.button-purple),.dialog .form :global(.remove-role),.dialog .form :global(.add-role){transition:none}
 }
+
+/* The portal preview shares the engagement shell without changing other forms. */
+.dialog.portal{width:min(1200px,calc(100vw - 40px));height:min(940px,calc(100vh - 40px));height:min(940px,calc(100dvh - 40px))}
+.portal .layout{grid-template-columns:minmax(240px,31%) minmax(0,1fr)}
+.portal .sidebar{padding:30px 26px}
+.portal .sideArt{width:80px;height:80px;margin:40px 0 26px;border-radius:22px}
+.portal .sideArt>svg{width:44px;height:44px}
+.portal .sideTitle{font-size:26px;line-height:1.45}
+.portal .content{padding:30px 32px 26px}
+.portal .header,.portal .form{width:100%;max-width:640px;margin-inline:auto}
+.portal .header{margin-bottom:18px}
+.portal .title{font-size:24px;letter-spacing:-.4px}
+.portal .description{--dm-text-body:13px;line-height:1.7}
+.portal .form :global(.request-fields){padding:2px 8px 16px 2px}
+.portal .form :global(.portal-preview-notice){--dm-text-body:12px;display:flex;align-items:flex-start;gap:10px;min-width:0;margin:0 0 24px;padding:12px 14px;border:1px solid var(--bid-border);border-radius:10px;background:color-mix(in srgb,var(--bid-teal) 6%,var(--bid-paper));color:var(--bid-ink);font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+.portal .form :global(.portal-preview-notice)>svg{flex-shrink:0;width:18px;height:18px;margin-top:2px;color:var(--bid-teal)}
+.portal .form :global(.portal-preview-notice)>div{min-width:0}
+.portal .form :global(.portal-preview-notice) strong{display:block;font-weight:650}
+.portal .form :global(.portal-preview-notice) p{margin:3px 0 0;color:var(--bid-muted);line-height:1.7}
+.portal .form :global(.portal-preview-welcome){min-width:0;margin:0 0 24px;text-align:center}
+.portal .form :global(.portal-preview-emblem){display:inline-flex;align-items:center;justify-content:center;width:54px;height:54px;margin-bottom:12px;border:1px solid var(--bid-border);border-radius:16px;background:var(--bid-field);color:var(--bid-teal)}
+.portal .form :global(.portal-preview-emblem)>svg{width:25px;height:25px}
+.portal .form :global(.portal-preview-welcome) h3{margin:0;color:var(--bid-ink);font-family:var(--dm-font-body);font-size:26px;font-weight:650;line-height:1.45;letter-spacing:-.5px;overflow-wrap:anywhere}
+.portal .form :global(.portal-preview-welcome) p{--dm-text-body:13px;margin:8px 0 0;color:var(--bid-muted);line-height:1.75;overflow-wrap:anywhere}
+.portal .form :global(.portal-preview-fields){grid-template-columns:minmax(0,1fr);gap:18px}
+.portal .form :global(.portal-password-input){position:relative;min-width:0}
+.dialog.portal .form :global(.field .portal-password-input)>input{padding-inline-end:52px}
+.portal .form :global(.portal-password-toggle){position:absolute;inset:0 0 0 auto;display:flex;align-items:center;justify-content:center;width:44px;min-height:44px;padding:10px;border:0;border-radius:7px;background:transparent;color:var(--bid-muted);cursor:pointer;transition:background .18s ease,color .18s ease}
+.portal .form :global(.portal-password-toggle)>svg{flex-shrink:0;width:18px;height:18px}
+.portal .form :global(.portal-preview-options){display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 14px;min-width:0;margin-top:10px}
+.portal .form :global(.portal-preview-remember){display:inline-flex;align-items:center;gap:8px;min-width:0;min-height:44px;color:var(--bid-muted);font-size:13px;line-height:1.7;cursor:pointer;overflow-wrap:anywhere}
+.portal .form :global(.portal-preview-remember)>input{flex-shrink:0;width:17px;height:17px;min-height:0;margin:0;padding:0;accent-color:var(--bid-teal)}
+.portal .form :global(.portal-preview-forgot),.portal .form :global(.portal-preview-join)>button{display:inline-flex;align-items:center;justify-content:center;min-width:0;min-height:44px;padding:8px 2px;border:0;border-radius:4px;background:transparent;color:var(--bid-teal);font-size:13px;font-weight:600;line-height:1.7;text-align:center;text-underline-offset:4px;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
+.portal .form :global(.portal-preview-status){--dm-text-body:13px;min-width:0;margin:0 0 18px;padding:12px 14px;border:1px solid var(--bid-border);border-radius:9px;background:var(--bid-field);color:var(--bid-ink);font-size:13px;line-height:1.8;overflow-wrap:anywhere}
+.portal .form :global(.portal-preview-footer){flex-direction:column;align-items:stretch;gap:8px;padding-top:18px}
+.portal .form :global(.portal-preview-submit){width:100%;min-height:46px;justify-content:center}
+.portal .form :global(.portal-preview-join){display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:0 7px;min-width:0;color:var(--bid-muted);font-size:13px;line-height:1.8;text-align:center;overflow-wrap:anywhere}
+.portal .form :global(.portal-password-toggle):focus-visible,.portal .form :global(.portal-preview-forgot):focus-visible,.portal .form :global(.portal-preview-join)>button:focus-visible,.portal .form :global(.portal-preview-remember)>input:focus-visible{outline:2px solid var(--purple);outline-offset:3px}
+@media(hover:hover) and (pointer:fine){
+  .portal .form :global(.portal-password-toggle):hover{background:color-mix(in srgb,var(--bid-teal) 8%,transparent);color:var(--bid-teal)}
+  .portal .form :global(.portal-preview-forgot):hover,.portal .form :global(.portal-preview-join)>button:hover{text-decoration:underline}
+}
+@media(max-width:800px){
+  .dialog.portal{width:calc(100vw - 24px);height:min(940px,calc(100vh - 24px));height:min(940px,calc(100dvh - 24px))}
+  .portal .layout{grid-template-columns:minmax(0,1fr)}
+  .portal .content{padding:28px 26px 22px}
+}
+@media(max-width:600px){
+  .portal .content{padding:24px 18px 18px}
+  .portal .header{margin-bottom:16px}
+  .portal .title{font-size:23px}
+  .portal .form :global(.portal-preview-notice){gap:8px;margin-bottom:20px;padding:11px 12px}
+  .portal .form :global(.portal-preview-welcome){margin-bottom:20px}
+  .portal .form :global(.portal-preview-welcome) h3{font-size:24px}
+  .portal .form :global(.portal-preview-footer){padding-top:12px}
+}
+@media(max-height:540px){
+  .portal .sideArt{display:none}
+  .portal .content{padding:18px 22px}
+  .portal .header{margin-bottom:12px}
+  .portal .form :global(.portal-preview-notice){margin-bottom:16px}
+  .portal .form :global(.portal-preview-welcome){margin-bottom:16px}
+  .portal .form :global(.portal-preview-emblem){display:none}
+  .portal .form :global(.portal-preview-welcome) h3{font-size:22px}
+  .portal .form :global(.portal-preview-footer){gap:4px;padding-top:10px}
+}
+:global(html[lang=km]) .portal .form :global(.portal-preview-welcome) h3{letter-spacing:0;line-height:1.7}
+@media(prefers-reduced-motion:reduce){.portal .form :global(.portal-password-toggle){transition:none}}
+
+/* Bid-specific document controls keep the native file input and form semantics. */
+.bid .form :global(.bid-upload-label){display:block;min-width:0;margin:0 0 8px;color:var(--bid-ink);font-size:var(--dm-text-label);font-weight:500;line-height:1.7;overflow-wrap:anywhere}
+.bid .form :global(.bid-upload){position:relative;display:flex;align-items:center;gap:16px;min-width:0;min-height:96px;padding:16px;border:1px dashed var(--bid-border);border-radius:12px;background:var(--bid-field);color:var(--bid-ink);transition:border-color .18s ease,background .18s ease,box-shadow .18s ease}
+.bid .form :global(.bid-upload-active){border-color:var(--bid-teal);background:color-mix(in srgb,var(--bid-teal) 9%,var(--bid-paper));box-shadow:0 0 0 3px color-mix(in srgb,var(--bid-teal) 13%,transparent)}
+.bid .form :global(.bid-upload):focus-within{border-color:var(--bid-teal);outline:2px solid var(--purple);outline-offset:3px}
+.bid .form :global(.bid-upload):has(input[aria-invalid=true]){border-color:#c24b66}
+.dialog.bid .form :global(.bid-upload-input){position:absolute;width:1px;height:1px;min-height:0;margin:0;padding:0;border:0;opacity:0;overflow:hidden;clip-path:inset(50%)}
+.bid .form :global(.bid-upload-icon){display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:48px;height:48px;border:1px solid var(--bid-border);border-radius:13px;background:var(--bid-paper);color:var(--bid-teal)}
+.bid .form :global(.bid-upload-icon)>svg{flex-shrink:0;width:25px;height:25px}
+.bid .form :global(.bid-upload-copy){--dm-text-body:12px;display:flex;flex:1;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;color:var(--bid-muted);font-size:12px;font-weight:400;line-height:1.75;overflow-wrap:anywhere}
+.bid .form :global(.bid-upload-copy) strong{display:block;max-width:100%;color:var(--bid-ink);font-size:13px;font-weight:600;line-height:1.7;overflow-wrap:anywhere}
+.bid .form :global(.bid-upload-copy) p{margin:0;color:var(--bid-muted);line-height:1.75}
+.bid .form :global(.bid-upload-browse),.bid .form :global(.bid-upload-remove){display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;gap:8px;min-height:44px;max-width:100%;padding:8px 13px;border:1px solid var(--bid-border);border-radius:8px;background:var(--bid-paper);font-size:13px;font-weight:600;line-height:1.7;text-align:center;white-space:normal;overflow-wrap:anywhere;cursor:pointer;transition:border-color .18s ease,background .18s ease,color .18s ease}
+.bid .form :global(.bid-upload-browse){color:var(--bid-teal)}
+.bid .form :global(.bid-upload-remove){color:#a5304e}
+.bid .form :global(.bid-upload-browse)>svg,.bid .form :global(.bid-upload-remove)>svg{flex-shrink:0;width:16px;height:16px}
+.bid .form :global(.bid-upload-selected){display:flex;flex:1;flex-wrap:wrap;align-items:center;gap:12px;min-width:0;width:100%}
+.bid .form :global(.bid-upload-selected)>div{flex:1;min-width:0}
+.bid .form :global(.bid-upload-selected) strong{display:block;max-width:100%;color:var(--bid-ink);font-size:13px;font-weight:600;line-height:1.7;overflow-wrap:anywhere}
+.bid .form :global(.bid-upload-selected)>span{flex:1;min-width:0;overflow-wrap:anywhere}
+.bid .form :global(.bid-upload-browse):focus-visible,.bid .form :global(.bid-upload-remove):focus-visible{outline:2px solid var(--purple);outline-offset:3px}
+@media(hover:hover) and (pointer:fine){
+  .bid .form :global(.bid-upload-browse):hover:not(:disabled){border-color:var(--bid-teal);background:color-mix(in srgb,var(--bid-teal) 6%,var(--bid-paper))}
+  .bid .form :global(.bid-upload-remove):hover:not(:disabled){border-color:#c47489;background:var(--bid-field)}
+}
+@media(max-width:600px){
+  .bid .form :global(.bid-upload){flex-wrap:wrap;align-items:flex-start;gap:12px;min-height:110px;padding:16px}
+  .bid .form :global(.bid-upload-copy){flex-basis:160px}
+  .bid .form :global(.bid-upload-browse){margin-inline-start:auto}
+  .bid .form :global(.bid-upload-icon){width:40px;height:40px;border-radius:11px}
+  .bid .form :global(.bid-upload-icon)>svg{width:22px;height:22px}
+  .bid .form :global(.bid-upload-selected){gap:10px}
+  .bid .form :global(.bid-upload-selected)>:global(.bid-upload-remove){margin-inline-start:auto}
+}
+@media(max-height:540px){.bid .form :global(.bid-upload){min-height:110px;padding:14px 16px}}
+:global(html[lang=km]) .bid .form :global(.bid-upload-label),:global(html[lang=km]) .bid .form :global(.bid-upload-copy){letter-spacing:0;line-height:1.85}
+:global(html[data-theme=dark]) .bid .form :global(.bid-upload-remove){color:#ffb4ca}
+@media(prefers-reduced-motion:reduce){.bid .form :global(.bid-upload),.bid .form :global(.bid-upload-browse),.bid .form :global(.bid-upload-remove){transition:none}}
+
+/* Signup is a separate preview; its layout does not alter the real application. */
+.expert .form :global(.expert-signup-banner){--dm-text-body:13px;display:flex;align-items:flex-start;gap:14px;min-width:0;margin:0 0 22px;padding:18px;border:1px solid var(--bid-border);border-radius:12px;background:var(--bid-field);color:var(--bid-ink);overflow-wrap:anywhere}
+.expert .form :global(.expert-signup-icon){display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:46px;height:46px;border:1px solid var(--bid-border);border-radius:13px;background:var(--bid-paper);color:var(--bid-teal)}
+.expert .form :global(.expert-signup-icon)>svg{width:25px;height:25px;flex-shrink:0}
+.expert .form :global(.expert-signup-banner)>div{min-width:0}
+.expert .form :global(.expert-signup-banner) p{align-self:center;margin:0;color:var(--bid-ink);font-weight:500;line-height:1.75}
+.expert .form :global(.expert-signup-fields){grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 16px;align-items:start}
+.expert .form :global(.expert-password-input){position:relative;min-width:0}
+.dialog.expert .form :global(.field .expert-password-input)>input{padding-inline-end:52px}
+.expert .form :global(.expert-password-toggle){position:absolute;inset:0 0 0 auto;display:flex;align-items:center;justify-content:center;width:44px;min-height:44px;padding:10px;border:0;border-radius:7px;background:transparent;color:var(--bid-muted);cursor:pointer;transition:background .18s ease,color .18s ease}
+.expert .form :global(.expert-password-toggle)>svg{flex-shrink:0;width:18px;height:18px}
+.expert .form :global(.expert-signup-status){--dm-text-body:13px;min-width:0;margin:0 0 18px;padding:12px 14px;border:1px solid var(--bid-border);border-radius:10px;background:var(--bid-field);color:var(--bid-ink);font-size:13px;line-height:1.8;overflow-wrap:anywhere}
+.expert .form :global(.expert-signup-footer){flex-direction:column;align-items:stretch;gap:8px;padding-top:16px}
+.expert .form :global(.expert-signup-submit){width:100%;min-height:46px;justify-content:center}
+.expert .form :global(.expert-signup-signin){display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:0 7px;min-width:0;color:var(--bid-muted);font-size:13px;line-height:1.8;text-align:center;overflow-wrap:anywhere}
+.expert .form :global(.expert-signup-signin)>button{display:inline-flex;align-items:center;justify-content:center;min-width:0;min-height:44px;padding:8px 2px;border:0;border-radius:4px;background:transparent;color:var(--bid-teal);font-size:13px;font-weight:600;line-height:1.7;text-align:center;text-underline-offset:4px;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
+.expert .form :global(.expert-signup-notice){--dm-text-body:12px;display:flex;align-items:flex-start;gap:8px;min-width:0;padding:10px 12px;border:1px solid var(--bid-border);border-radius:9px;background:var(--bid-field);color:var(--bid-muted);font-size:12px;line-height:1.75;text-align:start;overflow-wrap:anywhere}
+.expert .form :global(.expert-signup-notice)>svg{flex-shrink:0;width:16px;height:16px;margin-top:2px;color:var(--bid-teal)}
+.expert .form :global(.expert-signup-notice)>span,.expert .form :global(.expert-signup-notice)>div{min-width:0}
+.expert .form :global(.expert-signup-notice) p{margin:0;color:var(--bid-muted);line-height:1.75}
+.expert .form :global(.expert-password-toggle):focus-visible,.expert .form :global(.expert-signup-signin)>button:focus-visible{outline:2px solid var(--purple);outline-offset:3px}
+@media(hover:hover) and (pointer:fine){
+  .expert .form :global(.expert-password-toggle):hover{background:color-mix(in srgb,var(--bid-teal) 8%,transparent);color:var(--bid-teal)}
+  .expert .form :global(.expert-signup-signin)>button:hover{text-decoration:underline}
+}
+@media(max-width:600px){
+  .expert .form :global(.expert-signup-banner){gap:12px;margin-bottom:18px;padding:15px}
+  .expert .form :global(.expert-signup-icon){width:42px;height:42px;border-radius:11px}
+  .expert .form :global(.expert-signup-fields){grid-template-columns:minmax(0,1fr);gap:16px}
+  .expert .form :global(.expert-signup-footer){gap:6px;padding-top:12px}
+}
+@media(max-height:540px){
+  .expert .form :global(.expert-signup-banner){margin-bottom:16px;padding:12px 14px}
+  .expert .form :global(.expert-signup-icon){display:none}
+  .expert .form :global(.expert-signup-footer){gap:4px;padding-top:10px}
+  .expert .form :global(.expert-signup-notice){padding:8px 10px;line-height:1.65}
+}
+@media(prefers-reduced-motion:reduce){.expert .form :global(.expert-password-toggle){transition:none}}

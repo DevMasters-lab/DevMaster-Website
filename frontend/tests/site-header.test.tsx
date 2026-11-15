@@ -5,8 +5,8 @@ import {LocaleProvider} from '../src/i18n/provider';
 import {SiteHeader} from '../src/components/site-shell';
 
 afterEach(cleanup);
-describe('public header after retiring the hire page',()=>{
-  it.each(['en','km'] as const)('keeps the home link and tools without the work-together CTA in %s',locale=>{
+describe('public header actions',()=>{
+  it.each(['en','km'] as const)('keeps the home link and tools with a same-page Expert Portal control in %s',locale=>{
     render(<LocaleProvider initialLocale={locale}><SiteHeader/></LocaleProvider>);
     const header=screen.getByRole('banner');
     const links=within(header).getAllByRole('link');
@@ -14,6 +14,10 @@ describe('public header after retiring the hire page',()=>{
     expect(links[0]).toHaveAttribute('href',`/${locale}/home`);
     expect(within(header).queryByRole('link',{name:/Let’s work together/})).not.toBeInTheDocument();
     expect(header.querySelector('a[href*="hire-our-team"]')).toBeNull();
-    expect(within(header).getAllByRole('button')).toHaveLength(2);
+    const buttons=within(header).getAllByRole('button');
+    expect(buttons).toHaveLength(3);
+    expect(buttons.at(-1)).toBe(within(header).getByRole('button',{name:locale==='en'?'Language':'ភាសា'}));
+    const portal=within(header).getByRole('button',{name:locale==='en'?'Expert Portal':'ផតថលអ្នកជំនាញ'});
+    expect(portal).toHaveAttribute('type','button');expect(portal).toHaveAttribute('aria-haspopup','dialog');
   });
 });

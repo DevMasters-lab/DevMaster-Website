@@ -134,6 +134,13 @@ html[data-theme=dark] .skill-item{background:#30253d;border-color:#514061;color:
 html[data-theme=dark] footer{background:#1b102b}
 @media(max-width:760px){.header-actions{gap:6px}.header-icon-button{width:40px;height:40px}}
 
+/* Share the page-content alignment without changing the sticky header's height. */
+.site-header{padding-inline:0}
+.site-header-inner{display:flex;align-items:center;justify-content:space-between;gap:24px;width:100%;min-width:0}
+@media(max-width:1100px){.site-header-inner{gap:10px}}
+@media(max-width:760px){.site-header-inner{gap:8px}}
+@media(max-width:620px){.site-header-inner{flex-wrap:wrap;gap:8px 12px;padding-top:12px;padding-bottom:12px}.site-header .header-actions{max-width:100%;margin-inline-start:auto}}
+
 /* Sample partner logos, with the same sliding interaction as the reference. */
 .logo-section{padding:64px 0 48px;background:var(--soft);border-top:1px solid var(--border);overflow:hidden}
 .logo-heading{text-align:center;margin-bottom:42px}

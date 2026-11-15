@@ -99,6 +99,7 @@ describe('technology skills slider',()=>{
     const filters=screen.getByRole('group',{name:'Technology categories'});
     expect(within(filters).getAllByRole('button').map(button=>button.textContent)).toEqual(['All categories',...technologySkillCategories.slice(0,8).map(category=>category.name)]);
     expect(screen.queryByRole('combobox',{name:'Subcategory'})).not.toBeInTheDocument();
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
     expect(within(filters).getByRole('button',{name:'All categories'})).toHaveAttribute('aria-pressed','true');
     expect(engine.props?.slidesPerView).toBe(2);
     expect(engine.props?.breakpoints).toEqual(expect.objectContaining({700:expect.objectContaining({slidesPerView:4}),1100:expect.objectContaining({slidesPerView:5})}));
@@ -134,25 +135,21 @@ describe('technology skills slider',()=>{
     expect(within(filters).getAllByRole('button')).toHaveLength(9);
     expect(engine.realIndex).toBe(position);
   });
-  it('keeps a selected late category and its search results when the category list folds',()=>{
+  it('keeps a selected late category and its skills when the category list folds',()=>{
     renderShowcase();expandCategories();
     const filters=screen.getByRole('group',{name:'Technology categories'});
     const category=technologySkillCategories.at(-1)!;
     const selected=within(filters).getByRole('button',{name:category.name});
     fireEvent.click(selected);
-    const search=screen.getByRole('searchbox',{name:'Search skills'});
-    const query=getSkillsForCategory(category.id)[0].name;
-    fireEvent.change(search,{target:{value:query}});
-    const expected=getSkillsForCategory(category.id).filter(skill=>skill.name.toLowerCase().includes(query.toLowerCase()));
+    const expected=getSkillsForCategory(category.id);
     fireEvent.click(screen.getByRole('button',{name:/^Show fewer categories/}));
     expect(within(filters).getAllByRole('button')).toHaveLength(9);
     expect(within(filters).getByRole('button',{name:category.name})).toBe(selected);
     expect(selected).toHaveAttribute('aria-pressed','true');
     expect(within(filters).getAllByRole('button').map(button=>button.textContent)).toEqual(['All categories',...technologySkillCategories.slice(0,7).map(item=>item.name),category.name]);
-    expect(search).toHaveValue(query);
     expect(new Set(technologyIds())).toEqual(new Set(expected.map(skill=>skill.id)));
     fireEvent.click(screen.getByRole('button',{name:'Reset filters'}));
-    expect(search).toHaveValue('');expect(search).toHaveFocus();
+    expect(within(filters).getByRole('button',{name:'All categories'})).toHaveFocus();
     expect(screen.getByRole('button',{name:/^Show more categories/})).toHaveAttribute('aria-expanded','false');
     expect(within(filters).queryByRole('button',{name:category.name})).not.toBeInTheDocument();
     expect(new Set(technologyIds())).toEqual(new Set(technologySkills.map(skill=>skill.id)));
@@ -182,32 +179,22 @@ describe('technology skills slider',()=>{
     expect(engine.autoplay.running).toBe(true);
     expect(location.pathname).toBe('/en/home');
   });
-  it('limits the expanded grid to the selected category and query while leaving category disclosure alone',()=>{
+  it('limits the expanded grid to its category and keeps category disclosure independent',()=>{
     renderShowcase();expandCategories();
     fireEvent.click(screen.getByRole('button',{name:'Backend Development'}));
-    const search=screen.getByRole('searchbox',{name:'Search skills'});
-    fireEvent.change(search,{target:{value:'a'}});
     fireEvent.click(screen.getByRole('button',{name:/^Show all skills/}));
-    const expected=getSkillsForCategory('backend-development').filter(skill=>skill.name.toLowerCase().includes('a'));
+    const expected=getSkillsForCategory('backend-development');
     expect(technologyIds()).toHaveLength(expected.length);
     expect(new Set(technologyIds())).toEqual(new Set(expected.map(skill=>skill.id)));
     expect(screen.queryAllByTestId('technology-column')).toHaveLength(0);
     expect(screen.getByRole('button',{name:'Backend Development'})).toHaveAttribute('aria-pressed','true');
-    expect(search).toHaveValue('a');
-    expect(screen.getByRole('button',{name:/^Show fewer categories/})).toHaveAttribute('aria-expanded','true');
     fireEvent.click(screen.getByRole('button',{name:/^Show fewer categories/}));
     expect(screen.getByRole('button',{name:/^Show fewer skills/})).toHaveAttribute('aria-expanded','true');
     expect(screen.queryAllByTestId('technology-column')).toHaveLength(0);
     expect(new Set(technologyIds())).toEqual(new Set(expected.map(skill=>skill.id)));
     expandCategories();
-    fireEvent.change(search,{target:{value:'Laravel'}});
-    expect(screen.getByRole('button',{name:/^Show all skills/})).toHaveAttribute('aria-expanded','false');
-    expect(viewport()).toBeInTheDocument();
-    expect(technologyIds()).toEqual(['laravel']);
-    fireEvent.click(screen.getByRole('button',{name:/^Show all skills/}));
     expect(screen.getByRole('button',{name:/^Show fewer skills/})).toHaveAttribute('aria-expanded','true');
-    expect(screen.queryByRole('group',{name:'Technology skills slider'})).not.toBeInTheDocument();
-    expect(technologyIds()).toEqual(['laravel']);
+    expect(screen.getByRole('button',{name:/^Show fewer categories/})).toHaveAttribute('aria-expanded','true');
   });
   it('resets the expanded skill grid on category changes and reset without collapsing categories prematurely',()=>{
     renderShowcase();expandCategories();
@@ -222,7 +209,7 @@ describe('technology skills slider',()=>{
     expect(viewport()).toBeInTheDocument();
     expect(screen.getByRole('button',{name:/^Show all skills/})).toHaveAttribute('aria-expanded','false');
     expect(screen.getByRole('button',{name:/^Show more categories/})).toHaveAttribute('aria-expanded','false');
-    expect(screen.getByRole('searchbox',{name:'Search skills'})).toHaveFocus();
+    expect(screen.getByRole('button',{name:'All categories'})).toHaveFocus();
     expect(new Set(technologyIds())).toEqual(new Set(technologySkills.map(skill=>skill.id)));
   });
   it('keeps an odd filtered result complete and unique with one card in the final column',()=>{
@@ -257,7 +244,7 @@ describe('technology skills slider',()=>{
     fireEvent.keyDown(next,{key:'ArrowRight'});expect(engine.slideNext).toHaveBeenCalledTimes(2);
     expect(location.pathname).toBe('/en/home');
   });
-  it('shows complete category results and restarts when category or search changes',()=>{
+  it('shows complete category results and restarts when the category changes',()=>{
     renderShowcase();expandCategories();
     const filters=screen.getByRole('group',{name:'Technology categories'});
     const representatives=['programming-languages','frontend-development','cloud-computing','network-security','gis-remote-sensing','graphic-design'];
@@ -272,52 +259,22 @@ describe('technology skills slider',()=>{
       expect(engine.realIndex).toBe(0);
     }
     fireEvent.click(within(filters).getByRole('button',{name:'All categories'}));
-    fireEvent.click(screen.getByRole('button',{name:'Next technologies'}));
-    fireEvent.change(screen.getByRole('searchbox',{name:'Search skills'}),{target:{value:'a'}});
     expect(engine.realIndex).toBe(0);
-    expect(new Set(technologyIds())).toEqual(new Set(technologySkills.filter(skill=>skill.name.toLowerCase().includes('a')).map(skill=>skill.id)));
-  });
-  it('normalizes search, avoids duplicate shared skills, and stops navigation for one result',()=>{
-    renderShowcase();const search=screen.getByRole('searchbox',{name:'Search skills'});fireEvent.change(search,{target:{value:'  ＮＥＸＴ．ｊｓ  '}});
-    expect(technologyIds()).toEqual(['next-js']);expect(screen.getByRole('button',{name:'Previous technologies'})).toBeDisabled();expect(screen.getByRole('button',{name:'Next technologies'})).toBeDisabled();expect(engine.autoplay.running).toBe(false);
-    fireEvent.change(search,{target:{value:'  NeTwOrK   SeCuRiTy  '}});expect(technologyIds()).toEqual(['network-security']);fireEvent.change(search,{target:{value:'C++'}});expect(technologyIds()).toEqual(['cpp']);
-  });
-  it('intersects category and search without the previous main-category or subcategory controls',()=>{
-    renderShowcase();expandCategories();
-    const search=screen.getByRole('searchbox',{name:'Search skills'});
-    expect(screen.queryByRole('combobox',{name:'Subcategory'})).not.toBeInTheDocument();
-    expect(screen.queryByRole('button',{name:'Software Development'})).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button',{name:'Frontend Development'}));
-    fireEvent.change(search,{target:{value:'  ReAcT  '}});
-    expect(technologyIds()).toEqual(['react']);
-    fireEvent.click(screen.getByRole('button',{name:'Cloud Computing'}));
-    expect(search).toHaveValue('  ReAcT  ');
-    expect(screen.getByRole('heading',{name:'No matching skills'})).toBeInTheDocument();
-    expect(screen.queryAllByRole('article')).toHaveLength(0);
-    expect(screen.queryByRole('button',{name:/^Show all skills/})).not.toBeInTheDocument();
-  });
-  it('clears only search with focus retained and resets an empty result to every skill',()=>{
-    renderShowcase();expandCategories();
-    const search=screen.getByRole('searchbox',{name:'Search skills'});
-    const category=screen.getByRole('button',{name:'Backend Development'});
-    fireEvent.click(category);
-    fireEvent.change(search,{target:{value:'Laravel'}});
-    expect(technologyIds()).toEqual(['laravel']);
-    fireEvent.click(screen.getByRole('button',{name:'Clear search'}));
-    expect(search).toHaveValue('');expect(search).toHaveFocus();
-    expect(category).toHaveAttribute('aria-pressed','true');
-    expect(new Set(technologyIds())).toEqual(new Set(getSkillsForCategory('backend-development').map(skill=>skill.id)));
-    fireEvent.change(search,{target:{value:'no-such-technology-xyz'}});
-    expect(screen.getByRole('heading',{name:'No matching skills'})).toBeInTheDocument();
-    expect(screen.getByText('Try another keyword or choose a different category.')).toBeInTheDocument();
-    expect(screen.queryAllByRole('article')).toHaveLength(0);
-    fireEvent.click(screen.getByRole('button',{name:'Reset filters'}));
-    expect(search).toHaveValue('');expect(search).toHaveFocus();
-    expect(screen.getByRole('button',{name:'All categories'})).toHaveAttribute('aria-pressed','true');
     expect(new Set(technologyIds())).toEqual(new Set(technologySkills.map(skill=>skill.id)));
-    expect(engine.realIndex).toBe(0);
-    expect(screen.getByRole('button',{name:/^Show more categories/})).toHaveAttribute('aria-expanded','false');
-    expect(within(screen.getByRole('group',{name:'Technology categories'})).getAllByRole('button')).toHaveLength(9);
+  });
+  it('disables autoplay and navigation when a category fits the desktop viewport',()=>{
+    renderShowcase();expandCategories();
+    const category=technologySkillCategories.find(item=>getSkillsForCategory(item.id).length<=10)!;
+    fireEvent.click(screen.getByRole('button',{name:category.name}));
+    const expected=getSkillsForCategory(category.id);
+    expect(new Set(technologyIds())).toEqual(new Set(expected.map(skill=>skill.id)));
+    expect(screen.getByRole('button',{name:'Previous technologies'})).toBeDisabled();
+    expect(screen.getByRole('button',{name:'Next technologies'})).toBeDisabled();
+    expect(engine.props?.loop).toBe(false);
+    expect(engine.autoplay.running).toBe(false);
+    fireEvent.click(screen.getByRole('button',{name:/^Show all skills/}));
+    expect(screen.queryAllByTestId('technology-column')).toHaveLength(0);
+    expect(new Set(technologyIds())).toEqual(new Set(expected.map(skill=>skill.id)));
   });
   it('renders all skill names on the server with noninteractive cards',()=>{
     const container=document.createElement('div');container.innerHTML=renderToString(<LocaleProvider initialLocale="en"><TechnologySkillsShowcase/></LocaleProvider>);
@@ -338,7 +295,12 @@ describe('technology skills slider',()=>{
     fireEvent.click(fewerSkills);
     expect(allSkills).toHaveAttribute('aria-expanded','false');
     fireEvent.click(screen.getByRole('button',{name:'បច្ចេកវិទ្យាបន្ទាប់'}));expect(engine.slideNext).toHaveBeenCalled();fireEvent.click(screen.getByRole('button',{name:'បច្ចេកវិទ្យាមុន'}));expect(engine.slidePrev).toHaveBeenCalled();expect(screen.queryAllByRole('link')).toHaveLength(0);
-    const search=screen.getByRole('searchbox',{name:'ស្វែងរកជំនាញ'});fireEvent.change(search,{target:{value:'  LaRaVeL  '}});expect(technologyCards()).toHaveLength(1);expect(screen.getByRole('article',{name:'Laravel'})).toBeInTheDocument();fireEvent.click(screen.getByRole('button',{name:'កំណត់តម្រងឡើងវិញ'}));expect(search).toHaveValue('');expect(search).toHaveFocus();
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    fireEvent.click(within(filters).getByRole('button',{name:'ការអភិវឌ្ឍផ្នែកខាងមុខ'}));
+    expect(new Set(technologyIds())).toEqual(new Set(getSkillsForCategory('frontend-development').map(skill=>skill.id)));
+    fireEvent.click(screen.getByRole('button',{name:'កំណត់តម្រងឡើងវិញ'}));
+    expect(within(filters).getByRole('button',{name:'ប្រភេទទាំងអស់'})).toHaveFocus();
+    expect(new Set(technologyIds())).toEqual(new Set(technologySkills.map(skill=>skill.id)));
   });
   it('keeps moving on hover and pauses only for keyboard focus',()=>{
     renderShowcase();const slider=viewport();expect(engine.autoplay.running).toBe(true);hover(slider,true);expect(engine.autoplay.running).toBe(true);hover(slider,false);expect(engine.autoplay.running).toBe(true);

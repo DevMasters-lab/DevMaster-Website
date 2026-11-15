@@ -5,15 +5,21 @@ import {useState,useRef,useEffect,useId} from 'react';
 import {useForm} from 'react-hook-form';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useQuery} from '@tanstack/react-query';
-import {ArrowUpRight,CheckCircle2,LockKeyhole,LoaderCircle} from 'lucide-react';
+import {ArrowUpRight,LockKeyhole,LoaderCircle} from 'lucide-react';
 import {api,ApiError} from '@/lib/api';
 import {companySchema,applicationSchema,type CompanyValues,type ApplicationValues} from '@/lib/validation';
 import {useCompanyRequestSubmission} from '@/hooks/use-company-request-submission';
 import {expertSpecializations,expertExperienceRanges} from '@/data/expert-specializations';
+import {BidInvitationForm} from './bid-invitation-form';
+import {ErrorNotice,FormSuccess} from './form-feedback';
+export {ErrorNotice,FormSuccess} from './form-feedback';
 type Reference={data:{consent:{version:string;text:string}}};
-export function FormSuccess({result}:{result:{reference_no:string;message:string;message_code?:string}}){const t=useText();return <div className="success-box" role="status"><CheckCircle2 size={28}/><h2>{""}{t("Thank you. You’re on our radar.")}{""}</h2><p>{result.message_code==='REQUEST_RECEIVED'?t('Your request has been received. DevMasters will review it and follow up.'):result.message_code==='APPLICATION_RECEIVED'?t('Application received. Portal access becomes available after approval and account activation.'):result.message}</p><strong>{result.reference_no}</strong><p>{""}{t("Keep this reference for future correspondence. Attachments are held privately and checked before use.")}{""}</p></div>;}
-export function ErrorNotice({message}:{message:string}){const t=useText();return message?<div role="alert" className="error-box">{t(message)}</div>:null;}
-export function CompanyForm({type,contact=false,variant='default'}:{type:'INVITE_US_TO_BID'|'HIRE_OUR_TEAM';contact?:boolean;variant?:'default'|'bid-dialog'}){const t=useText();
+type CompanyFormProps={type:'INVITE_US_TO_BID'|'HIRE_OUR_TEAM';contact?:boolean;variant?:'default'|'bid-dialog'};
+export function CompanyForm(props:CompanyFormProps){
+ if(props.variant==='bid-dialog'&&props.type==='INVITE_US_TO_BID'&&!props.contact)return <BidInvitationForm/>;
+ return <LegacyCompanyForm {...props}/>;
+}
+function LegacyCompanyForm({type,contact=false,variant='default'}:CompanyFormProps){const t=useText();
  const [files,setFiles]=useState<File[]>([]);
  const {register,handleSubmit,formState:{errors,isSubmitting},setError:fieldError,trigger}=useForm<CompanyValues>({resolver:zodResolver(companySchema),defaultValues:{request_type:type}});
  const {result,error,submit:sendRequest,resetCommand}=useCompanyRequestSubmission((name,message)=>fieldError(name,{message}));

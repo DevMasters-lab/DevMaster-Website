@@ -74,8 +74,13 @@ export function HomeEngagementActions(){
   const ref=useRef<HTMLDivElement>(null);
   const triggers=useRef<Partial<Record<EngagementKind,HTMLButtonElement|null>>>({});
   const dialogId=useId();
-  const [activeDialog,setActiveDialog]=useState<EngagementKind|null>(null);
+  const [activeDialog,setActiveDialog]=useState<EngagementKind|'portal'|null>(null);
   const [running,setRunning]=useState(false);
+  function close(kind:EngagementKind|'portal'){
+    if(activeDialog!==kind)return;
+    setActiveDialog(current=>current===kind?null:current);
+    triggers.current[kind==='portal'?'expert':kind]?.focus();
+  }
 
   useEffect(()=>{
     const root=ref.current;
@@ -122,5 +127,9 @@ export function HomeEngagementActions(){
         <button ref={node=>{triggers.current[kind]=node;}} type="button" className={`${styles.card} ${styles[kind]}`} aria-haspopup="dialog" aria-controls={dialogId+'-'+kind} onClick={()=>setActiveDialog(kind)}>{content}</button>
       </div>;
     })}
-  </div>{engagements.map(({kind})=><EngagementDialog key={kind} id={dialogId+'-'+kind} kind={kind} open={activeDialog===kind} onClose={()=>{setActiveDialog(current=>current===kind?null:current);triggers.current[kind]?.focus();}}/>)}</>;
+  </div>{engagements.map(({kind})=>kind==='expert'
+    ?<EngagementDialog key={kind} id={dialogId+'-'+kind} kind="expert" open={activeDialog==='expert'} onClose={()=>close('expert')} onSignIn={()=>setActiveDialog('portal')}/>
+    :<EngagementDialog key={kind} id={dialogId+'-'+kind} kind={kind} open={activeDialog===kind} onClose={()=>close(kind)}/>) }
+    <EngagementDialog id={dialogId+'-portal'} kind="portal" open={activeDialog==='portal'} onClose={()=>close('portal')} onBecomeExpert={()=>setActiveDialog('expert')}/>
+  </>;
 }

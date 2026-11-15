@@ -17,12 +17,12 @@ test('both public languages, SEO, Khmer fonts and state-preserving popup languag
  await page.setViewportSize({width:390,height:844});await page.goto('/en/home?source=qa#brief');
  await page.getByRole('button',{name:/Invite Us to Bid/}).click();
  const dialog=page.getByRole('dialog',{name:'Invite DevMasters to Bid'});
- await dialog.getByLabel('Your name *').fill('Original input — ខ្មែរ');const file=page.locator('dialog[open] input[type=file]');await file.setInputFiles({name:'original-name.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4\n%%EOF')});
+ await dialog.getByLabel('Contact person *').fill('Original input — ខ្មែរ');const file=page.locator('dialog[open] input[type=file]');await file.setInputFiles({name:'original-name.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4\n%%EOF')});
  await page.evaluate(()=>{document.body.dataset.switchProbe='retained';});
  await dialog.getByRole('button',{name:'Close project invitation'}).click();await changeLanguage(page,'km');
  await page.getByRole('button',{name:/អញ្ជើញយើងចូលរួមដេញថ្លៃ/}).click();
  const khmerDialog=page.getByRole('dialog',{name:'អញ្ជើញ DevMasters ចូលរួមដេញថ្លៃ'});
- await expect(khmerDialog.getByLabel('ឈ្មោះរបស់អ្នក *')).toHaveValue('Original input — ខ្មែរ');expect(await file.evaluate((element:HTMLInputElement)=>element.files?.[0].name)).toBe('original-name.pdf');expect(await page.locator('body').getAttribute('data-switch-probe')).toBe('retained');await expect(page).toHaveURL(/\/km\/home\?source=qa#brief$/);
+ await expect(khmerDialog.getByLabel('អ្នកទំនាក់ទំនង *')).toHaveValue('Original input — ខ្មែរ');expect(await file.evaluate((element:HTMLInputElement)=>element.files?.[0].name)).toBe('original-name.pdf');expect(await page.locator('body').getAttribute('data-switch-probe')).toBe('retained');await expect(page).toHaveURL(/\/km\/home\?source=qa#brief$/);
  await khmerDialog.getByRole('button',{name:'បិទការអញ្ជើញចូលរួមគម្រោង'}).click();await page.reload();await expect(page.locator('html')).toHaveAttribute('lang','km');await expect(page.locator('link[rel=alternate][hreflang=en]')).toHaveAttribute('href',/\/en\/home$/);await expect(page.locator('html')).toHaveAttribute('dir','ltr');
  const fonts=await page.evaluate(async()=>{await document.fonts.load('400 16px "Noto Sans Khmer"','ភាសាខ្មែរ');return document.fonts.check('400 16px "Noto Sans Khmer"','ភាសាខ្មែរ');});expect(fonts).toBe(true);await expect(page.locator('.language-trigger')).toBeVisible();expect(await page.locator('body').evaluate(element=>element.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'../.runtime/khmer-public-mobile.png',fullPage:true});
 });

@@ -2,16 +2,21 @@
 
 import {useEffect,useRef,useState} from 'react';
 import dynamic from 'next/dynamic';
-import {Diamond,FilePenLine,Handshake,LoaderCircle,ShieldCheck,UserRoundPlus,X} from 'lucide-react';
+import {CircleDashed,Diamond,FilePenLine,Handshake,KeyRound,LoaderCircle,ShieldCheck,UserRoundPlus,X} from 'lucide-react';
 import {useText} from '@/i18n/provider';
 import styles from './engagement-dialog.module.css';
 
 export type EngagementKind='bid'|'partner'|'expert';
+type EngagementDialogProps={id:string;open:boolean;onClose:()=>void}&(
+  {kind:Exclude<EngagementKind,'expert'>;onBecomeExpert?:never;onSignIn?:never}|
+  {kind:'expert';onSignIn:()=>void;onBecomeExpert?:never}|
+  {kind:'portal';onBecomeExpert:()=>void;onSignIn?:never}
+);
 
 const dialogContent={
   bid:{
     title:'Invite DevMasters to Bid',
-    description:'Share your project brief, timeline and supporting documents.',
+    description:'Share your EOI, RFP or project invitation details below.',
     eyebrow:'Project invitation',
     sideLabel:'Project opportunity',
     sideTitle:'Bring us into your next opportunity.',
@@ -31,13 +36,23 @@ const dialogContent={
   },
   expert:{
     title:'Become an Expert',
-    description:'Apply to join the DevMasters expert network.',
+    description:'Sign up to join the DevMasters expert network.',
     eyebrow:'Join our network',
     sideLabel:'Join our network',
     sideTitle:'Your next chapter starts here.',
     sideDescription:'Share your expertise and discover opportunities to work with DevMasters.',
     closeLabel:'Close expert application',
     Icon:UserRoundPlus,
+  },
+  portal:{
+    title:'Expert Portal',
+    description:'Enter your details to preview the Expert Portal sign-in experience.',
+    eyebrow:'Expert access',
+    sideLabel:'Expert access',
+    sideTitle:'Your expertise. Your space.',
+    sideDescription:'A dedicated workspace for DevMasters specialists and collaborators.',
+    closeLabel:'Close Expert Portal preview',
+    Icon:KeyRound,
   },
 } as const;
 
@@ -48,12 +63,15 @@ function FormLoading(){
 
 const BidCompanyForm=dynamic(()=>import('./intake-form').then(module=>module.CompanyForm),{loading:FormLoading});
 const PartnershipForm=dynamic(()=>import('./expert-partnership-form').then(module=>module.ExpertPartnershipForm),{loading:FormLoading});
-const ExpertApplicationForm=dynamic(()=>import('./intake-form').then(module=>module.ApplicationForm),{loading:FormLoading});
+const ExpertSignupPreview=dynamic(()=>import('./expert-signup-preview').then(module=>module.ExpertSignupPreview),{loading:FormLoading});
+const PortalPreview=dynamic(()=>import('./expert-portal-preview').then(module=>module.ExpertPortalPreview),{loading:FormLoading});
 
-export function EngagementDialog({id,kind,open,onClose}:{id:string;kind:EngagementKind;open:boolean;onClose:()=>void}){
+export function EngagementDialog({id,kind,open,onClose,onBecomeExpert,onSignIn}:EngagementDialogProps){
   const t=useText();
   const content=dialogContent[kind];
   const Icon=content.Icon;
+  const isPreview=kind==='portal'||kind==='expert';
+  const NoteIcon=isPreview?CircleDashed:ShieldCheck;
   const dialogRef=useRef<HTMLDialogElement>(null);
   const headingRef=useRef<HTMLHeadingElement>(null);
   const [visited,setVisited]=useState(false);
@@ -85,8 +103,11 @@ export function EngagementDialog({id,kind,open,onClose}:{id:string;kind:Engageme
   },[open]);
 
   function close(){dialogRef.current?.close();}
+  const form=kind==='portal'?(open&&<PortalPreview onBecomeExpert={onBecomeExpert}/>)
+    :kind==='expert'?(open&&<ExpertSignupPreview onSignIn={onSignIn}/>)
+    :visited&&(kind==='bid'?<BidCompanyForm type="INVITE_US_TO_BID" variant="bid-dialog"/>:<PartnershipForm/>);
 
-  return <dialog ref={dialogRef} id={id} className={styles.dialog} aria-labelledby={titleId} aria-describedby={descriptionId}
+  return <dialog ref={dialogRef} id={id} className={styles.dialog+(kind==='portal'?' '+styles.portal:kind==='bid'?' '+styles.bid:kind==='expert'?' '+styles.expert:'')} aria-labelledby={titleId} aria-describedby={descriptionId}
     onClose={onClose} onCancel={event=>{event.preventDefault();close();}}
     onClick={event=>{
       if(event.target!==event.currentTarget)return;
@@ -101,7 +122,7 @@ export function EngagementDialog({id,kind,open,onClose}:{id:string;kind:Engageme
         <span className={styles.sideLabel}>{t(content.sideLabel)}</span>
         <h3 className={styles.sideTitle}>{t(content.sideTitle)}</h3>
         <p className={styles.sideDescription}>{t(content.sideDescription)}</p>
-        <div className={styles.sideNote}><ShieldCheck size={17} aria-hidden="true"/><span>{t('Secure submission · Reviewed by our team')}</span></div>
+        <div className={styles.sideNote}><NoteIcon size={17} aria-hidden="true"/><span>{t(isPreview?'Design preview · No data is sent':'Secure submission · Reviewed by our team')}</span></div>
       </aside>
       <div className={styles.content}>
         <header className={styles.header}>
@@ -109,7 +130,7 @@ export function EngagementDialog({id,kind,open,onClose}:{id:string;kind:Engageme
           <h2 ref={headingRef} id={titleId} className={styles.title} tabIndex={-1}>{t(content.title)}</h2>
           <p id={descriptionId} className={styles.description}>{t(content.description)}</p>
         </header>
-        <div className={styles.form}>{visited&&(kind==='bid'?<BidCompanyForm type="INVITE_US_TO_BID" variant="bid-dialog"/>:kind==='partner'?<PartnershipForm/>:<ExpertApplicationForm variant="dialog"/>)}</div>
+        <div className={styles.form}>{form}</div>
       </div>
     </div>
   </dialog>;
