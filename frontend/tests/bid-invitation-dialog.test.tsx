@@ -1,0 +1,154 @@
+import React from 'react';
+import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
+import {act,cleanup,fireEvent,render,screen,waitFor,within} from '@testing-library/react';
+import {LocaleProvider} from '../src/i18n/provider';
+import {HomeEngagementActions} from '../src/components/home-engagement-actions';
+import {api,ApiError} from '../src/lib/api';
+
+vi.mock('@/lib/api',async importOriginal=>{
+  const actual=await importOriginal<typeof import('../src/lib/api')>();
+  return {...actual,api:vi.fn()};
+});
+const dialogPrototype=HTMLDialogElement.prototype;
+const originalShowModal=Object.getOwnPropertyDescriptor(dialogPrototype,'showModal');
+const originalClose=Object.getOwnPropertyDescriptor(dialogPrototype,'close');
+let originalBodyStyle:string|null;
+let showModal:ReturnType<typeof vi.fn>;
+const idempotencyKey='11111111-1111-4111-8111-111111111111';
+
+beforeEach(()=>{
+  window.history.replaceState(null,'','/en/home?source=hero#start');
+  document.cookie='devmasters_locale=en;path=/';
+  originalBodyStyle=document.body.getAttribute('style');
+  document.body.style.removeProperty('overflow');document.body.style.removeProperty('padding-right');
+  vi.mocked(api).mockReset();
+  vi.spyOn(crypto,'randomUUID').mockReturnValue(idempotencyKey);
+  vi.spyOn(document.documentElement,'clientWidth','get').mockReturnValue(window.innerWidth-16);
+  // Supply native dialog lifecycle events that JSDOM does not implement.
+  showModal=vi.fn(function(this:HTMLDialogElement){
+    if(this.open)return;
+    this.setAttribute('open','');
+    this.querySelector<HTMLElement>('[autofocus],button,a[href]')?.focus();
+  });
+  Object.defineProperty(dialogPrototype,'showModal',{configurable:true,writable:true,value:showModal});
+  Object.defineProperty(dialogPrototype,'close',{configurable:true,writable:true,value:vi.fn(function(this:HTMLDialogElement){
+    if(!this.open)return;
+    this.removeAttribute('open');this.dispatchEvent(new Event('close'));
+  })});
+});
+afterEach(()=>{
+  cleanup();vi.restoreAllMocks();
+  if(originalShowModal)Object.defineProperty(dialogPrototype,'showModal',originalShowModal);
+  else Reflect.deleteProperty(dialogPrototype,'showModal');
+  if(originalClose)Object.defineProperty(dialogPrototype,'close',originalClose);
+  else Reflect.deleteProperty(dialogPrototype,'close');
+  if(originalBodyStyle===null)document.body.removeAttribute('style');
+  else document.body.setAttribute('style',originalBodyStyle);
+});
+
+const copy={
+  en:{invite:/Invite Us to Bid/,title:'Invite DevMasters to Bid',description:'Share your project brief, timeline and supporting documents.',close:'Close project invitation',organization:'Organization & contact',opportunity:'Project opportunity',company:'Company / organization *',partner:/Partner With Our Experts/,expert:/Become an Expert/},
+  km:{invite:/អញ្ជើញយើងចូលរួមដេញថ្លៃ/,title:'អញ្ជើញ DevMasters ចូលរួមដេញថ្លៃ',description:'ចែករំលែកសេចក្តីសង្ខេបគម្រោង កាលវិភាគ និងឯកសារគាំទ្ររបស់អ្នក។',close:'បិទការអញ្ជើញចូលរួមគម្រោង',organization:'អង្គភាព និងព័ត៌មានទំនាក់ទំនង',opportunity:'ឱកាសចូលរួមគម្រោង',company:'ក្រុមហ៊ុន / អង្គភាព *',partner:/សហការជាមួយអ្នកជំនាញរបស់យើង/,expert:/ចូលរួមជាអ្នកជំនាញ/},
+};
+function renderActions(locale:'en'|'km'='en'){
+  window.history.replaceState(null,'',`/${locale}/home?source=hero#start`);
+  return render(<LocaleProvider initialLocale={locale}><HomeEngagementActions/></LocaleProvider>);
+}
+async function openDialog(locale:'en'|'km'='en'){
+  const trigger=screen.getByRole('button',{name:copy[locale].invite});
+  act(()=>trigger.focus());fireEvent.click(trigger);
+  const dialog=await screen.findByRole('dialog',{name:copy[locale].title});
+  await within(dialog).findByLabelText(copy[locale].company);
+  return {trigger,dialog};
+}
+function fillRequired(dialog:HTMLElement){
+  const values={submitted_company_name:'Acme Digital',submitted_contact_name:'Sok Dara',submitted_email:'team@example.test',title:'Secure platform proposal',requirements:'We need technical specialists to deliver a secure public service platform.'};
+  for(const [label,value] of [['Company / organization *',values.submitted_company_name],['Your name *',values.submitted_contact_name],['Work email *',values.submitted_email],['Opportunity title *',values.title],['What do you need? *',values.requirements]])fireEvent.change(within(dialog).getByLabelText(label),{target:{value}});
+  return values;
+}
+
+describe('homepage bid invitation dialog',()=>{
+  it.each(['en','km'] as const)('opens the existing invitation form in %s without navigation or an API request',async locale=>{
+    renderActions(locale);const href=location.href;
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(copy[locale].company)).not.toBeInTheDocument();
+    const {trigger,dialog}=await openDialog(locale);
+    expect(location.href).toBe(href);
+    expect(trigger).toHaveAttribute('type','button');expect(trigger).toHaveAttribute('aria-haspopup','dialog');
+    expect(trigger).toHaveAttribute('aria-controls',dialog.id);
+    expect(dialog).toHaveAccessibleDescription(copy[locale].description);
+    expect(within(dialog).getByRole('group',{name:new RegExp(copy[locale].organization)})).toBeInTheDocument();
+    expect(within(dialog).getByRole('group',{name:new RegExp(copy[locale].opportunity)})).toBeInTheDocument();
+    expect(within(dialog).getByRole('heading',{name:copy[locale].title})).toHaveFocus();
+    const close=within(dialog).getByRole('button',{name:copy[locale].close});
+    expect(close).toBeEnabled();expect(close.tabIndex).toBe(0);
+    expect(screen.getByRole('button',{name:copy[locale].partner})).toHaveAttribute('aria-haspopup','dialog');
+    expect(screen.getByRole('button',{name:copy[locale].expert})).toHaveAttribute('aria-haspopup','dialog');
+    expect(api).not.toHaveBeenCalled();
+  });
+  it('preserves the draft and attachment across closing and reopening and restores focus and scroll styles',async()=>{
+    document.body.style.overflow='auto';document.body.style.paddingRight='9px';
+    const view=renderActions();const {trigger,dialog}=await openDialog();
+    const company=within(dialog).getByLabelText('Company / organization *');
+    const title=within(dialog).getByLabelText('Opportunity title *');
+    fireEvent.change(company,{target:{value:'Draft organization'}});fireEvent.change(title,{target:{value:'Unsubmitted project draft'}});
+    const file=new File(['private draft'],'brief.pdf',{type:'application/pdf'});
+    const upload=within(dialog).getByLabelText(/^Supporting documents/,{selector:'input'}) as HTMLInputElement;
+    fireEvent.change(upload,{target:{files:[file]}});
+    expect(document.body.style.overflow).toBe('hidden');
+    fireEvent.click(within(dialog).getByRole('button',{name:'Close project invitation'}));
+    await waitFor(()=>expect(dialog).not.toHaveAttribute('open'));
+    expect(trigger).toHaveFocus();expect(document.body.style.overflow).toBe('auto');expect(document.body.style.paddingRight).toBe('9px');
+    fireEvent.click(trigger);
+    await waitFor(()=>expect(dialog).toHaveAttribute('open'));
+    expect(company).toHaveValue('Draft organization');expect(title).toHaveValue('Unsubmitted project draft');expect(upload.files?.[0]).toBe(file);
+    expect(showModal).toHaveBeenCalledTimes(2);expect(api).not.toHaveBeenCalled();
+    view.unmount();expect(document.body.style.overflow).toBe('auto');expect(document.body.style.paddingRight).toBe('9px');
+  });
+  it('dismisses on Escape or an outside backdrop click and returns focus without leaving the homepage',async()=>{
+    renderActions();const href=location.href;const {trigger,dialog}=await openDialog();
+    const cancel=new Event('cancel',{cancelable:true});fireEvent(dialog,cancel);
+    expect(cancel.defaultPrevented).toBe(true);expect(dialog).not.toHaveAttribute('open');expect(trigger).toHaveFocus();
+    fireEvent.click(trigger);await waitFor(()=>expect(dialog).toHaveAttribute('open'));
+    vi.spyOn(dialog,'getBoundingClientRect').mockReturnValue(new DOMRect(100,100,500,400));
+    fireEvent.click(within(dialog).getByRole('heading',{name:'Invite DevMasters to Bid'}));
+    fireEvent.click(dialog,{clientX:300,clientY:300});expect(dialog).toHaveAttribute('open');
+    fireEvent.click(dialog,{clientX:20,clientY:20});expect(dialog).not.toHaveAttribute('open');expect(trigger).toHaveFocus();
+    expect(location.href).toBe(href);expect(api).not.toHaveBeenCalled();
+  });
+  it('keeps invalid submissions in the dialog and displays the existing field validation',async()=>{
+    renderActions();const {dialog}=await openDialog();
+    fireEvent.click(within(dialog).getByRole('button',{name:'Send your request'}));
+    expect(await within(dialog).findByText('Enter your company name.')).toBeInTheDocument();
+    expect(dialog).toHaveAttribute('open');expect(within(dialog).getByLabelText(/^Company \/ organization \*/)).toHaveAttribute('aria-invalid','true');
+    expect(api).not.toHaveBeenCalled();
+  });
+  it('submits the existing INVITE payload and attachment through the mocked API and shows success in place',async()=>{
+    vi.mocked(api).mockResolvedValueOnce({data:{reference_no:'DM-RQ-POPUP-001',message:'Received.',message_code:'REQUEST_RECEIVED'}});
+    renderActions();const href=location.href;const {dialog}=await openDialog();const required=fillRequired(dialog);
+    const optional={submitted_phone:'+85512345678',expected_start_on:'2027-01-10',expected_end_on:'2027-03-15',response_due_at:'2026-12-12T14:30'};
+    for(const [label,value] of [['Phone number',optional.submitted_phone],['Expected start date',optional.expected_start_on],['Expected end date',optional.expected_end_on],['Response deadline',optional.response_due_at]])fireEvent.change(within(dialog).getByLabelText(label),{target:{value}});
+    const file=new File(['%PDF-1.4\nprivate project brief'],'proposal.pdf',{type:'application/pdf'});
+    fireEvent.change(within(dialog).getByLabelText(/^Supporting documents/,{selector:'input'}),{target:{files:[file]}});
+    fireEvent.click(within(dialog).getByRole('button',{name:'Send your request'}));
+    const success=await within(dialog).findByRole('status');expect(success).toHaveTextContent('DM-RQ-POPUP-001');
+    expect(success).toHaveTextContent('Your request has been received. DevMasters will review it and follow up.');
+    expect(api).toHaveBeenCalledOnce();
+    const [path,options]=vi.mocked(api).mock.calls[0];expect(path).toBe('/company-requests');expect(options?.method).toBe('POST');
+    expect(new Headers(options?.headers).get('Idempotency-Key')).toBe(idempotencyKey);
+    const payload=options?.body as FormData;expect(payload).toBeInstanceOf(FormData);
+    const fields=Object.fromEntries([...payload.entries()].filter(([key])=>key!=='attachments[]'));
+    expect(fields).toEqual({request_type:'INVITE_US_TO_BID',...required,...optional,response_due_at:new Date(optional.response_due_at).toISOString()});
+    const attachments=payload.getAll('attachments[]') as File[];expect(attachments).toHaveLength(1);expect(attachments[0].name).toBe('proposal.pdf');expect(attachments[0].size).toBe(file.size);
+    expect(dialog).toHaveAttribute('open');expect(location.href).toBe(href);
+  });
+  it('keeps the draft open when the existing API returns field errors',async()=>{
+    vi.mocked(api).mockRejectedValueOnce(new ApiError('Please check your request.',422,{submitted_email:['This email address is unavailable.']}));
+    renderActions();const {dialog}=await openDialog();fillRequired(dialog);
+    fireEvent.click(within(dialog).getByRole('button',{name:'Send your request'}));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('Please check your request.');
+    expect(within(dialog).getByText('This email address is unavailable.')).toBeInTheDocument();
+    expect(within(dialog).getByLabelText(/^Work email \*/)).toHaveValue('team@example.test');
+    expect(dialog).toHaveAttribute('open');
+  });
+});

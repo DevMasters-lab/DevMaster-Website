@@ -76,8 +76,8 @@ describe('public page scroll animation',()=>{
 
   it('reveals the real engagement cards independently, replays them, and preserves focused content',()=>{
     render(<LocaleProvider initialLocale="en"><PageContent><HomeEngagementActions/></PageContent></LocaleProvider>);
-    const links=screen.getAllByRole('link');
-    const cards=links.map(link=>link.parentElement!);
+    const controls=[screen.getByRole('button',{name:/Invite Us to Bid/}),screen.getByRole('button',{name:/Partner With Our Experts/}),screen.getByRole('button',{name:/Become an Expert/})];
+    const cards=controls.map(control=>control.parentElement!);
     expect(new Set(cards).size).toBe(3);
     expect(cards.map(card=>card.getAttribute('data-reveal'))).toEqual(['left','right','left']);
     expect(cards.map(card=>card.getAttribute('data-reveal-delay'))).toEqual(['0','2','4']);
@@ -91,7 +91,7 @@ describe('public page scroll animation',()=>{
     expect(cards[0]).toHaveAttribute('data-reveal-state','revealed');
     expect(cards[1]).toHaveAttribute('data-reveal-state','pending');
     expect(cards[2]).toHaveAttribute('data-reveal-state','pending');
-    fireEvent.animationEnd(links[0]);
+    fireEvent.animationEnd(controls[0]);
     expect(cards[0]).toHaveAttribute('data-reveal-state','revealed');
     fireEvent.animationEnd(cards[0]);
     expect(cards[0]).toHaveAttribute('data-reveal-state','visible');
@@ -106,7 +106,7 @@ describe('public page scroll animation',()=>{
         observer('exit').intersect(card,false);
       }
     }
-    act(()=>links[1].focus());
+    act(()=>controls[1].focus());
     expect(cards[1]).toHaveAttribute('data-reveal-state','visible');
     observer('entry').intersect(cards[1],true);
     observer('exit').intersect(cards[1],false);

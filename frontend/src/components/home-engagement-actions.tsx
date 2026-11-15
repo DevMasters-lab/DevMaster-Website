@@ -1,12 +1,10 @@
 'use client';
 
 import {ArrowRight,Asterisk,Sparkles} from 'lucide-react';
-import {useEffect,useRef,useState} from 'react';
-import Link from '@/i18n/navigation';
+import {useEffect,useId,useRef,useState} from 'react';
 import {useText} from '@/i18n/provider';
+import {EngagementDialog,type EngagementKind} from './engagement-dialog';
 import styles from './home-engagement-actions.module.css';
-
-type EngagementKind='bid'|'partner'|'expert';
 
 function EngagementArtwork({kind}:{kind:EngagementKind}){
   return <span className={styles.artwork} aria-hidden="true">
@@ -66,14 +64,17 @@ function EngagementArtwork({kind}:{kind:EngagementKind}){
 }
 
 const engagements=[
-  {kind:'bid',href:'/invite-us-to-bid',Icon:ArrowRight,title:'Invite Us to Bid',description:'Bring us your project. Let’s deliver it together.'},
-  {kind:'partner',href:'/hire-our-team',Icon:Sparkles,title:'Partner With Our Experts',description:'Find developers and specialists for your team.'},
-  {kind:'expert',href:'/be-our-team',Icon:Asterisk,title:'Become an Expert',description:'Apply to join the DevMasters expert network.'},
+  {kind:'bid',Icon:ArrowRight,title:'Invite Us to Bid',description:'Bring us your project. Let’s deliver it together.'},
+  {kind:'partner',Icon:Sparkles,title:'Partner With Our Experts',description:'Find developers and specialists for your team.'},
+  {kind:'expert',Icon:Asterisk,title:'Become an Expert',description:'Apply to join the DevMasters expert network.'},
 ] as const;
 
 export function HomeEngagementActions(){
   const t=useText();
   const ref=useRef<HTMLDivElement>(null);
+  const triggers=useRef<Partial<Record<EngagementKind,HTMLButtonElement|null>>>({});
+  const dialogId=useId();
+  const [activeDialog,setActiveDialog]=useState<EngagementKind|null>(null);
   const [running,setRunning]=useState(false);
 
   useEffect(()=>{
@@ -107,16 +108,19 @@ export function HomeEngagementActions(){
     };
   },[]);
 
-  return <div ref={ref} className={styles.actions} data-running={running?'true':'false'}>
-    {engagements.map(({kind,href,Icon,title,description},index)=><div key={kind} className={styles.reveal} data-reveal={index%2===0?'left':'right'} data-reveal-delay={index*2}>
-      <Link href={href} className={`${styles.card} ${styles[kind]}`}>
+  return <><div ref={ref} className={styles.actions} data-running={running?'true':'false'}>
+    {engagements.map(({kind,Icon,title,description},index)=>{
+      const content=<>
         <span className={styles.leadingIcon}><Icon size={23} aria-hidden="true"/></span>
         <span className={styles.copy}>
           <span className={styles.title}>{t(title)}</span>
           <span className={styles.description}>{t(description)}</span>
         </span>
         <EngagementArtwork kind={kind}/>
-      </Link>
-    </div>)}
-  </div>;
+      </>;
+      return <div key={kind} className={styles.reveal} data-reveal={index%2===0?'left':'right'} data-reveal-delay={index*2}>
+        <button ref={node=>{triggers.current[kind]=node;}} type="button" className={`${styles.card} ${styles[kind]}`} aria-haspopup="dialog" aria-controls={dialogId+'-'+kind} onClick={()=>setActiveDialog(kind)}>{content}</button>
+      </div>;
+    })}
+  </div>{engagements.map(({kind})=><EngagementDialog key={kind} id={dialogId+'-'+kind} kind={kind} open={activeDialog===kind} onClose={()=>{setActiveDialog(current=>current===kind?null:current);triggers.current[kind]?.focus();}}/>)}</>;
 }

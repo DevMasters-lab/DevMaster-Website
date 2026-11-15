@@ -52,7 +52,10 @@ describe('homepage engagement motion policy',()=>{
     expect(root).toHaveAttribute('data-running','false');
     expect(root).not.toHaveAttribute('aria-hidden','true');
     expect(root.querySelector('[inert]')).toBeNull();
-    expect(root.querySelectorAll('a')).toHaveLength(3);
+    expect(root.querySelectorAll('a')).toHaveLength(0);
+    const buttons=root.querySelectorAll('button[aria-haspopup="dialog"]');
+    expect(buttons).toHaveLength(3);
+    expect([...buttons].map(button=>button.textContent)).toEqual([expect.stringContaining('Invite Us to Bid'),expect.stringContaining('Partner With Our Experts'),expect.stringContaining('Become an Expert')]);
     expect(ViewportObserver.instances).toHaveLength(0);
     expect(motionListeners.size).toBe(0);
   });
