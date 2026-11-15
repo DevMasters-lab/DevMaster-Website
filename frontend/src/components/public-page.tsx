@@ -7,9 +7,9 @@ import {CompanyForm,ApplicationForm} from '@/components/intake-form';
 export function PublicPage({slug}:{slug:string}){const t=useText();
 const pages:Record<string,{label:string;title:string;accent:string;copy:string}>= {
  expertise:{label:t("OUR EXPERTISE"),title:t("Deep knowledge."),accent:t("A broader perspective."),copy:t("A connected network of specialists, reviewed by DevMasters and matched manually to the requirements of your work.")},
- 'invite-us-to-bid':{label:t("INVITE US TO BID"),title:t("Your next opportunity."),accent:t("Our technical strength."),copy:t("Invite DevMasters to support an expression of interest, proposal, quotation or technical services opportunity.")},
- 'hire-our-team':{label:t("HIRE OUR TEAM"),title:t("The right expertise."),accent:t("For your next move."),copy:t("Tell us about the skills and support you need. Our team will review your request and follow up to find the right fit.")},
- 'be-our-team':{label:t("BE OUR TEAM"),title:t("Bring your expertise."),accent:t("Find your people."),copy:t("Apply to join the DevMasters expert network. Collaborate on opportunities while keeping your professional independence.")},
+ 'invite-us-to-bid':{label:t("Invite Us to Bid"),title:t("Your next opportunity."),accent:t("Our technical strength."),copy:t("Bring us your project. Let’s deliver it together.")},
+ 'hire-our-team':{label:t("Partner With Our Experts"),title:t("The right expertise."),accent:t("For your next move."),copy:t("Find developers and specialists for your team.")},
+ 'be-our-team':{label:t("Become an Expert"),title:t("Bring your expertise."),accent:t("Find your people."),copy:t("Apply to join the DevMasters expert network.")},
  contact:{label:t("CONTACT US"),title:t("Good work starts"),accent:t("with a conversation."),copy:t("Have a technical challenge, a team requirement or an opportunity in mind? Tell us a little about it.")},
  privacy:{label:t("PRIVACY POLICY"),title:t("Your information."),accent:t("Handled with care."),copy:t("How the development platform handles your information, with final privacy wording awaiting approval.")},
  terms:{label:t("TERMS & CONDITIONS"),title:t("Clear expectations."),accent:t("Better collaboration."),copy:t("The platform’s operating model and the status of its terms of use.")},

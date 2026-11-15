@@ -1,5 +1,12 @@
 {
   "ui": {
+    "home_engagement_heading": "Work with DevMasters",
+    "home_engagement_bid_title": "Invite Us to Bid",
+    "home_engagement_bid_description": "Bring us your project. Let’s deliver it together.",
+    "home_engagement_hire_title": "Partner With Our Experts",
+    "home_engagement_hire_description": "Find developers and specialists for your team.",
+    "home_engagement_expert_title": "Become an Expert",
+    "home_engagement_expert_description": "Apply to join the DevMasters expert network.",
     "s232f49c6ecbc": "Show all skills",
     "s0fc44940c084": "Show more categories",
     "s768ce4aa11c5": "Browse technology categories and search the skills that match your interests.",

@@ -1,0 +1,134 @@
+.actions{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-rows:1fr;gap:16px;width:100%;max-width:550px}
+.card{position:relative;display:grid;grid-template-columns:43px minmax(0,1fr) 100px;align-items:center;gap:16px;min-width:0;min-height:124px;padding:20px 22px;border:1px solid transparent;border-radius:16px;font-family:inherit;text-align:left;text-decoration:none;box-shadow:0 7px 20px #2432470b;isolation:isolate;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+.card::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:linear-gradient(110deg,transparent 34%,#ffffff66 48%,transparent 62%);background-size:250% 100%;background-position:150% 50%;opacity:0;pointer-events:none}
+.card::after{content:"";position:absolute;inset:0;z-index:-2;border-radius:inherit;opacity:0;pointer-events:none}
+.bid{border-color:#b8df62;background:#c9f36d;color:#192a20}
+.bid::after{box-shadow:0 8px 27px #b7e95b66}
+.partner{border-color:#385069;background:#162b44;color:#fff}
+.partner::before,.expert::before{background-image:linear-gradient(110deg,transparent 34%,#d3ffec30 48%,transparent 62%)}
+.expert{border-color:#386373;background:linear-gradient(120deg,#19465a,#17354b);color:#fff}
+.leadingIcon{display:flex;align-items:center;justify-content:center;width:43px;height:43px;border:1px solid #192a2029;border-radius:12px;background:#ffffff59;color:inherit}
+.leadingIcon>svg{display:block;width:23px;height:23px;flex-shrink:0}
+.partner .leadingIcon{border-color:#c9f36d40;background:#c9f36d17;color:#c9f36d}
+.expert .leadingIcon{border-color:#8ae4da4d;background:#8ae4da18;color:#a4eee3}
+.copy{display:flex;flex-direction:column;gap:7px;min-width:0}
+.title{display:block;font-family:inherit;font-size:20px;font-weight:650;line-height:1.5;letter-spacing:-.4px;overflow-wrap:anywhere}
+.description{display:block;color:#3c512c;font-size:13px;font-weight:500;line-height:1.65;overflow-wrap:anywhere}
+.partner .description{color:#c0d1df}
+.expert .description{color:#c0dce4}
+.artwork{display:block;width:100px;height:85px;max-width:100%;overflow:visible;justify-self:end;pointer-events:none;transition:transform .25s ease}
+.artwork>svg{display:block;width:100%;height:100%;overflow:visible}
+.paper,.pen,.handshake,.handLeft,.handRight,.handJoin,.sparkle,.profile,.badge,.badgeHalo{transform-box:fill-box;transform-origin:center}
+.pen{transform:translate(76px,86px)}
+.badgeHalo{opacity:0}
+.writingLine{stroke-dasharray:1;stroke-dashoffset:0;opacity:1}
+.card:focus-visible{outline:3px solid #6741d9;outline-offset:4px;box-shadow:0 0 0 3px #fcfbfd,0 10px 28px #24324726}
+@media(hover:hover) and (pointer:fine){
+  .card:hover{transform:translateY(-4px);box-shadow:0 14px 30px #24324726}
+  .bid:hover{border-color:#8cb938}
+  .partner:hover{border-color:#829bb5}
+  .expert:hover{border-color:#74b6c0}
+  .card:hover .artwork{transform:translateX(3px)}
+}
+/* The wrapper owns scroll reveal; these loops run only while the scene is visible. */
+@media(prefers-reduced-motion:no-preference){
+  .actions[data-running=true] .card::before{animation:cardShimmer 4.8s ease-in-out infinite}
+  .actions[data-running=true] .bid::after{animation:bidGlow 3.5s ease-in-out infinite}
+  .actions[data-running=true] .partner{animation:cardFloat 4s ease-in-out 1s infinite both}
+  .actions[data-running=true] .expert{animation:cardFloat 4.4s ease-in-out 1.6s infinite both}
+  .actions[data-running=true] .partner::before{animation-delay:2.4s}
+  .actions[data-running=true] .expert::before{animation-delay:3.2s}
+  .actions[data-running=true] .paper{animation:paperBreathe 4.8s ease-in-out infinite}
+  .actions[data-running=true] .pen{animation:penWriting 4.8s ease-in-out infinite}
+  .actions[data-running=true] .writingLine{animation:lineWriting 4.8s ease-in-out infinite both}
+  .actions[data-running=true] .lineTwo{animation-name:lineTwoWriting}
+  .actions[data-running=true] .lineThree{animation-name:lineThreeWriting}
+  .actions[data-running=true] .handshake{animation:handshakeBob 2.8s ease-in-out infinite}
+  .actions[data-running=true] .handLeft{animation:handReachLeft 2.8s ease-in-out infinite}
+  .actions[data-running=true] .handRight{animation:handReachRight 2.8s ease-in-out infinite}
+  .actions[data-running=true] .handJoin{animation:handJoin 2.8s ease-in-out infinite}
+  .actions[data-running=true] .partner .sparkle{animation:handshakeSpark 2.8s ease-in-out infinite}
+  .actions[data-running=true] .profile{animation:profileBob 3.2s ease-in-out infinite}
+  .actions[data-running=true] .badge{animation:badgePulse 3.2s ease-in-out infinite}
+  .actions[data-running=true] .badgeHalo{animation:badgeRipple 3.2s ease-out infinite}
+  .actions[data-running=true] .expert .sparkle{animation:expertSparkle 2.6s ease-in-out .4s infinite both}
+  .actions[data-running=true]:has(.card:focus-visible) :is(.card,.paper,.pen,.writingLine,.handshake,.handLeft,.handRight,.handJoin,.sparkle,.profile,.badge,.badgeHalo),.actions[data-running=true]:has(.card:focus-visible) .card::before,.actions[data-running=true]:has(.card:focus-visible) .card::after{animation-play-state:paused}
+}
+@keyframes cardShimmer{
+  0%,15%{background-position:150% 50%;opacity:0}
+  22%{opacity:1}
+  62%{background-position:-150% 50%;opacity:1}
+  70%,100%{background-position:-150% 50%;opacity:0}
+}
+@keyframes bidGlow{0%,100%{opacity:.15}50%{opacity:.8}}
+@keyframes cardFloat{0%,100%{translate:0 0}50%{translate:0 -3px}}
+@keyframes paperBreathe{0%,100%{transform:rotate(-2deg)}45%,70%{transform:rotate(2deg)}}
+@keyframes penWriting{
+  0%,8%,78%,100%{transform:translate(76px,86px)}
+  12%{transform:translate(40px,41px)}
+  30%{transform:translate(69px,41px)}
+  33%{transform:translate(40px,52px)}
+  51%{transform:translate(67px,52px)}
+  54%{transform:translate(40px,63px)}
+  68%{transform:translate(59px,63px)}
+}
+@keyframes lineWriting{
+  0%,12%{stroke-dashoffset:1;opacity:.45}
+  30%,88%{stroke-dashoffset:0;opacity:1}
+  94%,100%{stroke-dashoffset:1;opacity:.45}
+}
+@keyframes lineTwoWriting{
+  0%,33%{stroke-dashoffset:1;opacity:.45}
+  51%,88%{stroke-dashoffset:0;opacity:1}
+  94%,100%{stroke-dashoffset:1;opacity:.45}
+}
+@keyframes lineThreeWriting{
+  0%,54%{stroke-dashoffset:1;opacity:.45}
+  68%,88%{stroke-dashoffset:0;opacity:1}
+  94%,100%{stroke-dashoffset:1;opacity:.45}
+}
+@keyframes handshakeBob{0%,100%{transform:translateY(0) rotate(0)}38%,62%{transform:translateY(-4px) rotate(-3deg)}50%{transform:translateY(1px) rotate(2deg)}}
+@keyframes handReachLeft{0%,100%{transform:translateX(-6px) rotate(-3deg)}35%,70%{transform:translateX(2px) rotate(2deg)}}
+@keyframes handReachRight{0%,100%{transform:translateX(6px) rotate(3deg)}35%,70%{transform:translateX(-2px) rotate(-2deg)}}
+@keyframes handJoin{0%,100%{transform:scale(.95)}40%,65%{transform:scale(1.06)}}
+@keyframes handshakeSpark{0%,20%,88%,100%{opacity:.2;transform:scale(.65) rotate(-15deg)}40%,65%{opacity:1;transform:scale(1.2) rotate(15deg)}}
+@keyframes profileBob{0%,100%{transform:translateY(0)}45%,60%{transform:translateY(-6px)}}
+@keyframes badgePulse{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.14) rotate(12deg)}}
+@keyframes badgeRipple{0%,20%{opacity:0;transform:scale(.8)}35%{opacity:.55}75%,100%{opacity:0;transform:scale(1.2)}}
+@keyframes expertSparkle{0%,100%{opacity:.3;transform:scale(.65)}50%{opacity:1;transform:scale(1.22) rotate(15deg)}}
+@media(max-width:1100px) and (min-width:851px){
+  .card{grid-template-columns:39px minmax(0,1fr) 76px;gap:12px;padding:18px}
+  .leadingIcon{width:39px;height:39px}
+  .title{font-size:18px}
+  .artwork{width:76px;height:70px}
+}
+@media(max-width:850px){
+  .actions{max-width:none}
+}
+@media(max-width:620px){
+  .actions{gap:14px}
+  .card{grid-template-columns:36px minmax(0,1fr) 56px;gap:12px;min-height:124px;padding:16px;border-radius:14px}
+  .leadingIcon{width:36px;height:36px;border-radius:10px}
+  .leadingIcon>svg{width:20px;height:20px}
+  .copy{gap:6px}
+  .title{font-size:16px;line-height:1.55;letter-spacing:-.2px}
+  .description{font-size:12px;line-height:1.7}
+  .artwork{width:56px;height:62px}
+}
+@media(max-width:380px){
+  .card{grid-template-columns:32px minmax(0,1fr) 48px;gap:10px;padding:14px}
+  .leadingIcon{width:32px;height:32px}
+  .leadingIcon>svg{width:18px;height:18px}
+  .title{font-size:15px}
+  .artwork{width:48px;height:58px}
+}
+:global(html[lang=km]) .title{line-height:1.75;letter-spacing:0}
+:global(html[lang=km]) .description{line-height:1.9;letter-spacing:0}
+@media(prefers-reduced-motion:reduce),print{
+  .card,.artwork,.paper,.pen,.writingLine,.handshake,.handLeft,.handRight,.handJoin,.sparkle,.profile,.badge,.badgeHalo{animation:none!important;transition:none;transform:none!important;translate:none!important;opacity:1!important}
+  .card:hover,.card:hover .artwork{transform:none!important}
+  .card::before,.card::after{animation:none!important;opacity:0!important}
+  .writingLine{stroke-dashoffset:0!important}
+  .pen{transform:translate(76px,86px)!important}
+  .badgeHalo{opacity:0!important}
+}
