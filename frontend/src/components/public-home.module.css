@@ -1,3 +1,26 @@
-.home{--dm-home-background:#f3f6fc;--dm-home-card-background:#fff;background:var(--dm-home-background)}
-.home :global(.logo-section){background:var(--dm-home-background)}
-:global(html[data-theme=dark]) .home{--dm-home-background:var(--paper);--dm-home-card-background:var(--paper)}
+.home {
+  --dm-home-background: #fbfaff;
+  --dm-home-card-background: #fff;
+  --dm-home-lavender: rgb(213 196 255 / 64%);
+  --dm-home-sky: rgb(187 226 255 / 62%);
+  --dm-home-lilac: rgb(230 217 255 / 74%);
+  background:
+    radial-gradient(ellipse 70% 38% at 3% 2%, var(--dm-home-lavender), transparent 74%),
+    radial-gradient(ellipse 65% 42% at 100% 36%, var(--dm-home-sky), transparent 75%),
+    radial-gradient(ellipse 85% 35% at 30% 100%, var(--dm-home-lilac), transparent 75%),
+    var(--dm-home-background);
+}
+
+/* Let each section share the same continuous canvas. */
+.home > section,
+.home :global(.logo-section) {
+  background: transparent;
+}
+
+:global(html[data-theme=dark]) .home {
+  --dm-home-background: var(--paper);
+  --dm-home-card-background: var(--paper);
+  --dm-home-lavender: rgb(103 65 217 / 22%);
+  --dm-home-sky: rgb(48 139 205 / 15%);
+  --dm-home-lilac: rgb(141 105 232 / 18%);
+}
