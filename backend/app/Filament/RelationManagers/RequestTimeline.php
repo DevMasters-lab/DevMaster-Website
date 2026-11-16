@@ -26,6 +26,6 @@ class RequestTimeline extends RelationManager
             TextColumn::make('from_status')->label(__('From status'))->formatStateUsing(fn (?string $state): string => $state ? Localization::status($state) : '—'),
             TextColumn::make('to_status')->label(__('To status'))->formatStateUsing(fn (?string $state): string => $state ? Localization::status($state) : '—'),
             TextColumn::make('occurred_at')->label(__('Occurred at'))->dateTime('d M Y H:i')->sortable(),
-        ])->defaultSort('occurred_at', 'desc')->recordActions([])->headerActions([]);
+        ])->defaultSort('occurred_at', 'desc')->paginated([10, 25, 50, 100])->defaultPaginationPageOption(10)->recordActions([])->headerActions([]);
     }
 }

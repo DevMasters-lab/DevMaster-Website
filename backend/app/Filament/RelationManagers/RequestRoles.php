@@ -25,6 +25,6 @@ class RequestRoles extends RelationManager
             TextColumn::make('scope')->label(__('Scope'))->wrap(),
             TextColumn::make('status')->label(__('Status'))->formatStateUsing(fn (string $state): string => Localization::status($state))->badge(),
             TextColumn::make('created_at')->label(__('Created at'))->dateTime('d M Y H:i')->sortable(),
-        ])->defaultSort('created_at', 'desc')->recordActions([])->headerActions([]);
+        ])->defaultSort('created_at', 'desc')->paginated([10, 25, 50, 100])->defaultPaginationPageOption(10)->recordActions([])->headerActions([]);
     }
 }

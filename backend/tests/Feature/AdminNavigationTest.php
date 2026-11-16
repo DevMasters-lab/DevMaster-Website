@@ -3,13 +3,16 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\NotificationTemplateResource\ManageRecords;
+use App\Filament\Resources\UserResource\ManageRecords as ManageUsers;
 use App\Filament\Widgets\PlatformStats;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
+use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -86,6 +89,42 @@ class AdminNavigationTest extends TestCase
     public function test_retained_resources_require_authentication(): void
     {
         $this->get('/admin/company-requests')->assertRedirect('/admin/login');
+    }
+
+    public function test_user_list_paginates_filtered_records_and_preserves_search_when_page_size_changes(): void
+    {
+        $admin = $this->user('ADMIN');
+        $prefix = 'Pagination '.$admin->getKey();
+        $users = User::factory()->count(26)
+            ->sequence(fn (Sequence $sequence): array => ['display_name' => $prefix.' '.sprintf('%02d', $sequence->index + 1)])
+            ->create(['status' => 'ACTIVE']);
+        $suspended = User::factory()->create(['display_name' => $prefix.' 00', 'status' => 'SUSPENDED']);
+        $unrelated = User::factory()->create(['display_name' => 'Outside the pagination search', 'status' => 'ACTIVE']);
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+        Filament::bootCurrentPanel();
+
+        $component = Livewire::actingAs($admin)->test(ManageUsers::class)
+            ->assertSuccessful()
+            ->searchTable($prefix)
+            ->filterTable('status', 'ACTIVE')
+            ->sortTable('display_name', 'asc')
+            ->assertCountTableRecords(26)
+            ->assertCanSeeTableRecords($users->take(10), inOrder: true)
+            ->assertCanNotSeeTableRecords($users->slice(10))
+            ->assertCanNotSeeTableRecords([$suspended, $unrelated]);
+
+        $component->call('gotoPage', 2)
+            ->assertCanSeeTableRecords($users->slice(10, 10), inOrder: true)
+            ->assertCanNotSeeTableRecords($users->take(10))
+            ->assertCanNotSeeTableRecords($users->slice(20));
+
+        $component->set('tableRecordsPerPage', 25)
+            ->assertCountTableRecords(26)
+            ->assertCanSeeTableRecords($users->take(25), inOrder: true)
+            ->assertCanNotSeeTableRecords($users->slice(25))
+            ->assertCanNotSeeTableRecords([$suspended, $unrelated])
+            ->mountTableAction('inspect', $users->first())
+            ->assertActionMounted(TestAction::make('inspect')->table($users->first()));
     }
 
     public function test_revoking_resource_access_also_forbids_livewire_updates_to_an_open_page(): void

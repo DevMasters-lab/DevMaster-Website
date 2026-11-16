@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Policies\DomainPolicy;
 use App\Support\Localization;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
@@ -169,7 +170,21 @@ abstract class DomainResource extends Resource
         }
         $viewActions = array_key_exists('view', static::getPages()) ? [ViewAction::make()->label(__('Open record'))] : [];
 
-        return $table->columns($columns)->filters($filters)->recordActions(array_merge($viewActions, [Action::make('inspect')->label(__('Details'))->modalHeading(fn ($record) => static::getModelLabel().' · '.__('Details'))->modalContent(fn ($record) => view('filament.record-details', ['record' => $record]))->modalSubmitAction(false)], static::workflowActions()))->defaultSort(in_array('created_at', $names) ? 'created_at' : (in_array('occurred_at', $names) ? 'occurred_at' : 'id'), 'desc')->defaultPaginationPageOption(20)->paginationPageOptions([20, 50, 100]);
+        $recordActions = array_merge($viewActions, [
+            Action::make('inspect')
+                ->label(__('Details'))
+                ->modalHeading(fn ($record) => static::getModelLabel().' · '.__('Details'))
+                ->modalContent(fn ($record) => view('filament.record-details', ['record' => $record]))
+                ->modalSubmitAction(false),
+        ], static::workflowActions());
+
+        return $table
+            ->columns($columns)
+            ->filters($filters)
+            ->recordActions([ActionGroup::make($recordActions)])
+            ->defaultSort(in_array('created_at', $names) ? 'created_at' : (in_array('occurred_at', $names) ? 'occurred_at' : 'id'), 'desc')
+            ->paginated([10, 25, 50, 100])
+            ->defaultPaginationPageOption(10);
     }
 
     protected static function workflowActions(): array
