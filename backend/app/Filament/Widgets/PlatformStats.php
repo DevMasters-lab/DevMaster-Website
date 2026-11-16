@@ -10,13 +10,13 @@ class PlatformStats extends StatsOverviewWidget
 {
     public static function canView(): bool
     {
-        return auth()->user()?->can('requests.manage') ?? false;
+        return auth()->user()?->can('requests.view') ?? false;
     }
 
     protected function getStats(): array
     {
         $stats = [];
-        if (auth()->user()?->can('requests.manage')) {
+        if (auth()->user()?->can('requests.view')) {
             $stats[] = Stat::make(__('Requests to review'), CompanyRequest::whereIn('status', ['SUBMITTED', 'UNDER_REVIEW', 'CLARIFICATION_REQUIRED'])->count())->description(__('Public company submissions'))->color('primary');
         }
 

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Permission;
 use App\Models\Role;
+use App\Support\AdminPermissions;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -16,6 +17,7 @@ class RolesAndPermissionsSeeder extends Seeder
         DB::transaction(function (): void {
             app(PermissionRegistrar::class)->forgetCachedPermissions();
             $permissions = ['admin.access', 'users.manage', 'roles.manage', 'crm.manage', 'requests.manage', 'experts.review', 'experts.activate', 'experts.manage', 'matching.manage', 'offers.prepare', 'offers.issue', 'offers.record-response', 'selections.decide', 'placements.manage', 'documents.view', 'notifications.manage', 'content.manage', 'audit.view', 'settings.manage', 'reports.export'];
+            $permissions = array_values(array_unique([...$permissions, ...array_keys(AdminPermissions::definitions())]));
             foreach ($permissions as $code) {
                 $matches = Permission::where('code', $code)->orWhere(fn ($query) => $query->where('name', $code)->where('guard_name', 'web'))->lockForUpdate()->get();
                 $permission = $matches->first();
@@ -27,9 +29,17 @@ class RolesAndPermissionsSeeder extends Seeder
                 }
             }
 
+            $staffPermissions = ['admin.access', 'crm.manage', 'requests.manage', 'experts.manage', 'matching.manage', 'offers.prepare', 'documents.view'];
+
+            foreach (AdminPermissions::legacyGrants() as $legacy => $expanded) {
+                if (in_array($legacy, $staffPermissions, true)) {
+                    $staffPermissions = [...$staffPermissions, ...$expanded];
+                }
+            }
+
             $grants = [
                 'ADMIN' => $permissions,
-                'STAFF' => ['admin.access', 'crm.manage', 'requests.manage', 'experts.manage', 'matching.manage', 'offers.prepare', 'documents.view'],
+                'STAFF' => $staffPermissions,
                 'EXPERT' => [],
             ];
             foreach ($grants as $code => $names) {

@@ -26,10 +26,25 @@ test('both public languages, SEO, Khmer fonts and state-preserving popup languag
  await khmerDialog.getByRole('button',{name:'បិទការអញ្ជើញចូលរួមគម្រោង'}).click();await page.reload();await expect(page.locator('html')).toHaveAttribute('lang','km');await expect(page.locator('link[rel=alternate][hreflang=en]')).toHaveAttribute('href',/\/en\/home$/);await expect(page.locator('html')).toHaveAttribute('dir','ltr');
  const fonts=await page.evaluate(async()=>{await document.fonts.load('400 16px "Noto Sans Khmer"','ភាសាខ្មែរ');return document.fonts.check('400 16px "Noto Sans Khmer"','ភាសាខ្មែរ');});expect(fonts).toBe(true);await expect(page.locator('.language-trigger')).toBeVisible();expect(await page.locator('body').evaluate(element=>element.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'../.runtime/khmer-public-mobile.png',fullPage:true});
 });
-test('Filament switches actual resource and modal translations without losing pending inputs',async({page,context})=>{
+test('Filament switches resource and role-form translations without losing pending inputs',async({page,context})=>{
  test.setTimeout(150000);await context.addCookies([{name:'devmasters_locale',value:'en',url:'http://localhost:3000'}]);const data=fixture();await page.goto('/admin/login');await page.getByLabel('Email address').fill(data.i18n_admin_email);await page.locator('input[type=password]').fill(data.i18n_admin_password);await page.getByRole('button',{name:'Sign in',exact:true}).click();await expect(page.getByRole('textbox',{name:'Enter the 6-digit code from the authenticator app'})).toBeVisible();const code=totp(data.i18n_totp_secret);for(let index=0;index<6;index++)await page.locator('input.fi-one-time-code-input-digit').nth(index).fill(code[index]);await expect(page).toHaveURL(/\/admin$/);
  await page.locator('.fi-topbar .admin-language-toggle').click();await expect(page.locator('html')).toHaveAttribute('lang','km');await expect(page.getByRole('link',{name:'សំណើក្រុមហ៊ុន',exact:true})).toBeVisible();
- const resources=['users','roles','permissions','company-requests','documents','document-versions','notification-templates','public-pages','system-settings'];
+ const resources=['users','roles','company-requests','documents','document-versions','notification-templates','public-pages','system-settings'];
  for(const resource of resources){await page.goto('/admin/'+resource);await expect(page.locator('h1')).toBeVisible();expect(await page.locator('h1').innerText()).toMatch(/[\u1780-\u17ff]/);}
- await page.screenshot({path:'../.runtime/khmer-admin.png',fullPage:true});await page.goto('/admin/roles');await page.getByRole('button',{name:'បង្កើតតួនាទីផ្ទាល់ខ្លួន',exact:true}).click();const dialog=page.getByRole('dialog');const name=dialog.getByRole('textbox',{name:/ឈ្មោះ/});await name.fill('Original unsaved role');await dialog.locator('.admin-language-toggle').click();await expect(page.locator('html')).toHaveAttribute('lang','en');await expect(dialog.getByRole('textbox',{name:/Name/})).toHaveValue('Original unsaved role');await expect(dialog.getByRole('heading',{name:'Create custom role'})).toBeVisible();await expect(page.locator('.fi-topbar .admin-language-toggle')).toHaveAttribute('aria-label','Switch to Khmer');await dialog.getByRole('button',{name:'Cancel',exact:true}).click();await page.reload();await expect(page.locator('html')).toHaveAttribute('lang','en');await page.screenshot({path:'../.runtime/bilingual-admin.png',fullPage:true});
+ await page.screenshot({path:'../.runtime/khmer-admin.png',fullPage:true});
+ await page.goto('/admin/roles');
+ await page.getByRole('link',{name:'បង្កើតតួនាទីផ្ទាល់ខ្លួន',exact:true}).click();
+ await expect(page).toHaveURL(/\/admin\/roles\/create$/);
+ await page.getByRole('textbox',{name:/ឈ្មោះ/}).fill('Original unsaved role');
+ await page.locator('.fi-topbar .admin-language-toggle').click();
+ await expect(page.locator('html')).toHaveAttribute('lang','en');
+ await expect(page.getByRole('textbox',{name:'Name',exact:true})).toHaveValue('Original unsaved role');
+ await expect(page.locator('h1')).toContainText('Role');
+ await expect(page.locator('.fi-topbar .admin-language-toggle')).toHaveAttribute('aria-label','Switch to Khmer');
+ page.once('dialog',dialog=>dialog.accept());
+ await page.getByRole('button',{name:'Cancel',exact:true}).click();
+ await expect(page).toHaveURL(/\/admin\/roles$/);
+ await page.reload();
+ await expect(page.locator('html')).toHaveAttribute('lang','en');
+ await page.screenshot({path:'../.runtime/bilingual-admin.png',fullPage:true});
 });

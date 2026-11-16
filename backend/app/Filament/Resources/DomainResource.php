@@ -15,6 +15,8 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
 abstract class DomainResource extends Resource
@@ -26,8 +28,6 @@ abstract class DomainResource extends Resource
         'document_versions' => ['group' => 'Documents', 'sort' => 20, 'icon' => Heroicon::OutlinedDocumentDuplicate],
         'public_pages' => ['group' => 'Website content', 'sort' => 10, 'icon' => Heroicon::OutlinedGlobeAlt],
         'users' => ['group' => 'Access management', 'sort' => 10, 'icon' => Heroicon::OutlinedUsers],
-        'roles' => ['group' => 'Access management', 'sort' => 20, 'icon' => Heroicon::OutlinedUserGroup],
-        'permissions' => ['group' => 'Access management', 'sort' => 30, 'icon' => Heroicon::OutlinedKey],
         'notification_templates' => ['group' => 'Settings', 'sort' => 10, 'icon' => Heroicon::OutlinedBell],
         'system_settings' => ['group' => 'Settings', 'sort' => 20, 'icon' => Heroicon::OutlinedCog6Tooth],
     ];
@@ -66,7 +66,7 @@ abstract class DomainResource extends Resource
 
     public static function permission(): string
     {
-        return DomainPolicy::MODULES[(new (static::getModel()))->getTable()];
+        return (new DomainPolicy((new (static::getModel()))->getTable()))->permission();
     }
 
     public static function canViewAny(): bool
@@ -76,15 +76,21 @@ abstract class DomainResource extends Resource
 
     public static function canCreate(): bool
     {
-        return (new DomainPolicy((new (static::getModel()))->getTable()))->create(auth()->user());
+        $table = (new (static::getModel()))->getTable();
+
+        return in_array($table, ['organizations', 'contacts', 'skills', 'services'], true)
+            && auth()->check()
+            && (new DomainPolicy($table))->create(auth()->user());
     }
 
-    public static function canEdit($record): bool
+    public static function canEdit(Model $record): bool
     {
-        return (new DomainPolicy($record->getTable()))->update(auth()->user(), $record);
+        return in_array($record->getTable(), ['organizations', 'contacts', 'skills', 'services'], true)
+            && auth()->check()
+            && (new DomainPolicy($record->getTable()))->update(auth()->user(), $record);
     }
 
-    public static function canDelete($record): bool
+    public static function canDelete(Model $record): bool
     {
         return false;
     }
@@ -173,6 +179,7 @@ abstract class DomainResource extends Resource
         $recordActions = array_merge($viewActions, [
             Action::make('inspect')
                 ->label(__('Details'))
+                ->authorize(fn (): bool => Gate::allows(static::permission()))
                 ->modalHeading(fn ($record) => static::getModelLabel().' · '.__('Details'))
                 ->modalContent(fn ($record) => view('filament.record-details', ['record' => $record]))
                 ->modalSubmitAction(false),

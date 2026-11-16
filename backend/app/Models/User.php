@@ -21,7 +21,10 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery, HasName
 {
     use HasFactory, HasUuids, InteractsWithAppAuthentication, InteractsWithAppAuthenticationRecovery, Notifiable;
-    use HasRoles { roles as protected assignedRoles; }
+    use HasRoles {
+        roles as protected assignedRoles;
+        checkPermissionTo as protected checkAssignedPermission;
+    }
 
     public function roles(): MorphToMany
     {
@@ -50,6 +53,11 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     public function getFilamentName(): string
     {
         return $this->display_name;
+    }
+
+    public function checkPermissionTo(mixed $permission, ?string $guardName = null): bool
+    {
+        return $this->status === 'ACTIVE' && $this->checkAssignedPermission($permission, $guardName);
     }
 
     public function canAccessPanel(Panel $panel): bool

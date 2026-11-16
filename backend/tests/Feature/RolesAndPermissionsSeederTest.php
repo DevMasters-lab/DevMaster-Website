@@ -22,9 +22,14 @@ class RolesAndPermissionsSeederTest extends TestCase
         $this->seed(RolesAndPermissionsSeeder::class);
 
         $this->assertDatabaseCount('roles', 3);
-        $this->assertDatabaseCount('permissions', 20);
+        $this->assertDatabaseCount('permissions', 51);
         $this->assertTrue(Role::findByName('ADMIN')->hasPermissionTo('users.manage'));
+        $this->assertTrue(Role::findByName('ADMIN')->hasPermissionTo('users.delete'));
         $this->assertTrue(Role::findByName('STAFF')->hasPermissionTo('admin.access'));
+        $this->assertTrue(Role::findByName('STAFF')->hasPermissionTo('requests.update'));
+        $this->assertTrue(Role::findByName('STAFF')->hasPermissionTo('documents.create'));
+        $this->assertTrue(Role::findByName('STAFF')->hasPermissionTo('document_versions.view'));
+        $this->assertFalse(Role::findByName('STAFF')->hasPermissionTo('requests.delete'));
         $this->assertFalse(Role::findByName('STAFF')->hasPermissionTo('users.manage'));
         $this->assertSame(0, Role::findByName('EXPERT')->permissions()->count());
         $this->assertDatabaseCount('user_roles', 0);
@@ -45,8 +50,8 @@ class RolesAndPermissionsSeederTest extends TestCase
         $this->seed(RolesAndPermissionsSeeder::class);
 
         $this->assertDatabaseCount('roles', 3);
-        $this->assertDatabaseCount('permissions', 21);
-        $this->assertDatabaseCount('role_permissions', 30);
+        $this->assertDatabaseCount('permissions', 52);
+        $this->assertDatabaseCount('role_permissions', 66);
         foreach (['ADMIN', 'STAFF', 'EXPERT'] as $name) {
             $this->assertTrue(Role::findByName($name)->hasPermissionTo('custom.permission'));
         }

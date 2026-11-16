@@ -1,5 +1,9 @@
 **/node_modules/
 **/vendor/
+!backend/lang/vendor/
+backend/lang/vendor/*
+!backend/lang/vendor/filament-shield/
+!backend/lang/vendor/filament-shield/**
 **/.next/
 **/.next-audit/
 **/.env

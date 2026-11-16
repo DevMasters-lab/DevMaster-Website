@@ -8,6 +8,7 @@ use App\Filament\Pages\Security;
 use App\Http\Middleware\RenderAdminLogin;
 use App\Http\Middleware\ResolveLocale;
 use App\Livewire\AdminNotifications;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
@@ -21,6 +22,7 @@ use Filament\PanelProvider;
 use Filament\Support\Assets\Css;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
+use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -70,6 +72,20 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()->label(fn (): string => __('Settings')),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
+            ->plugins([
+                FilamentShieldPlugin::make()
+                    ->globallySearchable(false)
+                    ->navigationGroup(fn (): string => __('Access management'))
+                    ->navigationLabel(fn (): string => __('Roles'))
+                    ->modelLabel(fn (): string => __('Role'))
+                    ->pluralModelLabel(fn (): string => __('Roles'))
+                    ->navigationIcon(Heroicon::OutlinedUserGroup)
+                    ->activeNavigationIcon(Heroicon::UserGroup)
+                    ->navigationSort(20)
+                    ->gridColumns(1)
+                    ->checkboxListColumns(['default' => 1, 'sm' => 2, 'lg' => 3])
+                    ->resourceCheckboxListColumns(['default' => 1, 'sm' => 2, 'lg' => 3]),
+            ])
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
                 Dashboard::class,

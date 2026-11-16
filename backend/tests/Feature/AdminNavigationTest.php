@@ -35,7 +35,7 @@ class AdminNavigationTest extends TestCase
             $groups[0] => ['/admin/company-requests'],
             $groups[1] => ['/admin/documents', '/admin/document-versions'],
             $groups[2] => ['/admin/public-pages'],
-            $groups[3] => ['/admin/users', '/admin/roles', '/admin/permissions'],
+            $groups[3] => ['/admin/users', '/admin/roles'],
             $groups[4] => ['/admin/notification-templates', '/admin/system-settings', '/admin/settings/security'],
         ], $this->navigation());
     }
@@ -45,10 +45,10 @@ class AdminNavigationTest extends TestCase
         config(['devmasters.show_operational_navigation' => true]);
         $this->actingAs($this->user('ADMIN'));
 
-        foreach (['organizations', 'contacts', 'request-roles', 'request-activities', 'expert-profiles', 'expert-reviews', 'availabilities', 'skills', 'candidates', 'outreach-records', 'expert-offers', 'offer-versions', 'offer-responses', 'selection-decisions', 'placements', 'notifications', 'outbox-events', 'delivery-attempts', 'audit-events', 'export-jobs', 'services'] as $slug) {
+        foreach (['permissions', 'organizations', 'contacts', 'request-roles', 'request-activities', 'expert-profiles', 'expert-reviews', 'availabilities', 'skills', 'candidates', 'outreach-records', 'expert-offers', 'offer-versions', 'offer-responses', 'selection-decisions', 'placements', 'notifications', 'outbox-events', 'delivery-attempts', 'audit-events', 'export-jobs', 'services'] as $slug) {
             $this->get('/admin/'.$slug)->assertNotFound();
         }
-        $this->assertCount(9, Filament::getPanel('admin')->getResources());
+        $this->assertCount(8, Filament::getPanel('admin')->getResources());
     }
 
     public function test_default_staff_sidebar_keeps_request_and_file_management_without_privileged_menus(): void
@@ -69,7 +69,7 @@ class AdminNavigationTest extends TestCase
     {
         $this->actingAs($this->user('ADMIN'));
 
-        foreach (['company-requests', 'documents', 'document-versions', 'public-pages', 'users', 'roles', 'permissions', 'notification-templates', 'system-settings'] as $slug) {
+        foreach (['company-requests', 'documents', 'document-versions', 'public-pages', 'users', 'roles', 'notification-templates', 'system-settings'] as $slug) {
             $this->get('/admin/'.$slug)->assertOk();
         }
     }
@@ -78,7 +78,6 @@ class AdminNavigationTest extends TestCase
     #[TestWith(['system-settings'])]
     #[TestWith(['users'])]
     #[TestWith(['roles'])]
-    #[TestWith(['permissions'])]
     public function test_staff_cannot_access_privileged_resource_routes(string $slug): void
     {
         $staff = $this->user('STAFF');
@@ -96,10 +95,13 @@ class AdminNavigationTest extends TestCase
         $admin = $this->user('ADMIN');
         $prefix = 'Pagination '.$admin->getKey();
         $users = User::factory()->count(26)
-            ->sequence(fn (Sequence $sequence): array => ['display_name' => $prefix.' '.sprintf('%02d', $sequence->index + 1)])
+            ->sequence(fn (Sequence $sequence): array => [
+                'display_name' => $prefix.' '.sprintf('%02d', $sequence->index + 1),
+                'email' => 'pagination-'.$admin->getKey().'-'.$sequence->index.'@example.test',
+            ])
             ->create(['status' => 'ACTIVE']);
-        $suspended = User::factory()->create(['display_name' => $prefix.' 00', 'status' => 'SUSPENDED']);
-        $unrelated = User::factory()->create(['display_name' => 'Outside the pagination search', 'status' => 'ACTIVE']);
+        $suspended = User::factory()->create(['display_name' => $prefix.' 00', 'email' => 'pagination-'.$admin->getKey().'-suspended@example.test', 'status' => 'SUSPENDED']);
+        $unrelated = User::factory()->create(['display_name' => 'Outside the pagination search', 'email' => 'unrelated-'.str_replace('-', '', $admin->getKey()).'@example.test', 'status' => 'ACTIVE']);
         Filament::setCurrentPanel(Filament::getPanel('admin'));
         Filament::bootCurrentPanel();
 

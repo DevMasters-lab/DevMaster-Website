@@ -22,7 +22,7 @@ class AdminWorkflow
 {
     public function updateRequest(User $actor, CompanyRequest $request, array $data): void
     {
-        Gate::forUser($actor)->authorize('requests.manage');
+        Gate::forUser($actor)->authorize('requests.update');
         DB::transaction(function () use ($actor, $request, $data) {
             $r = CompanyRequest::lockForUpdate()->findOrFail($request->id);
             abort_unless($r->record_version === (int) $data['record_version'], 409, 'Request changed. Refresh first.');
@@ -34,7 +34,7 @@ class AdminWorkflow
 
     public function addRole(User $actor, CompanyRequest $request, array $data): RequestRole
     {
-        Gate::forUser($actor)->authorize('requests.manage');
+        Gate::forUser($actor)->authorize('requests.update');
 
         return RequestRole::create($data + ['request_id' => $request->id]);
     }

@@ -42,7 +42,7 @@ class AccessManagementService
 
     public function createRole(User $actor, array $input): Role
     {
-        Gate::forUser($actor)->authorize('roles.manage');
+        Gate::forUser($actor)->authorize('roles.create');
         $data = Validator::make($input, [
             'code' => ['required', 'regex:/^[A-Z][A-Z0-9_]{2,63}$/', Rule::unique('roles', 'code')],
             'name' => ['required', 'string', 'max:120', Rule::unique('roles', 'name')],
@@ -63,7 +63,7 @@ class AccessManagementService
 
     public function updateRole(User $actor, Role $role, array $input): Role
     {
-        Gate::forUser($actor)->authorize('roles.manage');
+        Gate::forUser($actor)->authorize('roles.update');
         $data = Validator::make($input, [
             'record_version' => ['required', 'integer', 'min:1'],
             'name' => ['required', 'string', 'max:120', Rule::unique('roles', 'name')->ignore($role->id)],
@@ -89,8 +89,8 @@ class AccessManagementService
 
     public function inviteStaff(User $actor, array $input): User
     {
-        Gate::forUser($actor)->authorize('users.manage');
-        Gate::forUser($actor)->authorize('roles.manage');
+        Gate::forUser($actor)->authorize('users.create');
+        Gate::forUser($actor)->authorize('roles.update');
         $input['email'] = mb_strtolower(trim((string) ($input['email'] ?? '')));
         $data = Validator::make($input, [
             'email' => ['required', 'email:rfc', 'max:254', Rule::unique('users', 'email')],
@@ -114,7 +114,8 @@ class AccessManagementService
 
     public function assignRoles(User $actor, User $user, array $roleIds): void
     {
-        Gate::forUser($actor)->authorize('roles.manage');
+        Gate::forUser($actor)->authorize('users.update');
+        Gate::forUser($actor)->authorize('roles.update');
         Validator::make(['role_ids' => $roleIds], ['role_ids' => ['required', 'array', 'min:1'], 'role_ids.*' => ['uuid', 'distinct', 'exists:roles,id']])->validate();
         DB::transaction(function () use ($actor, $user, $roleIds): void {
             $user = User::lockForUpdate()->findOrFail($user->id);
@@ -129,7 +130,7 @@ class AccessManagementService
 
     public function changeStatus(User $actor, User $user, string $status): void
     {
-        Gate::forUser($actor)->authorize('users.manage');
+        Gate::forUser($actor)->authorize('users.update');
         Validator::make(['status' => $status], ['status' => ['required', Rule::in(['ACTIVE', 'SUSPENDED', 'DISABLED'])]])->validate();
         DB::transaction(function () use ($actor, $user, $status): void {
             $user = User::lockForUpdate()->findOrFail($user->id);

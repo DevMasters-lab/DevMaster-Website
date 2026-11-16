@@ -14,7 +14,7 @@ class RequestVolume extends ChartWidget
 
     public static function canView(): bool
     {
-        return auth()->user()?->can('requests.manage') ?? false;
+        return auth()->user()?->can('requests.view') ?? false;
     }
 
     protected function getData(): array

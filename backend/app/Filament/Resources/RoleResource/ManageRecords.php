@@ -4,10 +4,10 @@ namespace App\Filament\Resources\RoleResource;
 
 use App\Filament\HandlesWorkflowErrors;
 use App\Filament\Resources\RoleResource;
-use App\Filament\Resources\WorkflowActions;
-use Filament\Resources\Pages\ManageRecords as BasePage;
+use Filament\Actions\CreateAction;
+use Filament\Resources\Pages\ListRecords;
 
-class ManageRecords extends BasePage
+class ManageRecords extends ListRecords
 {
     use HandlesWorkflowErrors;
 
@@ -15,6 +15,6 @@ class ManageRecords extends BasePage
 
     protected function getHeaderActions(): array
     {
-        return WorkflowActions::header((new (static::$resource::getModel()))->getTable());
+        return [CreateAction::make()->label(__('Create custom role'))];
     }
 }

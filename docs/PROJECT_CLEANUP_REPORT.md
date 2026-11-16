@@ -4,7 +4,7 @@ Work branch: `codex/full-project-cleanup`. The pre-existing tracked changes and 
 
 ## Audit and implementation plan
 
-The current app has three public pages, two live company-request dialogs, expert signup/sign-in previews, localized CMS fallbacks, a technology drawer/showcase, and nine required Filament resources. Laravel retains a broader API and queued domain workflow; models, policies, enums and relationships can be discovered dynamically through schema dictionaries and framework registration. These are not deletion candidates merely because static references are sparse.
+The current app has three public pages, two live company-request dialogs, expert signup/sign-in previews, localized CMS fallbacks, a technology drawer/showcase, and eight retained Filament resources (the standalone Permissions screen was subsequently removed; permissions are managed through Roles). Laravel retains a broader API and queued domain workflow; models, policies, enums and relationships can be discovered dynamically through schema dictionaries and framework registration. These are not deletion candidates merely because static references are sparse.
 
 Findings: layout and engagement files share one flat component folder; the live bid dialog imports a module containing retired application/contact/company forms; API client/error handling is compressed and has no direct request-contract tests; offer resources query attachments per version; staff setup emails point to retired frontend reset pages; a TypeScript build cache is tracked; the unrouted Laravel welcome view is the only consumer of the separate backend Vite starter stack. npm reports no advisories; Composer initially reports 12 advisories across seven packages.
 

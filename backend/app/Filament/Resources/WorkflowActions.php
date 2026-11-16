@@ -5,7 +5,6 @@ namespace App\Filament\Resources;
 use App\Enums\RequestStatus;
 use App\Models\Contact;
 use App\Models\Organization;
-use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\AccessManagementService;
@@ -35,25 +34,32 @@ class WorkflowActions
             $a[] = Action::make('addRole')->schema([TextInput::make('role_title')->required(), TextInput::make('headcount')->integer()->minValue(1)->default(1)->required(), Textarea::make('scope'), Select::make('work_mode')->options(['REMOTE' => __('Remote'), 'ONSITE' => __('Onsite'), 'HYBRID' => __('Hybrid')]), TextInput::make('location_text')])->action(fn ($record, $data) => app(AdminWorkflow::class)->addRole(auth()->user(), $record, $data));
         }
         if ($table === 'users') {
-            $a[] = Action::make('roles')->visible(fn () => auth()->user()->can('roles.manage'))->fillForm(fn ($record) => ['role_ids' => $record->roles->pluck('id')->all()])->schema([CheckboxList::make('role_ids')->options(fn () => Role::where('is_active', true)->pluck('name', 'id'))->required()])->action(fn ($record, $data) => app(AccessManagementService::class)->assignRoles(auth()->user(), $record, $data['role_ids']));
+            $a[] = Action::make('roles')->fillForm(fn ($record) => ['role_ids' => $record->roles->pluck('id')->all()])->schema([CheckboxList::make('role_ids')->options(fn () => Role::where('is_active', true)->pluck('name', 'id'))->required()])->action(fn ($record, $data) => app(AccessManagementService::class)->assignRoles(auth()->user(), $record, $data['role_ids']));
             $a[] = Action::make('accountStatus')->schema([Select::make('status')->options(['ACTIVE' => __('Active'), 'SUSPENDED' => __('Suspended'), 'DISABLED' => __('Disabled')])->required()])->action(fn ($record, $data) => app(AccessManagementService::class)->changeStatus(auth()->user(), $record, $data['status']));
-        }
-        if ($table === 'roles') {
-            $a[] = Action::make('permissions')->label(__('Edit custom role'))->visible(fn ($record) => ! $record->is_system)->fillForm(fn ($record) => $record->only(['record_version', 'name', 'description', 'is_active']) + ['permission_ids' => $record->permissions->pluck('id')->all()])->schema(array_merge([Hidden::make('record_version')], self::roleFields(false)))->action(fn ($record, $data) => app(AccessManagementService::class)->updateRole(auth()->user(), $record, $data));
         }
         if ($table === 'public_pages') {
             $a[] = Action::make('editContent')->fillForm(fn ($record) => $record->only(['slug', 'locale', 'title', 'body_markdown', 'status']))->schema(self::pageFields())->action(fn ($record, $data) => app(ConfigurationService::class)->page(auth()->user(), $data, $record));
         }
         if ($table === 'document_versions') {
-            $a[] = Action::make('download')->visible(fn ($record) => $record->scan_status === 'CLEAN')->action(function ($record) {
-                Gate::authorize('view', $record);
+            $a[] = Action::make('download')
+                ->visible(fn ($record): bool => Gate::allows('document_versions.view') && Gate::allows('view', $record))
+                ->authorize(fn ($record): bool => Gate::allows('document_versions.view') && Gate::allows('view', $record))
+                ->action(function ($record) {
+                    Gate::authorize('document_versions.view');
+                    Gate::authorize('view', $record);
 
-                return Storage::disk('private')->download($record->object_key, $record->original_filename, ['Content-Type' => 'application/octet-stream', 'Cache-Control' => 'private, no-store']);
-            });
+                    return Storage::disk('private')->download($record->object_key, $record->original_filename, ['Content-Type' => 'application/octet-stream', 'Cache-Control' => 'private, no-store']);
+                });
         }
 
         foreach ($a as $action) {
             if ($action->getName() !== 'download') {
+                self::restrict($action, match ($action->getName()) {
+                    'reviewRequest', 'addRole' => ['requests.update'],
+                    'roles' => ['users.update', 'roles.update'],
+                    'accountStatus' => ['users.update'],
+                    'editContent' => ['content.update'],
+                });
                 $action->modalContentFooter(fn () => view('filament.language-switcher'));
             }
         }
@@ -66,18 +72,12 @@ class WorkflowActions
         return [TextInput::make('slug')->required(), Select::make('locale')->options(['km' => 'ខ្មែរ', 'en' => 'English'])->default('km')->required(), TextInput::make('title')->required(), MarkdownEditor::make('body_markdown')->required(), Select::make('status')->options(['DRAFT' => __('Draft'), 'PUBLISHED' => __('Published'), 'ARCHIVED' => __('Archived')])->default('DRAFT')->required()];
     }
 
-    public static function roleFields(bool $creating = true): array
-    {
-        return array_merge($creating ? [TextInput::make('code')->required()->regex('/^[A-Z][A-Z0-9_]{2,63}$/')->helperText(__('Stable uppercase code, for example OPERATIONS.'))] : [], [TextInput::make('name')->required()->maxLength(120), Textarea::make('description')->maxLength(3000), Toggle::make('is_active')->default(true), CheckboxList::make('permission_ids')->options(fn () => Permission::pluck('description', 'id'))->columns(2)]);
-    }
-
     public static function header(string $table): array
     {
         $actions = match ($table) {
-            'roles' => [Action::make('createCustomRole')->schema(self::roleFields())->action(fn ($data) => app(AccessManagementService::class)->createRole(auth()->user(), $data))],
-            'users' => [Action::make('inviteStaff')->visible(fn () => auth()->user()->can('roles.manage'))->schema([TextInput::make('display_name')->required()->maxLength(200), TextInput::make('email')->email()->required()->maxLength(254), CheckboxList::make('role_ids')->options(fn () => Role::where('is_active', true)->where('code', '<>', 'EXPERT')->pluck('name', 'id'))->required()])->action(fn ($data) => app(AccessManagementService::class)->inviteStaff(auth()->user(), $data))],
+            'users' => [Action::make('inviteStaff')->schema([TextInput::make('display_name')->required()->maxLength(200), TextInput::make('email')->email()->required()->maxLength(254), CheckboxList::make('role_ids')->options(fn () => Role::where('is_active', true)->where('code', '<>', 'EXPERT')->pluck('name', 'id'))->required()])->action(fn ($data) => app(AccessManagementService::class)->inviteStaff(auth()->user(), $data))],
             'documents' => [Action::make('uploadDocument')->schema([FileUpload::make('file')->acceptedFileTypes(['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png'])->maxSize(10240)->storeFiles(false)->required(), Select::make('document_type')->options(['OFFER_ATTACHMENT' => __('Offer attachment'), 'RESPONSE_EVIDENCE' => __('Response evidence'), 'OTHER' => __('Other')])->required()])->action(function ($data) {
-                Gate::authorize('documents.view');
+                Gate::authorize('documents.create');
                 app(DocumentService::class)->upload($data['file'], $data['document_type'], auth()->user());
             })],
             'public_pages' => [Action::make('createPage')->schema(self::pageFields())->action(fn ($data) => app(ConfigurationService::class)->page(auth()->user(), $data))],
@@ -86,9 +86,24 @@ class WorkflowActions
             default => []
         };
         foreach ($actions as $action) {
+            self::restrict($action, match ($action->getName()) {
+                'inviteStaff' => ['users.create', 'roles.update'],
+                'uploadDocument' => ['documents.create'],
+                'createPage' => ['content.create'],
+                'newTemplateVersion' => ['notifications.create', 'notifications.update'],
+                'saveSetting' => ['settings.create', 'settings.update'],
+            }, any: in_array($action->getName(), ['newTemplateVersion', 'saveSetting'], true));
             $action->modalContentFooter(fn () => view('filament.language-switcher'));
         }
 
         return $actions;
+    }
+
+    /** @param list<string> $permissions */
+    private static function restrict(Action $action, array $permissions, bool $any = false): Action
+    {
+        $authorized = fn (): bool => $any ? Gate::any($permissions) : Gate::check($permissions);
+
+        return $action->visible($authorized)->authorize($authorized);
     }
 }

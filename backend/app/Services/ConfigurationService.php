@@ -15,7 +15,7 @@ class ConfigurationService
 {
     public function page(User $actor, array $data, ?PublicPage $page = null): PublicPage
     {
-        Gate::forUser($actor)->authorize('content.manage');
+        Gate::forUser($actor)->authorize($page ? 'content.update' : 'content.create');
         Validator::make($data, ['locale' => ['required', Rule::in(['km', 'en'])]])->validate();
         abort_unless(preg_match('/^[a-z][a-z0-9-]*$/', $data['slug']), 422, 'Use a safe page slug.');
 
@@ -34,12 +34,12 @@ class ConfigurationService
 
     public function template(User $actor, array $data): NotificationTemplate
     {
-        Gate::forUser($actor)->authorize('notifications.manage');
         Validator::make($data, ['locale' => ['required', Rule::in(['km', 'en'])]])->validate();
 
         return DB::transaction(function () use ($actor, $data) {
             DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?,0))', [$data['template_key'].':'.$data['channel'].':'.$data['locale']]);
             $q = NotificationTemplate::where('template_key', $data['template_key'])->where('channel', $data['channel'])->where('locale', $data['locale']);
+            Gate::forUser($actor)->authorize($q->exists() ? 'notifications.update' : 'notifications.create');
             $no = ($q->max('version_no') ?? 0) + 1;
             if ($data['is_active'] ?? false) {
                 (clone $q)->where('is_active', true)->update(['is_active' => false]);
@@ -51,10 +51,22 @@ class ConfigurationService
 
     public function setting(User $actor, string $key, array $value, string $description): SystemSetting
     {
-        Gate::forUser($actor)->authorize('settings.manage');
         abort_unless(in_array($key, ['business.contact', 'business.display_name', 'website.announcement']), 422, 'This setting is not in the approved non-secret allowlist.');
         abort_if(strlen(json_encode($value)) > 5000, 422, 'Setting is too large.');
 
-        return SystemSetting::updateOrCreate(['key' => $key], ['value' => $value, 'description' => $description, 'updated_by_user_id' => $actor->id]);
+        return DB::transaction(function () use ($actor, $key, $value, $description): SystemSetting {
+            DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?,0))', ['system-setting:'.$key]);
+            $setting = SystemSetting::where('key', $key)->lockForUpdate()->first();
+            Gate::forUser($actor)->authorize($setting ? 'settings.update' : 'settings.create');
+            $values = ['value' => $value, 'description' => $description, 'updated_by_user_id' => $actor->id];
+
+            if ($setting) {
+                $setting->update($values);
+
+                return $setting;
+            }
+
+            return SystemSetting::create(['key' => $key] + $values);
+        });
     }
 }

@@ -12,6 +12,11 @@ use App\Models\User;
 
 class DocumentVersionPolicy
 {
+    public function viewAny(User $user): bool
+    {
+        return $user->status === 'ACTIVE' && $user->can('document_versions.view');
+    }
+
     public function view(User $user, DocumentVersion $v): bool
     {
         if ($user->status !== 'ACTIVE' || $v->scan_status !== 'CLEAN') {
@@ -25,7 +30,7 @@ class DocumentVersionPolicy
 
             return $job && $job->requested_by_user_id === $user->id && $job->status === 'COMPLETED' && $job->expires_at?->isFuture() && $user->can('reports.export') && $user->can($permission);
         }
-        if ($user->status === 'ACTIVE' && $user->can('documents.view')) {
+        if ($this->viewAny($user)) {
             return true;
         }
         if (! $user->isEligibleExpert()) {

@@ -2,15 +2,17 @@ Current follow-up: see [Project cleanup report](PROJECT_CLEANUP_REPORT.md) for t
 
 # Admin module removal — final cleanup
 
+Follow-up: the standalone Permissions resource and its page folder have also been removed. Permission selection remains in the Roles editor; authorization models, records, and role relationships are retained. The deletion manifest and audit history below describe the earlier cleanup.
+
 The user explicitly requested deletion of unused backend menus and their code/files/folders after the initial hide-only audit. This cleanup supersedes the navigation-restoration approach described in the historical audit below.
 
 Deletion scope: 21 Filament resource classes and their 21 page folders (44 files), plus nine relation-manager files used only by retired admin screens. All models, policies, services, migrations, API controllers, API endpoints, database tables, jobs, and scheduler tasks remain because they have non-menu consumers.
 
 Request roles and request history stay as read-only Company request tabs, rewritten to remove their dependency on deleted resources. Candidate/offer tabs and matching/offer/export/diagnostic admin actions are retired along with their screens. The sidebar restoration configuration and unused generic CRUD forms are removed.
 
-Current panel: Dashboard; Company intake → Company requests; Documents → Document management and Document versions; Website content → Public pages; Access management → Users, Roles, Permissions; Settings → Notification templates, System settings, Security. Nine resources remain. Deleted module URLs return 404, and there is no configuration switch that restores them.
+Current panel: Dashboard; Company intake → Company requests; Documents → Document management and Document versions; Website content → Public pages; Access management → Users, Roles; Settings → Notification templates, System settings, Security. Eight resources remain. Deleted module URLs return 404, and there is no configuration switch that restores them.
 
-Route comparison after deletion: all 32 API route entries are unchanged. Only 23 Filament resource routes were removed (21 list pages and two record-detail pages), leaving 69 total application routes. Native Filament login/reset/MFA and the current nine resources retain their original methods, names, actions, and middleware.
+Route comparison after deletion: all 32 API route entries are unchanged. Only 23 Filament resource routes were removed (21 list pages and two record-detail pages), leaving 69 total application routes. Native Filament login/reset/MFA and the current eight resources retain their original methods, names, actions, and middleware.
 
 The retired screens no longer provide manual matching, offer administration, report requests/downloads, diagnostics/retries, CRM master editing, or expert review/invitation. The related domain code is retained for existing API, scheduled, queued, and historical-data consumers. This is an admin UI cleanup; no database cleanup or dependency removal was performed.
 

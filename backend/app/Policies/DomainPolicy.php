@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\User;
+use App\Support\AdminPermissions;
 use Illuminate\Database\Eloquent\Model;
 
 class DomainPolicy
@@ -13,7 +14,7 @@ class DomainPolicy
 
     public function viewAny(User $u): bool
     {
-        return $u->status === 'ACTIVE' && $u->can(self::MODULES[$this->table] ?? 'admin.access');
+        return $u->status === 'ACTIVE' && $u->can($this->permission('view'));
     }
 
     public function view(User $u, Model $m): bool
@@ -23,21 +24,52 @@ class DomainPolicy
 
     public function create(User $u): bool
     {
+        if (isset(AdminPermissions::MODULES[$this->table])) {
+            return $u->status === 'ACTIVE'
+                && ! in_array($this->table, ['company_requests', 'document_versions'], true)
+                && $u->can($this->permission('create'));
+        }
+
         return $this->viewAny($u) && in_array($this->table, ['organizations', 'contacts', 'skills', 'services']);
     }
 
     public function update(User $u, Model $m): bool
     {
+        if (isset(AdminPermissions::MODULES[$this->table])) {
+            if ($this->table === 'roles' && ($m->is_system || $u->roles->contains('id', $m->getKey()))) {
+                return false;
+            }
+
+            return $u->status === 'ACTIVE'
+                && ! in_array($this->table, ['documents', 'document_versions', 'notification_templates'], true)
+                && $u->can($this->permission('update'));
+        }
+
         return $this->viewAny($u) && in_array($this->table, ['organizations', 'contacts', 'skills', 'services']);
     }
 
     public function delete(User $u, Model $m): bool
     {
-        return false;
+        return $u->status === 'ACTIVE'
+            && in_array($this->table, ['public_pages', 'system_settings'], true)
+            && $u->can($this->permission('delete'));
     }
 
     public function deleteAny(User $u): bool
     {
         return false;
+    }
+
+    public function permission(string $operation = 'view'): string
+    {
+        if (isset(AdminPermissions::MODULES[$this->table])) {
+            return AdminPermissions::MODULES[$this->table].'.'.$operation;
+        }
+
+        if (in_array($this->table, ['request_roles', 'request_activities'], true)) {
+            return 'requests.'.$operation;
+        }
+
+        return self::MODULES[$this->table] ?? 'admin.access';
     }
 }
