@@ -1,8 +1,7 @@
-import React from 'react';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
-import {act,cleanup,fireEvent,render,screen,waitFor,within} from '@testing-library/react';
+import {act,cleanup,fireEvent,render,screen,within} from '@testing-library/react';
 import {LocaleProvider} from '../src/i18n/provider';
-import {SiteHeader} from '../src/components/site-shell';
+import {SiteHeader} from '../src/components/layout/site-shell';
 import {api} from '../src/lib/api';
 
 vi.mock('@/lib/api',async importOriginal=>({...await importOriginal<typeof import('../src/lib/api')>(),api:vi.fn()}));

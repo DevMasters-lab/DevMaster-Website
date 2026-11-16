@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\RelationManagers\RequestCandidates;
-use App\Filament\RelationManagers\RequestOffers;
 use App\Filament\RelationManagers\RequestRoles;
 use App\Filament\RelationManagers\RequestTimeline;
 use App\Models\CompanyRequest;
@@ -23,6 +21,6 @@ class CompanyRequestResource extends DomainResource
 
     public static function getRelations(): array
     {
-        return [RequestRoles::class, RequestCandidates::class, RequestOffers::class, RequestTimeline::class];
+        return [RequestRoles::class, RequestTimeline::class];
     }
 }

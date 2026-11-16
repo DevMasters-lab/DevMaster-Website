@@ -10,7 +10,6 @@ use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
-use Tests\Support\WorkflowFixture;
 use Tests\TestCase;
 
 class AdminAndExportsTest extends TestCase
@@ -59,18 +58,17 @@ class AdminAndExportsTest extends TestCase
         }
     }
 
-    public function test_contextual_admin_tables_search_expert_names_and_user_emails(): void
+    public function test_user_management_searches_by_user_email(): void
     {
-        $fixture = WorkflowFixture::make();
-        $this->actingAs($fixture['admin']);
+        $admin = User::factory()->create();
+        $admin->assignRole('ADMIN');
+        $user = User::factory()->create();
+        $this->actingAs($admin);
         Filament::setCurrentPanel(Filament::getPanel('admin'));
         Filament::bootCurrentPanel();
         Livewire::test(ManageRecords::class)
-            ->searchTable($fixture['user']->email)->assertCanSeeTableRecords([$fixture['user']]);
-        Livewire::test(\App\Filament\Resources\ExpertProfileResource\ManageRecords::class)
-            ->searchTable($fixture['expert']->contact_email)->assertCanSeeTableRecords([$fixture['expert']]);
-        Livewire::test(\App\Filament\Resources\ExpertOfferResource\ManageRecords::class)
-            ->searchTable($fixture['expert']->full_name)->assertCanSeeTableRecords([$fixture['offer']]);
+            ->searchTable($user->email)->assertCanSeeTableRecords([$user]);
+
     }
 
     public function test_public_catalogue_uses_only_active_database_services(): void

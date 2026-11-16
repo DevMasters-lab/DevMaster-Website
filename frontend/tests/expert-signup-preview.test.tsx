@@ -1,8 +1,7 @@
-import React from 'react';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import {act,cleanup,fireEvent,render,screen,within} from '@testing-library/react';
 import {LocaleProvider} from '../src/i18n/provider';
-import {HomeEngagementActions} from '../src/components/home-engagement-actions';
+import {HomeEngagementActions} from '../src/features/engagement/home-engagement-actions';
 import {api} from '../src/lib/api';
 
 vi.mock('@/lib/api',async importOriginal=>({...await importOriginal<typeof import('../src/lib/api')>(),api:vi.fn()}));

@@ -1,8 +1,7 @@
-import React from 'react';
 import {afterEach,describe,expect,it} from 'vitest';
 import {cleanup,render,screen,within} from '@testing-library/react';
 import {LocaleProvider} from '../src/i18n/provider';
-import {SiteHeader} from '../src/components/site-shell';
+import {SiteHeader} from '../src/components/layout/site-shell';
 
 afterEach(cleanup);
 describe('public header actions',()=>{

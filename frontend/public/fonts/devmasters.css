@@ -72,6 +72,43 @@ html[lang='km'] :is(h1, h2) :where(*) {
     letter-spacing: normal;
 }
 
+/* Keep resource listings tall enough to fill the space below the topbar. */
+.fi-resource-list-records-page > .fi-page-header-main-ctn {
+    min-height: calc(100dvh - var(--topbar-height, 4rem));
+}
+.fi-resource-list-records-page > .fi-page-header-main-ctn > .fi-page-main,
+.fi-resource-list-records-page .fi-page-main > .fi-page-content,
+.fi-resource-list-records-page .fi-page-content > .fi-sc,
+.fi-resource-list-records-page .fi-page-content > .fi-sc > .fi-grid-col:has(> .fi-sc-component > .fi-ta),
+.fi-resource-list-records-page .fi-page-content > .fi-sc > .fi-grid-col > .fi-sc-component:has(> .fi-ta),
+.fi-resource-list-records-page .fi-page-content > .fi-sc > .fi-grid-col > .fi-sc-component > .fi-ta {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+.fi-resource-list-records-page .fi-page-content > .fi-sc > .fi-grid-col > .fi-sc-component > .fi-ta > .fi-ta-ctn {
+    flex: 1;
+
+    & > .fi-ta-main {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        min-width: 0;
+
+        &:not(:has(> .fi-ta-empty-state)) > .fi-ta-content-ctn {
+            flex: 1;
+        }
+
+        & > .fi-ta-empty-state {
+            display: flex;
+            flex: 1;
+            align-items: center;
+            justify-content: center;
+        }
+    }
+}
+
 /* Shared sidebar tokens also cover menus and labels rendered outside the sidebar. */
 :root,
 html[lang='km'] {

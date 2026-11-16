@@ -6,9 +6,10 @@
     "dev": "next dev --webpack --hostname 127.0.0.1",
     "build": "next build --webpack",
     "start": "next start --hostname 127.0.0.1",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --incremental false",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "lint": "tsc --noEmit --incremental false --noUnusedLocals --noUnusedParameters"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.0",

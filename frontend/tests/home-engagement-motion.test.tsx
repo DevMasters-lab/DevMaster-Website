@@ -1,9 +1,8 @@
-import React from 'react';
 import {renderToString} from 'react-dom/server';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import {act,cleanup,render} from '@testing-library/react';
 import {LocaleProvider} from '../src/i18n/provider';
-import {HomeEngagementActions} from '../src/components/home-engagement-actions';
+import {HomeEngagementActions} from '../src/features/engagement/home-engagement-actions';
 
 class ViewportObserver{
   static instances:ViewportObserver[]=[];

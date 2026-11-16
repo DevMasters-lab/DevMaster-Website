@@ -2,20 +2,14 @@
 
 namespace App\Filament\Resources;
 
-use App\Models\Organization;
-use App\Models\Skill;
 use App\Policies\DomainPolicy;
 use App\Support\Localization;
 use Filament\Actions\Action;
-use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -24,11 +18,34 @@ use Illuminate\Support\Str;
 
 abstract class DomainResource extends Resource
 {
+    /** @var array<string, array{group: string, sort: int, icon: Heroicon}> */
+    private const NAVIGATION = [
+        'company_requests' => ['group' => 'Company intake', 'sort' => 10, 'icon' => Heroicon::OutlinedClipboardDocumentList],
+        'documents' => ['group' => 'Documents', 'sort' => 10, 'icon' => Heroicon::OutlinedFolderOpen],
+        'document_versions' => ['group' => 'Documents', 'sort' => 20, 'icon' => Heroicon::OutlinedDocumentDuplicate],
+        'public_pages' => ['group' => 'Website content', 'sort' => 10, 'icon' => Heroicon::OutlinedGlobeAlt],
+        'users' => ['group' => 'Access management', 'sort' => 10, 'icon' => Heroicon::OutlinedUsers],
+        'roles' => ['group' => 'Access management', 'sort' => 20, 'icon' => Heroicon::OutlinedUserGroup],
+        'permissions' => ['group' => 'Access management', 'sort' => 30, 'icon' => Heroicon::OutlinedKey],
+        'notification_templates' => ['group' => 'Settings', 'sort' => 10, 'icon' => Heroicon::OutlinedBell],
+        'system_settings' => ['group' => 'Settings', 'sort' => 20, 'icon' => Heroicon::OutlinedCog6Tooth],
+    ];
+
     public static function getNavigationGroup(): string|\UnitEnum|null
     {
-        $group = parent::getNavigationGroup();
+        $group = self::NAVIGATION[(new (static::getModel()))->getTable()]['group'] ?? parent::getNavigationGroup();
 
         return is_string($group) ? __($group) : $group;
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return self::NAVIGATION[(new (static::getModel()))->getTable()]['sort'] ?? parent::getNavigationSort();
+    }
+
+    public static function getNavigationIcon(): string|\BackedEnum|Htmlable|null
+    {
+        return self::NAVIGATION[(new (static::getModel()))->getTable()]['icon'] ?? parent::getNavigationIcon();
     }
 
     public static function getNavigationLabel(): string|Htmlable
@@ -78,44 +95,6 @@ abstract class DomainResource extends Resource
         return $dictionary[(new (static::getModel()))->getTable()];
     }
 
-    public static function form(Schema $schema): Schema
-    {
-        $allowed = ['organization_code', 'name', 'registration_number', 'website', 'address', 'is_active', 'organization_id', 'full_name', 'job_title', 'email', 'phone', 'is_primary', 'code', 'description', 'sort_order'];
-        $fields = [];
-        foreach (static::fields() as $f) {
-            $n = $f['name'];
-            if (! in_array($n, $allowed)) {
-                continue;
-            }
-            if ($f['type'] === 'boolean') {
-                $input = Toggle::make($n)->default($f['default'] === 'true');
-            } elseif ($n === 'organization_id') {
-                $input = Select::make($n)->options(fn () => Organization::where('is_active', true)->pluck('name', 'id'))->searchable();
-            } elseif ($f['type'] === 'text') {
-                $input = Textarea::make($n)->rows(4)->columnSpanFull();
-            } else {
-                $input = TextInput::make($n);
-                if (preg_match('/varchar\((\d+)\)/', $f['type'], $m)) {
-                    $input->maxLength((int) $m[1]);
-                }if ($f['type'] === 'integer') {
-                    $input->numeric()->default(0);
-                }if (in_array($n, ['email'])) {
-                    $input->email();
-                }
-            }
-            if (! $f['nullable']) {
-                $input->required();
-            }$fields[] = $input;
-        }
-
-        if (in_array((new (static::getModel()))->getTable(), ['services', 'skills'])) {
-            $fields[] = TextInput::make('translations.km.name')->label(__('Khmer name'))->maxLength(200);
-            $fields[] = Textarea::make('translations.km.description')->label(__('Khmer description'))->columnSpanFull();
-        }
-
-        return $schema->components($fields)->columns(2);
-    }
-
     public static function infolist(Schema $schema): Schema
     {
         $fields = [];
@@ -148,18 +127,7 @@ abstract class DomainResource extends Resource
         $context = match ((new (static::getModel()))->getTable()) {
             'users' => ['email' => 'Email'],
             'company_requests' => ['submitted_company_name' => 'Company', 'submitted_contact_name' => 'Contact'],
-            'expert_profiles' => ['professional_title' => 'Expertise', 'contact_email' => 'Email'],
-            'expert_offers' => ['expertProfile.full_name' => 'Expert', 'request.reference_no' => 'Request', 'currentVersion.version_no' => 'Version'],
-            'candidates' => ['expertProfile.full_name' => 'Expert', 'request.reference_no' => 'Request'],
-            'placements' => ['expertProfile.full_name' => 'Expert', 'company_name_snapshot' => 'Company', 'request.reference_no' => 'Request'],
-            'availabilities' => ['expertProfile.full_name' => 'Expert', 'starts_on' => 'From', 'ends_on' => 'Through'],
-            'offer_versions' => ['offer.reference_no' => 'Offer', 'version_no' => 'Version'],
-            'selection_decisions' => ['offer.reference_no' => 'Offer', 'offer.expertProfile.full_name' => 'Expert'],
-            'offer_responses' => ['offerVersion.offer.reference_no' => 'Offer', 'offerVersion.version_no' => 'Version'],
-            'outreach_records' => ['candidate.expertProfile.full_name' => 'Expert', 'follow_up_at' => 'Follow up'],
             'document_versions' => ['document.title' => 'Document', 'scan_status' => 'Scan'],
-            'export_jobs' => ['export_type' => 'Report', 'format' => 'Format', 'requestedByUser.display_name' => 'Requested by'],
-            'notifications' => ['recipientUser.display_name' => 'Recipient'],
             default => []
         };
         $columns = [];
@@ -190,9 +158,6 @@ abstract class DomainResource extends Resource
         if (! $columns) {
             $columns = [TextColumn::make('id')->copyable()];
         }$filters = [];
-        if ((new (static::getModel()))->getTable() === 'expert_profiles') {
-            $filters[] = SelectFilter::make('skill')->options(fn () => Skill::where('is_active', true)->pluck('name', 'id'))->query(fn ($query, $data) => empty($data['value']) ? $query : $query->whereHas('skills', fn ($q) => $q->where('skills.id', $data['value'])));
-        }
         foreach ($fields as $f) {
             if (in_array($f['name'], ['status', 'application_status', 'network_status'])) {
                 $enum = Str::studly($f['type']);
@@ -204,7 +169,7 @@ abstract class DomainResource extends Resource
         }
         $viewActions = array_key_exists('view', static::getPages()) ? [ViewAction::make()->label(__('Open record'))] : [];
 
-        return $table->columns($columns)->filters($filters)->recordActions(array_merge($viewActions, [Action::make('inspect')->label(__('Details'))->modalHeading(fn ($record) => static::getModelLabel().' · '.__('Details'))->modalContent(fn ($record) => view('filament.record-details', ['record' => $record]))->modalSubmitAction(false), EditAction::make()->modalContentFooter(fn () => view('filament.language-switcher'))], static::workflowActions()))->defaultSort(in_array('created_at', $names) ? 'created_at' : (in_array('occurred_at', $names) ? 'occurred_at' : 'id'), 'desc')->defaultPaginationPageOption(20)->paginationPageOptions([20, 50, 100]);
+        return $table->columns($columns)->filters($filters)->recordActions(array_merge($viewActions, [Action::make('inspect')->label(__('Details'))->modalHeading(fn ($record) => static::getModelLabel().' · '.__('Details'))->modalContent(fn ($record) => view('filament.record-details', ['record' => $record]))->modalSubmitAction(false)], static::workflowActions()))->defaultSort(in_array('created_at', $names) ? 'created_at' : (in_array('occurred_at', $names) ? 'occurred_at' : 'id'), 'desc')->defaultPaginationPageOption(20)->paginationPageOptions([20, 50, 100]);
     }
 
     protected static function workflowActions(): array

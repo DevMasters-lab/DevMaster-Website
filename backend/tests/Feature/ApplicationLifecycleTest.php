@@ -2,9 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Filament\RelationManagers\RequestRoles;
+use App\Filament\RelationManagers\RequestTimeline;
+use App\Filament\Resources\CompanyRequestResource\ViewRecord;
+use App\Models\CompanyRequest;
 use App\Models\DocumentVersion;
 use App\Models\ExpertDocument;
 use App\Models\ExpertProfile;
+use App\Models\RequestActivity;
+use App\Models\RequestRole;
 use App\Models\User;
 use App\Services\ExpertApplicationService;
 use Filament\Facades\Filament;
@@ -43,15 +49,22 @@ class ApplicationLifecycleTest extends TestCase
         $this->getJson('/api/v1/expert/profile')->assertJsonPath('data.id', $p->id);
     }
 
-    public function test_contextual_record_pages_render_their_relation_managers(): void
+    public function test_request_details_and_read_only_tabs_remain_scoped_without_removed_resources(): void
     {
         $this->seed();
         $f = F::make();
         $this->actingAs($f['admin']);
         Filament::setCurrentPanel(Filament::getPanel('admin'));
         Filament::bootCurrentPanel();
-        foreach (['CompanyRequest' => $f['request'], 'ExpertProfile' => $f['expert'], 'ExpertOffer' => $f['offer']] as $model => $record) {
-            Livewire::test('App\\Filament\\Resources\\'.$model.'Resource\\ViewRecord', ['record' => $record->id])->assertSuccessful();
-        }
+        $otherRequest = CompanyRequest::factory()->create();
+        $otherRole = RequestRole::create(['request_id' => $otherRequest->id, 'role_title' => 'Other request role']);
+        $activity = RequestActivity::create(['request_id' => $f['request']->id, 'actor_type' => 'PUBLIC', 'activity_type' => 'SUBMITTED']);
+        $otherActivity = RequestActivity::create(['request_id' => $otherRequest->id, 'actor_type' => 'PUBLIC', 'activity_type' => 'SUBMITTED']);
+
+        Livewire::test(ViewRecord::class, ['record' => $f['request']->id])->assertSuccessful();
+        Livewire::test(RequestRoles::class, ['ownerRecord' => $f['request'], 'pageClass' => ViewRecord::class])
+            ->assertCanSeeTableRecords([$f['role']])->assertCanNotSeeTableRecords([$otherRole]);
+        Livewire::test(RequestTimeline::class, ['ownerRecord' => $f['request'], 'pageClass' => ViewRecord::class])
+            ->assertCanSeeTableRecords([$activity])->assertCanNotSeeTableRecords([$otherActivity]);
     }
 }

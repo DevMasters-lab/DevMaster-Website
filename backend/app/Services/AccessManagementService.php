@@ -2,17 +2,44 @@
 
 namespace App\Services;
 
+use App\Models\ExpertProfile;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Spatie\Permission\PermissionRegistrar;
 
 class AccessManagementService
 {
+    public function sendPasswordResetLink(string $email, bool $staffOnly = false): void
+    {
+        $user = User::where('email', strtolower(trim($email)))->first();
+        if (! $user || ! in_array($user->status, ['INVITED', 'ACTIVE'])) {
+            return;
+        }
+        if ($user->hasPermissionTo('admin.access') || (! $staffOnly && $user->expertProfile?->application_status === 'APPROVED')) {
+            Password::sendResetLink(['email' => $user->email]);
+        }
+    }
+
+    public function resetPassword(User $user, string $password): void
+    {
+        DB::transaction(function () use ($user, $password): void {
+            $user = User::lockForUpdate()->findOrFail($user->id);
+            $profile = ExpertProfile::lockForUpdate()->where('user_id', $user->id)->first();
+            abort_unless((($profile && $profile->application_status === 'APPROVED') || $user->hasPermissionTo('admin.access')) && in_array($user->status, ['INVITED', 'ACTIVE']), 403, 'Account is not eligible for activation.');
+            $user->forceFill(['password_hash' => $password, 'status' => 'ACTIVE', 'email_verified_at' => now(), 'remember_token' => Str::random(60)])->save();
+            if ($profile) {
+                $profile->update(['network_status' => 'ACTIVE', 'activated_at' => $profile->activated_at ?? now()]);
+            }
+        });
+    }
+
     public function createRole(User $actor, array $input): Role
     {
         Gate::forUser($actor)->authorize('roles.manage');

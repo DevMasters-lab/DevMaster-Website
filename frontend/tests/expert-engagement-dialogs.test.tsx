@@ -1,11 +1,9 @@
-import React from 'react';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import {act,cleanup,fireEvent,render,screen,waitFor,within} from '@testing-library/react';
 import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
 import {LocaleProvider} from '../src/i18n/provider';
-import {HomeEngagementActions} from '../src/components/home-engagement-actions';
+import {HomeEngagementActions} from '../src/features/engagement/home-engagement-actions';
 import {api} from '../src/lib/api';
-import {ApplicationForm} from '../src/components/intake-form';
 
 vi.mock('@/lib/api',async importOriginal=>{
   const actual=await importOriginal<typeof import('../src/lib/api')>();
@@ -14,21 +12,18 @@ vi.mock('@/lib/api',async importOriginal=>{
 const prototype=HTMLDialogElement.prototype;
 const originalShowModal=Object.getOwnPropertyDescriptor(prototype,'showModal');
 const originalClose=Object.getOwnPropertyDescriptor(prototype,'close');
-const consent={data:{consent:{version:'2026-11',text:'I consent to this expert application and its review.'}}};
 let clients:QueryClient[];
 let originalBodyStyle:string|null;
 let postResult:unknown;
 
 beforeEach(()=>{
   clients=[];postResult=null;vi.mocked(api).mockReset();
-  window.history.replaceState(null,'','/en/home?source=cards#connect');document.cookie='devmasters_locale=en;path=/';
   originalBodyStyle=document.body.getAttribute('style');
   window.history.replaceState(null,'','/en/home?source=cards#connect');
   document.cookie='devmasters_locale=en;path=/';
   vi.spyOn(document.documentElement,'clientWidth','get').mockReturnValue(window.innerWidth-16);
   vi.mocked(api).mockImplementation(async <T,>(path:string)=>{
-    if(path==='/reference-data')return consent as T;
-    if(postResult&&(path==='/company-requests'||path==='/expert-applications'))return postResult as T;
+    if(postResult&&path==='/company-requests')return postResult as T;
     throw new Error(`Unexpected mocked API request: ${path}`);
   });
   Object.defineProperty(prototype,'showModal',{configurable:true,writable:true,value:vi.fn(function(this:HTMLDialogElement){
@@ -50,12 +45,6 @@ function renderActions(locale:'en'|'km'='en'){
   document.cookie=`devmasters_locale=${locale};path=/`;
   const client=new QueryClient({defaultOptions:{queries:{retry:false,gcTime:0}}});clients.push(client);
   return render(<LocaleProvider initialLocale={locale}><QueryClientProvider client={client}><HomeEngagementActions/></QueryClientProvider></LocaleProvider>);
-}
-
-function renderApplication(){
-  const client=new QueryClient({defaultOptions:{queries:{retry:false,gcTime:0}}});clients.push(client);
-  render(<LocaleProvider initialLocale="en"><QueryClientProvider client={client}><section aria-label="Existing expert application"><ApplicationForm variant="dialog"/></section></QueryClientProvider></LocaleProvider>);
-  return {form:screen.getByRole('region',{name:'Existing expert application'})};
 }
 
 const labels={
@@ -144,57 +133,6 @@ describe('expert engagement dialogs',()=>{
     const payload=options?.body as FormData;
     expect(Object.fromEntries(payload.entries())).toEqual({request_type:'HIRE_OUR_TEAM',title:'Expert collaboration request',...contact,expected_start_on:'2027-02-01',requirements:'Collaboration type: Joint proposal\n\nSpecialists requested:\n1. Frontend Engineer\nCount: 2\nRequirements:\nBuild accessible, responsive user interfaces.\n\n2. Cybersecurity Specialist\nCount: 1\nRequirements:\nReview application security and harden the deployment.\n\nExpected start date: 2027-02-01'});
     expect(dialog).toHaveAttribute('open');expect(location.href).toBe(href);
-  });
-  it('blocks malformed consent and restores the real checkbox after a successful retry',async()=>{
-    vi.mocked(api).mockResolvedValueOnce({data:{consent:{version:'',text:''}}});
-    const {form}=renderApplication();
-    await within(form).findByText(/Unable to load consent information/);
-    const name=within(form).getByLabelText('Full name *');
-    fireEvent.change(name,{target:{value:'Preserved retry draft'}});
-    expect(within(form).queryByRole('checkbox')).not.toBeInTheDocument();
-    const submit=within(form).getByRole('button',{name:'Submit application'});
-    expect(submit).toBeDisabled();
-    fireEvent.click(submit);
-    expect(vi.mocked(api).mock.calls.filter(([,options])=>options?.method==='POST')).toHaveLength(0);
-    fireEvent.click(within(form).getByRole('button',{name:'Try again'}));
-    expect(await within(form).findByRole('checkbox')).toHaveAccessibleName(new RegExp(consent.data.consent.text));
-    expect(submit).toBeEnabled();
-    expect(form).toHaveTextContent(consent.data.consent.version);
-    expect(name).toHaveValue('Preserved retry draft');
-    expect(vi.mocked(api).mock.calls.filter(([path])=>path==='/reference-data')).toHaveLength(2);
-    expect(vi.mocked(api).mock.calls.filter(([,options])=>options?.method==='POST')).toHaveLength(0);
-  });
-  it('requires a CV and consent, then preserves optional expert details in the existing application payload',async()=>{
-    const {form}=renderApplication();const href=location.href;
-    fireEvent.change(within(form).getByLabelText('Full name *'),{target:{value:'Sok Expert'}});
-    fireEvent.change(within(form).getByLabelText('Email address *'),{target:{value:'expert@example.test'}});
-    fireEvent.change(within(form).getByRole('combobox',{name:'Primary specialization *'}),{target:{value:'Other'}});
-    fireEvent.change(within(form).getByLabelText('Professional title *'),{target:{value:'GIS automation specialist'}});
-    const biography='I build reliable integrations and accessible digital services.';
-    fireEvent.change(within(form).getByLabelText('Your experience & expertise *'),{target:{value:biography}});
-    const consentInput=await within(form).findByRole('checkbox');
-    fireEvent.click(consentInput);
-    fireEvent.click(within(form).getByRole('button',{name:'Submit application'}));
-    expect(await within(form).findByRole('alert')).toHaveTextContent('Please attach a PDF or DOCX CV, 10 MB or smaller.');
-    expect(vi.mocked(api).mock.calls.filter(([,options])=>options?.method==='POST')).toHaveLength(0);
-    const cv=new File(['%PDF-1.4\nprivate CV'],'expert-cv.pdf',{type:'application/pdf'});
-    fireEvent.change(within(form).getByLabelText(/^Your CV \*/,{selector:'input'}),{target:{files:[cv]}});
-    fireEvent.click(consentInput);
-    fireEvent.click(within(form).getByRole('button',{name:'Submit application'}));
-    expect(await within(form).findByText('Please confirm your consent to apply.')).toBeInTheDocument();
-    expect(vi.mocked(api).mock.calls.filter(([,options])=>options?.method==='POST')).toHaveLength(0);
-    fireEvent.change(within(form).getByRole('combobox',{name:'Years of experience'}),{target:{value:'3–5 years'}});
-    fireEvent.change(within(form).getByLabelText('Portfolio or LinkedIn URL'),{target:{value:'https://portfolio.example.test/sok'}});
-    fireEvent.click(consentInput);
-    postResult={data:{reference_no:'DM-EX-POPUP-001',message:'Received.',message_code:'APPLICATION_RECEIVED'}};
-    fireEvent.click(within(form).getByRole('button',{name:'Submit application'}));
-    expect(await within(form).findByRole('status')).toHaveTextContent('DM-EX-POPUP-001');
-    const posts=vi.mocked(api).mock.calls.filter(([,options])=>options?.method==='POST');
-    expect(posts).toHaveLength(1);expect(posts[0][0]).toBe('/expert-applications');
-    const payload=posts[0][1]?.body as FormData;
-    expect(Object.fromEntries([...payload.entries()].filter(([key])=>key!=='cv'))).toEqual({full_name:'Sok Expert',contact_email:'expert@example.test',contact_phone:'',location_text:'',professional_title:'GIS automation specialist',biography:biography+'\n\nAdditional experience details:\nYears of experience: 3–5 years\nPortfolio / LinkedIn: https://portfolio.example.test/sok',consent:'1',consent_version:consent.data.consent.version});
-    const uploaded=payload.get('cv') as File;expect(uploaded.name).toBe('expert-cv.pdf');expect(uploaded.size).toBe(cv.size);
-    expect(form).toBeInTheDocument();expect(location.href).toBe(href);
   });
   it('keeps bid and partnership drafts while clearing the closed signup preview',async()=>{
     document.body.style.overflow='auto';

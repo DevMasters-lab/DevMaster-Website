@@ -9,6 +9,8 @@ import {useText} from '@/i18n/provider';
 import {technologySkillCategories,type TechnologySkill} from '@/data/technology-skills';
 import {getShowcaseSkills,getTechnologyTileAppearance} from '@/data/technology-skill-tiles';
 import {carouselMotion} from '@/lib/carousel-motion';
+import {TechnologySkillDrawer} from './technology-skill-drawer';
+import {EngagementDialog} from '@/features/engagement/engagement-dialog';
 import styles from './technology-skills-showcase.module.css';
 import 'swiper/css';
 import 'swiper/css/a11y';
@@ -16,7 +18,8 @@ import 'swiper/css/a11y';
 const breakpoints={700:{slidesPerView:4,spaceBetween:14},1100:{slidesPerView:5,spaceBetween:14}};
 const CATEGORY_PREVIEW_COUNT=8;
 
-export function TechnologySkillTile({skill}:{skill:TechnologySkill}){
+export function TechnologySkillTile({skill,dialogId,onSelect}:{skill:TechnologySkill;dialogId:string;onSelect:(skill:TechnologySkill,trigger:HTMLButtonElement)=>void}){
+  const t=useText();
   const appearance=getTechnologyTileAppearance(skill);
   const iconStyle={'--technology-color':appearance.color,'--technology-tint':appearance.tint} as CSSProperties;
   return <article className={styles.card} aria-label={skill.name}>
@@ -24,10 +27,12 @@ export function TechnologySkillTile({skill}:{skill:TechnologySkill}){
       {skill.id==='react'?<Atom size={29} strokeWidth={1.6}/>:skill.id==='docker'?<Box size={27} strokeWidth={1.7}/>:appearance.label}
     </span>
     <h3 className={styles.name}>{skill.name}</h3>
+    <span className={styles.viewTechnology}>{t('View Technology')}</span>
+    <button type="button" className={styles.tileTrigger} aria-label={t('View {technology} details',{technology:skill.name})} aria-haspopup="dialog" aria-controls={dialogId} onClick={event=>onSelect(skill,event.currentTarget)}/>
   </article>;
 }
 
-function TechnologySkillsSlider({skills,id}:{skills:TechnologySkill[];id:string}){
+function TechnologySkillsSlider({skills,id,dialogId,onSelect,interactionOpen}:{skills:TechnologySkill[];id:string;dialogId:string;onSelect:(skill:TechnologySkill,trigger:HTMLButtonElement)=>void;interactionOpen:boolean}){
   const t=useText();
   const columns:TechnologySkill[][]=[];
   for(let index=0;index<skills.length;index+=2)columns.push(skills.slice(index,index+2));
@@ -40,7 +45,7 @@ function TechnologySkillsSlider({skills,id}:{skills:TechnologySkill[];id:string}
   const [navigation,setNavigation]=useState({locked:columns.length<=2,beginning:true,end:columns.length<=2});
   // Swiper needs more slides than the widest viewport to loop without blanks.
   const loop=columns.length>5;
-  const autoplayAllowed=loop&&visible&&pageVisible&&!reducedMotion&&!keyboardFocused;
+  const autoplayAllowed=loop&&visible&&pageVisible&&!reducedMotion&&!keyboardFocused&&!interactionOpen;
   const playbackPolicy=useRef(autoplayAllowed);
   playbackPolicy.current=autoplayAllowed;
   const stopMotion=useCallback((instance:SwiperInstance)=>{
@@ -126,7 +131,7 @@ function TechnologySkillsSlider({skills,id}:{skills:TechnologySkill[];id:string}
         mousewheel={{forceToAxis:true,sensitivity:1}}
         a11y={{slideLabelMessage:'{{index}} / {{slidesLength}}'}}>
         {columns.map(column=><SwiperSlide key={column[0].id} className={styles.slide}>
-          {column.map(skill=><TechnologySkillTile key={skill.id} skill={skill}/>)}
+          {column.map(skill=><TechnologySkillTile key={skill.id} skill={skill} dialogId={dialogId} onSelect={onSelect}/>)}
         </SwiperSlide>)}
       </Swiper>
       <button type="button" className={styles.arrow} aria-label={t('Next technologies')} aria-controls={id+'-track'} disabled={nextDisabled} onClick={()=>move('next')}><ChevronRight size={20} aria-hidden="true"/></button>
@@ -143,6 +148,10 @@ export function TechnologySkillsShowcase(){
   const skillsToggleRef=useRef<HTMLButtonElement>(null);
   const collapseRequested=useRef(false);
   const skillsCollapseRequested=useRef(false);
+  const skillTrigger=useRef<HTMLButtonElement|null>(null);
+  const [selectedSkill,setSelectedSkill]=useState<TechnologySkill|null>(null);
+  const [drawerOpen,setDrawerOpen]=useState(false);
+  const [partnershipOpen,setPartnershipOpen]=useState(false);
   const [categoryId,setCategoryId]=useState('');
   const [categoriesExpanded,setCategoriesExpanded]=useState(false);
   const [skillsExpanded,setSkillsExpanded]=useState(false);
@@ -154,6 +163,19 @@ export function TechnologySkillsShowcase(){
   const hiddenCategoryCount=technologySkillCategories.length-previewCategories.length;
   const skills=getShowcaseSkills(categoryId);
   const filtered=Boolean(categoryId);
+  function openSkill(skill:TechnologySkill,trigger:HTMLButtonElement){
+    skillTrigger.current=trigger;
+    setSelectedSkill(skill);
+    setDrawerOpen(true);
+  }
+  function restoreSkillFocus(){
+    const trigger=skillTrigger.current;
+    if(trigger?.isConnected)trigger.focus({preventScroll:true});
+    else skillsToggleRef.current?.focus({preventScroll:true});
+  }
+  function closeSkill(){setDrawerOpen(false);restoreSkillFocus();}
+  function partnerFromSkill(){setDrawerOpen(false);setPartnershipOpen(true);}
+  function closePartnership(){setPartnershipOpen(false);restoreSkillFocus();}
   function selectCategory(value:string){setCategoryId(value);setSkillsExpanded(false);skillsCollapseRequested.current=false;}
   function resetFilters(){setCategoryId('');setCategoriesExpanded(false);setSkillsExpanded(false);collapseRequested.current=false;skillsCollapseRequested.current=false;allCategoriesRef.current?.focus();}
   function toggleCategories(){collapseRequested.current=categoriesExpanded;setCategoriesExpanded(previous=>!previous);}
@@ -194,10 +216,10 @@ export function TechnologySkillsShowcase(){
         <div id={id+'-skills'}>
           {skills.length?(skillsExpanded?<>
             <ul className={styles.skillsGrid} aria-labelledby={id+'-heading'}>
-              {skills.map((skill,index)=><li key={skill.id} data-reveal="up" data-reveal-delay={index%4}><TechnologySkillTile skill={skill}/></li>)}
+              {skills.map((skill,index)=><li key={skill.id} data-reveal="up" data-reveal-delay={index%4}><TechnologySkillTile skill={skill} dialogId={id+'-detail'} onSelect={openSkill}/></li>)}
             </ul>
             <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{skills.length===1?t('1 skill'):t('{count} skills',{count:skills.length})}</p>
-          </>:<TechnologySkillsSlider key={categoryId} skills={skills} id={id+'-slider'}/>):<>
+          </>:<TechnologySkillsSlider key={categoryId} skills={skills} id={id+'-slider'} dialogId={id+'-detail'} onSelect={openSkill} interactionOpen={drawerOpen||partnershipOpen}/>):<>
             <div className={styles.empty}><Box size={25} aria-hidden="true"/><h3>{t('No skills available')}</h3><p>{t('Choose another category to explore more technologies.')}</p></div>
             <p className="sr-only" role="status">{t('{count} skills',{count:0})}</p>
           </>}
@@ -208,5 +230,7 @@ export function TechnologySkillsShowcase(){
         </button>}
       </div>
     </div>
+    <TechnologySkillDrawer id={id+'-detail'} skill={selectedSkill} open={drawerOpen} onClose={closeSkill} onPartner={partnerFromSkill}/>
+    <EngagementDialog id={id+'-partner'} kind="partner" open={partnershipOpen} onClose={closePartnership}/>
   </section>;
 }

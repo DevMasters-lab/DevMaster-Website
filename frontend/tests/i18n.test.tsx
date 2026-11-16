@@ -1,12 +1,13 @@
-import React from 'react';
 import {afterEach,beforeEach,describe,it,expect,vi} from 'vitest';
 import {render,screen,fireEvent,waitFor,cleanup} from '@testing-library/react';
 import {LocaleProvider,useText,useStatus,useDate} from '../src/i18n/provider';
-import {LanguageSwitcher} from '../src/components/LanguageSwitcher';
+import {LanguageSwitcher} from '../src/components/ui/language-switcher';
 import {NativeValidation} from '../src/i18n/NativeValidation';
-import {CompanyForm} from '../src/components/intake-form';
+import {BidInvitationForm} from '../src/features/engagement/bid-invitation-form';
 import {localePath,stripLocale,supported} from '../src/i18n/config';
 import {api} from '../src/lib/api';
+import english from '../messages/en.json';
+import khmer from '../messages/km.json';
 vi.mock('@/lib/api',()=>({api:vi.fn().mockResolvedValue({data:{locale:'km'}}),ApiError:class extends Error{}}));
 afterEach(cleanup);
 beforeEach(()=>{document.cookie='devmasters_locale=;max-age=0;path=/';window.history.replaceState(null,'','/en/home?source=qa#brief');vi.clearAllMocks();});
@@ -16,18 +17,23 @@ function chooseLanguage(locale:'km'|'en'){
  expect(document.documentElement.lang).toBe(locale);
 }
 describe('Khmer and English localization',()=>{
+ it('has a nonempty Khmer translation for every English UI message',()=>{
+  const messages=khmer.ui as Record<string,string>;
+  const missing=Object.keys(english.ui).filter(key=>!messages[key]?.trim());
+  expect(missing).toEqual([]);
+ });
  it('switches labels immediately and preserves page query, hash and form/file values',async()=>{
-  render(<LocaleProvider initialLocale="en"><LanguageSwitcher/><CompanyForm type="INVITE_US_TO_BID"/></LocaleProvider>);
-  const name=screen.getByLabelText('Your name *');fireEvent.change(name,{target:{value:'Original user name'}});
+  render(<LocaleProvider initialLocale="en"><LanguageSwitcher/><BidInvitationForm/></LocaleProvider>);
+  const name=screen.getByLabelText('Contact person *');fireEvent.change(name,{target:{value:'Original user name'}});
   const fileInput=document.querySelector('input[type=file]') as HTMLInputElement;const file=new File(['private bytes'],'unchanged.pdf',{type:'application/pdf'});fireEvent.change(fileInput,{target:{files:[file]}});
   chooseLanguage('km');
-  await waitFor(()=>expect(screen.getByLabelText('ឈ្មោះរបស់អ្នក *')).toHaveValue('Original user name'));
+  await waitFor(()=>expect(screen.getByLabelText('អ្នកទំនាក់ទំនង *')).toHaveValue('Original user name'));
   expect(screen.queryByRole('menu')).not.toBeInTheDocument();expect(screen.getByRole('button',{name:/Language|ភាសា/})).not.toHaveAttribute('aria-haspopup');
   expect(fileInput.files?.[0]).toBe(file);expect(window.location.pathname).toBe('/km/home');expect(window.location.search).toBe('?source=qa');expect(window.location.hash).toBe('#brief');expect(document.cookie).toContain('devmasters_locale=km');
   await waitFor(()=>expect(api).toHaveBeenCalledWith('/locale',expect.objectContaining({method:'POST',body:'{"locale":"km"}'})));
  });
  it('localizes validation for the selected language without clearing existing values',async()=>{
-  render(<LocaleProvider initialLocale="km"><CompanyForm type="INVITE_US_TO_BID"/></LocaleProvider>);
+  render(<LocaleProvider initialLocale="km"><BidInvitationForm/></LocaleProvider>);
   fireEvent.click(screen.getByRole('button',{name:/ផ្ញើ/}));expect(await screen.findByText('សូមបញ្ចូលឈ្មោះក្រុមហ៊ុនរបស់អ្នក។')).toBeInTheDocument();expect(api).not.toHaveBeenCalled();
  });
  it('localizes dates and displayed status labels while retaining machine codes and missing-message fallback',()=>{

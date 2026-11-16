@@ -2,6 +2,8 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\RequestPasswordReset;
+use App\Filament\Pages\ResetPassword;
 use App\Filament\Pages\Security;
 use App\Http\Middleware\RenderAdminLogin;
 use App\Http\Middleware\ResolveLocale;
@@ -12,11 +14,13 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Assets\Css;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Width;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -37,11 +41,13 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->databaseTransactions()
-            ->passwordReset()
+            ->passwordReset(requestAction: RequestPasswordReset::class, resetAction: ResetPassword::class)
             ->brandName('DevMasters')
             ->brandLogo(fn (): ?string => is_file(public_path('logo-light.png')) ? '/admin/logo-light.png' : null)
             ->darkModeBrandLogo(fn (): ?string => is_file(public_path('logo.png')) ? '/admin/logo.png' : null)
             ->brandLogoHeight('3.5rem')
+            ->maxContentWidth(Width::Full)
+            ->sidebarCollapsibleOnDesktop()
             ->favicon('/favicon.png')
             ->font('Inter', provider: LocalFontProvider::class)
             ->assets([Css::make('devmasters-typography', public_path('fonts/devmasters.css'))->html('/fonts/devmasters.css')])
@@ -55,6 +61,13 @@ class AdminPanelProvider extends PanelProvider
             })
             ->colors([
                 'primary' => Color::Violet,
+            ])
+            ->navigationGroups([
+                NavigationGroup::make()->label(fn (): string => __('Company intake')),
+                NavigationGroup::make()->label(fn (): string => __('Documents')),
+                NavigationGroup::make()->label(fn (): string => __('Website content')),
+                NavigationGroup::make()->label(fn (): string => __('Access management')),
+                NavigationGroup::make()->label(fn (): string => __('Settings')),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')

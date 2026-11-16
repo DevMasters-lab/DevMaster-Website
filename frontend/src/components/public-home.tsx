@@ -1,9 +1,9 @@
 'use client';
-import {useText,useDate,useStatus,useLanguage} from '@/i18n/provider';
+import {useText} from '@/i18n/provider';
 import {CmsContent} from './cms-content';
 import {LogoCarousel} from './logo-carousel';
 import {TechnologySkillsShowcase} from './technology-skills-showcase';
-import {HomeEngagementActions} from './home-engagement-actions';
+import {HomeEngagementActions} from '@/features/engagement/home-engagement-actions';
 import {Code2,Network,ShieldCheck,Database,MoveUpRight} from 'lucide-react';
 import styles from './public-home.module.css';
 

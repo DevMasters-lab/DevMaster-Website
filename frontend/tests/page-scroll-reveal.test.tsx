@@ -1,10 +1,9 @@
-import React from 'react';
 import {renderToString} from 'react-dom/server';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import {act,cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {LocaleProvider} from '../src/i18n/provider';
-import {PageContent} from '../src/components/page-content';
-import {HomeEngagementActions} from '../src/components/home-engagement-actions';
+import {PageContent} from '../src/components/layout/page-content';
+import {HomeEngagementActions} from '../src/features/engagement/home-engagement-actions';
 
 const route=vi.hoisted(()=>({path:'/en/home'}));
 vi.mock('next/navigation',()=>({usePathname:()=>route.path}));

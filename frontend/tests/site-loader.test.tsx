@@ -3,7 +3,7 @@ import {renderToString} from 'react-dom/server';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import {act,cleanup,render,screen} from '@testing-library/react';
 import {LocaleProvider} from '../src/i18n/provider';
-import {SiteLoader} from '../src/components/site-loader';
+import {SiteLoader} from '../src/components/layout/site-loader';
 import {siteLoaderInitScript,siteLoaderMaxDuration,siteLoaderMinDuration} from '../src/lib/site-loader';
 
 const originalUrl=window.location.href;

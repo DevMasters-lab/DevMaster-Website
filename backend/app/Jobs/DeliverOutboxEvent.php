@@ -14,6 +14,7 @@ use App\Services\ApplicationCorrectionService;
 use App\Services\DocumentService;
 use App\Services\ExportService;
 use App\Support\Localization;
+use App\Support\PasswordResetUrl;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -85,7 +86,7 @@ class DeliverOutboxEvent implements ShouldQueue
                         $staff = User::findOrFail($event->aggregate_id);
                         if ($staff->status === 'INVITED' && $staff->hasPermissionTo('admin.access')) {
                             $token = Password::createToken($staff);
-                            $body .= ' '.__('Set up your password: ').config('devmasters.frontend_url').'/reset-password?token='.urlencode($token).'&email='.urlencode($staff->email).'&portal=admin';
+                            $body .= ' '.__('Set up your password: ').PasswordResetUrl::forUser($staff, $token);
                         }
                     }
                     $attempt = DeliveryAttempt::create(['outbox_event_id' => $event->id, 'notification_template_id' => $template?->id, 'notification_id' => \App\Models\Notification::where('outbox_event_id', $event->id)->value('id'), 'delivery_key' => $key, 'channel' => 'EMAIL', 'recipient_address' => $email, 'attempt_no' => $event->publish_attempts, 'provider' => config('mail.default')]);

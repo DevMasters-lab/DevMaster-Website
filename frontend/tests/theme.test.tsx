@@ -1,8 +1,7 @@
-import React from 'react';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react';
 import {LocaleProvider} from '../src/i18n/provider';
-import {ThemeToggle} from '../src/components/ThemeToggle';
+import {ThemeToggle} from '../src/components/ui/theme-toggle';
 import {themeInitScript,themeStorageKey} from '../src/lib/theme';
 
 let systemDark=false;

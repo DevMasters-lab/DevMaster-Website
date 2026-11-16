@@ -12,6 +12,10 @@ trait HandlesWorkflowErrors
 {
     public function exceptionHandlesWorkflowErrors(Throwable $e, callable $stopPropagation): void
     {
+        if (! static::getResource()::canAccess()) {
+            return;
+        }
+
         if ($e instanceof AuthorizationException) {
             Notification::make()->title(__('Access denied'))->body(__('Your account is not authorized for this action.'))->danger()->send();
             $stopPropagation();

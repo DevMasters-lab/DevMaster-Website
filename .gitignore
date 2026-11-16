@@ -1,6 +1,7 @@
 **/node_modules/
 **/vendor/
 **/.next/
+**/.next-audit/
 **/.env
 **/.env.local
 **/storage/*.key
@@ -14,3 +15,5 @@ playwright-report/
 .DS_Store
 **/__pycache__/
 **/*.pyc
+
+**/*.tsbuildinfo

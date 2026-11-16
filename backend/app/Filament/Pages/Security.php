@@ -17,9 +17,11 @@ class Security extends Page
 
     protected static ?string $slug = 'settings/security';
 
+    protected static ?int $navigationSort = 30;
+
     public static function getNavigationGroup(): string|\UnitEnum|null
     {
-        return __('Content and settings');
+        return __('Settings');
     }
 
     public static function getNavigationLabel(): string

@@ -3,14 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ExpertProfile;
 use App\Models\User;
+use App\Services\AccessManagementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -41,30 +39,18 @@ class AuthController extends Controller
         return response()->noContent();
     }
 
-    public function forgot(Request $r)
+    public function forgot(Request $r, AccessManagementService $access)
     {
         $r->validate(['email' => 'required|email']);
-        $u = User::where('email', strtolower(trim($r->email)))->first();
-        if ($u && ($u->expertProfile?->application_status === 'APPROVED' || $u->hasPermissionTo('admin.access')) && in_array($u->status, ['INVITED', 'ACTIVE'])) {
-            Password::sendResetLink(['email' => $u->email]);
-        }
+        $access->sendPasswordResetLink($r->input('email'));
 
         return ['message' => __('If an eligible account exists, a setup or recovery link will be sent.')];
     }
 
-    public function reset(Request $r)
+    public function reset(Request $r, AccessManagementService $access)
     {
         $data = $r->validate(['email' => 'required|email', 'token' => 'required|string', 'password' => 'required|string|min:12|confirmed']);
-        $status = Password::reset($data, function (User $u, string $password) {
-            DB::transaction(function () use ($u, $password) {
-                $p = ExpertProfile::lockForUpdate()->where('user_id', $u->id)->first();
-                abort_unless((($p && $p->application_status === 'APPROVED') || $u->hasPermissionTo('admin.access')) && in_array($u->status, ['INVITED', 'ACTIVE']), 403, 'Account is not eligible for activation.');
-                $u->forceFill(['password_hash' => $password, 'status' => 'ACTIVE', 'email_verified_at' => now(), 'remember_token' => Str::random(60)])->save();
-                if ($p) {
-                    $p->update(['network_status' => 'ACTIVE', 'activated_at' => $p->activated_at ?? now()]);
-                }
-            });
-        });
+        $status = Password::reset($data, fn (User $user, string $password) => $access->resetPassword($user, $password));
         abort_unless($status === Password::PASSWORD_RESET, 422, $status);
 
         return ['message' => __('Password set. You may now sign in.')];

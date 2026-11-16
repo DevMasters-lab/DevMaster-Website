@@ -28,11 +28,13 @@ class PublicController extends Controller
         return ['data' => ['services' => Service::where('is_active', true)->orderBy('sort_order')->get(['id', 'code', 'name', 'description', 'translations'])->map(fn ($service) => ['id' => $service->id, 'code' => $service->code, 'name' => Localization::content($service, 'name'), 'description' => Localization::content($service, 'description')]), 'skills' => Skill::where('is_active', true)->orderBy('name')->get(['id', 'code', 'name', 'translations'])->map(fn ($skill) => ['id' => $skill->id, 'code' => $skill->code, 'name' => Localization::content($skill, 'name')]), 'consent' => ['version' => config('devmasters.consent_version'), 'text' => __(config('devmasters.consent_text')), 'cv_sharing_text' => __(config('devmasters.cv_sharing_text'))]]];
     }
 
-    public function page(string $slug)
+    public function page(Request $request, string $slug): array
     {
-        $p = PublicPage::where('slug', $slug)->whereIn('locale', [app()->getLocale(), 'en'])->where('status', 'PUBLISHED')->orderByRaw('CASE WHEN locale = ? THEN 0 ELSE 1 END', [app()->getLocale()])->firstOrFail();
+        $p = PublicPage::where('slug', $slug)->whereIn('locale', [app()->getLocale(), 'en'])->where('status', 'PUBLISHED')->orderByRaw('CASE WHEN locale = ? THEN 0 ELSE 1 END', [app()->getLocale()])->first();
 
-        return ['data' => $p->only(['slug', 'locale', 'title', 'body_markdown', 'published_at'])];
+        abort_if($p === null && ! $request->boolean('optional'), 404);
+
+        return ['data' => $p?->only(['slug', 'locale', 'title', 'body_markdown', 'published_at'])];
     }
 
     private function scope(Request $r): string

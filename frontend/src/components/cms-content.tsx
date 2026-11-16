@@ -18,7 +18,7 @@ function revealMarkdownBlocks(){
 }
 
 export function CmsContent({slug,children}:{slug:'home'|'privacy'|'terms';children:React.ReactNode}){
- const query=useQuery({queryKey:['page',slug,useLanguage().locale],queryFn:()=>api<{data:{title:string;body_markdown:string}}>('/pages/'+slug),retry:false,staleTime:60000});
- if(query.data)return <div className="prose"><h2 data-reveal="up">{query.data.data.title}</h2><Markdown remarkPlugins={[revealMarkdownBlocks]}>{query.data.data.body_markdown}</Markdown></div>;
+ const query=useQuery({queryKey:['page',slug,useLanguage().locale],queryFn:()=>api<{data:{title:string;body_markdown:string}|null}>('/pages/'+slug+'?optional=1'),retry:false,staleTime:60000});
+ if(query.data?.data)return <div className="prose"><h2 data-reveal="up">{query.data.data.title}</h2><Markdown remarkPlugins={[revealMarkdownBlocks]}>{query.data.data.body_markdown}</Markdown></div>;
  return <>{children}</>;
 }

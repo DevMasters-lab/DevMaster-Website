@@ -1,58 +1,24 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# DevMasters backend
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel 13 / PHP 8.4 REST API and Filament 5 administration. The public Next.js application lives in `../frontend`; this backend has no separate Node/Vite asset pipeline. Filament publishes its vendor assets, and local typography lives in `public/fonts`.
 
-## About Laravel
+- `app/Http`: controllers, middleware, validated requests, and API response resources.
+- `app/Services`: transactional intake, matching, offers, account access, document handling, exports, audit, and outbox operations.
+- `app/Models`, `app/Policies`, `app/Enums`: existing PostgreSQL domain schema, authorization, and status values, including framework/schema-discovered classes.
+- `app/Filament`: nine retained admin resources, request context tabs, Dashboard widgets, Security, and native staff setup/recovery pages.
+- `routes`: existing public/expert REST contracts, native web endpoints, and scheduled commands.
+- `database`: retained migrations, schema source, factories and seeders. No production schema/data cleanup is part of the refactor.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Staff invitations and password recovery point to native Filament pages. Invited staff can set a password or request a fresh setup link; suspended, disabled, and non-staff users cannot activate through those pages. Existing expert API recovery contracts remain intact. Expert signup/sign-in dialogs on the public site remain previews.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Use the [repository README](../README.md) and [native setup](../docs/NATIVE_SETUP.md) for the configured local services. `composer run dev` starts the PHP development server on `127.0.0.1:8081`; run the Next.js frontend separately. Deployment configuration remains in the existing Render/Docker and `../infra` files.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Tests use the separate PostgreSQL `devmaster-website_test` database:
 
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```sh
+DB_DATABASE=devmaster-website_test php artisan test --compact
+vendor/bin/pint --dirty --format agent
+composer audit --locked
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+See the [project cleanup report](../docs/PROJECT_CLEANUP_REPORT.md), [admin deletion manifest](../docs/BACKEND_ADMIN_AUDIT.md), and [API contract](../docs/API.md) for scope, preserved behavior and remaining limitations.

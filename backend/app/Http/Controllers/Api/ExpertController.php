@@ -103,14 +103,14 @@ class ExpertController extends Controller
             $q->where('status', $r->query('status'));
         }
 
-        return OfferResource::collection($q->with(['versions.responses'])->latest()->paginate(20));
+        return OfferResource::collection($q->with(['versions.responses', 'versions.offerDocumentsByOfferVersion.documentVersion'])->latest()->paginate(20));
     }
 
     public function offer(Request $r, ExpertOffer $offer)
     {
         abort_unless($offer->expert_profile_id === $this->profile($r)->id && $offer->versions()->whereNotNull('issued_at')->exists(), 404);
 
-        return new OfferResource($offer->load('versions.responses'));
+        return new OfferResource($offer->load(['versions.responses', 'versions.offerDocumentsByOfferVersion.documentVersion']));
     }
 
     public function respond(OfferResponseRequest $r, OfferVersion $version, OfferService $offers, CommandService $commands)

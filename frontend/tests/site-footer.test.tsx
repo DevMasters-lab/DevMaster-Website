@@ -1,8 +1,7 @@
-import React from 'react';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import {act,cleanup,render,screen,within} from '@testing-library/react';
 import {LocaleProvider} from '../src/i18n/provider';
-import {SiteFooter} from '../src/components/site-shell';
+import {SiteFooter} from '../src/components/layout/site-shell';
 
 const route=vi.hoisted(()=>({path:'/en/home'}));
 vi.mock('next/navigation',()=>({usePathname:()=>route.path}));

@@ -1,8 +1,7 @@
-import React from 'react';
 import {renderToString} from 'react-dom/server';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import {act,cleanup,render} from '@testing-library/react';
-import {FooterBugChase} from '../src/components/footer-bug-chase';
+import {FooterBugChase} from '../src/components/layout/footer-bug-chase';
 
 class ViewportObserver {
   static instances:ViewportObserver[]=[];

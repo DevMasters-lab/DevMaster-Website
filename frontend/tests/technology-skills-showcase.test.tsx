@@ -1,11 +1,14 @@
 import React from 'react';
 import {renderToString} from 'react-dom/server';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
-import {act,cleanup,createEvent,fireEvent,render,screen,within} from '@testing-library/react';
+import {act,cleanup,createEvent,fireEvent,render,screen,waitFor,within} from '@testing-library/react';
 import {LocaleProvider} from '../src/i18n/provider';
 import {TechnologySkillsShowcase} from '../src/components/technology-skills-showcase';
 import {carouselMotion} from '../src/lib/carousel-motion';
 import {getSkillsForCategory,technologySkillCategories,technologySkills} from '../src/data/technology-skills';
+import {getTechnologySkillDetails} from '../src/data/technology-skill-details';
+import english from '../messages/en.json';
+import khmer from '../messages/km.json';
 
 type EngineCallback=(swiper:unknown)=>void;
 type EngineProps={onSwiper?:EngineCallback;onInit?:EngineCallback;onSlideChange?:EngineCallback;onUpdate?:EngineCallback;onAutoplay?:EngineCallback;children:React.ReactNode;[key:string]:unknown};
@@ -50,6 +53,10 @@ class ViewportObserver{
 let reducedMotion=false;
 let hidden=false;
 let motionListeners:Set<()=>void>;
+const dialogPrototype=HTMLDialogElement.prototype;
+const originalShowModal=Object.getOwnPropertyDescriptor(dialogPrototype,'showModal');
+const originalClose=Object.getOwnPropertyDescriptor(dialogPrototype,'close');
+let originalBodyStyle:string|null;
 beforeEach(()=>{
   window.history.replaceState(null,'','/en/home');vi.clearAllMocks();
   reducedMotion=false;hidden=false;motionListeners=new Set();ViewportObserver.instances=[];
@@ -66,8 +73,24 @@ beforeEach(()=>{
   vi.spyOn(document,'visibilityState','get').mockImplementation(()=>hidden?'hidden':'visible');
   vi.stubGlobal('IntersectionObserver',ViewportObserver);
   vi.stubGlobal('matchMedia',()=>({get matches(){return reducedMotion;},addEventListener:(_event:string,listener:()=>void)=>motionListeners.add(listener),removeEventListener:(_event:string,listener:()=>void)=>motionListeners.delete(listener)}));
+  originalBodyStyle=document.body.getAttribute('style');
+  Object.defineProperty(dialogPrototype,'showModal',{configurable:true,writable:true,value:vi.fn(function(this:HTMLDialogElement){
+    if(this.open)return;
+    this.setAttribute('open','');
+    this.querySelector<HTMLElement>('[autofocus],button,a[href]')?.focus();
+  })});
+  Object.defineProperty(dialogPrototype,'close',{configurable:true,writable:true,value:vi.fn(function(this:HTMLDialogElement){
+    if(!this.open)return;
+    this.removeAttribute('open');
+    this.dispatchEvent(new Event('close'));
+  })});
 });
-afterEach(()=>{cleanup();vi.restoreAllMocks();vi.unstubAllGlobals();});
+afterEach(()=>{
+  cleanup();vi.restoreAllMocks();vi.unstubAllGlobals();
+  if(originalShowModal)Object.defineProperty(dialogPrototype,'showModal',originalShowModal);else Reflect.deleteProperty(dialogPrototype,'showModal');
+  if(originalClose)Object.defineProperty(dialogPrototype,'close',originalClose);else Reflect.deleteProperty(dialogPrototype,'close');
+  if(originalBodyStyle===null)document.body.removeAttribute('style');else document.body.setAttribute('style',originalBodyStyle);
+});
 const featured=['React','Next.js','TypeScript','JavaScript','NestJS','Node.js','Laravel','Python','Flutter','PostgreSQL','AWS','Docker'];
 function renderShowcase(locale:'en'|'km'='en'){
   const view=render(<LocaleProvider initialLocale={locale}><TechnologySkillsShowcase/><button type="button">Outside slider</button></LocaleProvider>);
@@ -79,9 +102,15 @@ function technologyIds(){return technologyCards().map(card=>technologySkills.fin
 function viewport(){return screen.getByRole('group',{name:'Technology skills slider'});}
 function expandCategories(){const more=screen.queryByRole('button',{name:/^Show more categories/});if(more)fireEvent.click(more);}
 function hover(element:HTMLElement,entering:boolean){const event=entering?createEvent.pointerOver(element):createEvent.pointerOut(element);Object.defineProperty(event,'pointerType',{value:'mouse'});fireEvent(element,event);}
+function translated(locale:'en'|'km',source:string,values:Record<string,string>={}){
+  const key=Object.entries(english.ui).findLast(([,value])=>value===source)?.[0];
+  const dictionary=(locale==='en'?english:khmer).ui as Record<string,string>;
+  const template=key?dictionary[key]:source;
+  return template.replace(/\{(\w+)\}/g,(match,name:string)=>values[name]??match);
+}
 
 describe('technology skills slider',()=>{
-  it('offers every unique skill with reference technologies first and preserves noninteractive cards',()=>{
+  it('offers every unique skill with reference technologies first and accessible detail buttons',()=>{
     renderShowcase();
     expect(technologyCards()).toHaveLength(technologySkills.length);
     expect(screen.getAllByRole('heading',{level:3,hidden:true}).slice(0,12).map(heading=>heading.textContent)).toEqual(featured);
@@ -92,9 +121,19 @@ describe('technology skills slider',()=>{
     for(const column of columns)expect(column.querySelectorAll('article')).toHaveLength(2);
     expect([...columns[0].querySelectorAll('h3')].map(heading=>heading.textContent)).toEqual(featured.slice(0,2));
     expect([...columns[1].querySelectorAll('h3')].map(heading=>heading.textContent)).toEqual(featured.slice(2,4));
-    for(const card of technologyCards()){expect(card).not.toHaveAttribute('tabindex');expect(card.querySelector('a,button,input,[tabindex]')).toBeNull();}
+    const dialogIds=new Set<string>();
+    for(const card of technologyCards()){
+      expect(card).not.toHaveAttribute('tabindex');
+      const name=card.querySelector('h3')!.textContent!;
+      const button=within(card).getByRole('button',{name:`View ${name} details`});
+      expect(button).toHaveAttribute('type','button');
+      expect(button).toHaveAttribute('aria-haspopup','dialog');
+      dialogIds.add(button.getAttribute('aria-controls')!);
+    }
+    expect(dialogIds.size).toBe(1);
+    expect(document.getElementById([...dialogIds][0])?.tagName).toBe('DIALOG');
     expect(screen.queryAllByRole('link')).toHaveLength(0);
-    expect(screen.queryByText('View technology')).not.toBeInTheDocument();
+    expect(screen.getAllByText('View Technology')).toHaveLength(technologySkills.length);
     expect(screen.queryByRole('button',{name:/Show (more|fewer) technologies/})).not.toBeInTheDocument();
     const filters=screen.getByRole('group',{name:'Technology categories'});
     expect(within(filters).getAllByRole('button').map(button=>button.textContent)).toEqual(['All categories',...technologySkillCategories.slice(0,8).map(category=>category.name)]);
@@ -276,9 +315,9 @@ describe('technology skills slider',()=>{
     expect(screen.queryAllByTestId('technology-column')).toHaveLength(0);
     expect(new Set(technologyIds())).toEqual(new Set(expected.map(skill=>skill.id)));
   });
-  it('renders all skill names on the server with noninteractive cards',()=>{
+  it('renders every skill and its detail button on the server without opening a dialog',()=>{
     const container=document.createElement('div');container.innerHTML=renderToString(<LocaleProvider initialLocale="en"><TechnologySkillsShowcase/></LocaleProvider>);
-    expect(container.querySelectorAll('article')).toHaveLength(technologySkills.length);expect(container.querySelector('a')).toBeNull();expect(container.querySelector('article[tabindex],article [tabindex]')).toBeNull();expect(container.textContent).not.toContain('View technology');expect(container.textContent).not.toContain('Show more technologies');
+    expect(container.querySelectorAll('article')).toHaveLength(technologySkills.length);expect(container.querySelector('a')).toBeNull();expect(container.querySelector('article[tabindex],article [tabindex]')).toBeNull();expect(container.querySelectorAll('article button[aria-haspopup="dialog"]')).toHaveLength(technologySkills.length);expect(container.querySelector('dialog[open]')).toBeNull();expect(container.textContent).not.toContain('Show more technologies');
   });
   it('translates Khmer controls while retaining canonical technology names',()=>{
     renderShowcase('km');expect(screen.getByRole('heading',{level:2,name:'ជំនាញ និងឯកទេសបច្ចេកវិទ្យា'})).toBeInTheDocument();const filters=screen.getByRole('group',{name:'ប្រភេទបច្ចេកវិទ្យា'});expect(within(filters).getByRole('button',{name:'ប្រភេទទាំងអស់'})).toHaveAttribute('aria-pressed','true');
@@ -346,5 +385,103 @@ describe('technology skills slider',()=>{
     act(()=>screen.getByRole('button',{name:'Outside slider'}).focus());
     act(()=>{reducedMotion=false;motionListeners.forEach(listener=>listener());});expect(engine.autoplay.running).toBe(true);engine.animating=true;
     act(()=>{reducedMotion=true;motionListeners.forEach(listener=>listener());});expect(engine.autoplay.running).toBe(false);expect(engine.setTransition).toHaveBeenCalledWith(0);expect(engine.setTranslate).toHaveBeenCalledWith(-42);expect(engine.transitionEnd).toHaveBeenCalled();expect(engine.animating).toBe(false);
+  });
+});
+
+describe('technology skill details drawer',()=>{
+  it.each(['en','km'] as const)('opens localized details from a skill tile in %s without navigating',locale=>{
+    renderShowcase(locale);
+    const href=location.href;
+    const skill=technologySkills.find(item=>item.id==='javascript')!;
+    const details=getTechnologySkillDetails(skill);
+    const trigger=screen.getByRole('button',{name:translated(locale,'View {technology} details',{technology:skill.name})});
+    expect(engine.autoplay.running).toBe(true);
+    fireEvent.click(trigger,{detail:0});
+    const dialog=screen.getByRole('dialog',{name:skill.name});
+    expect(dialog.id).toBe(trigger.getAttribute('aria-controls'));
+    expect(within(dialog).getByRole('heading',{level:2,name:skill.name})).toHaveFocus();
+    expect(dialog).toHaveAccessibleDescription(translated(locale,details.description,{technology:skill.name}));
+    expect(within(dialog).getByRole('heading',{name:translated(locale,'Where it can be applied')})).toBeInTheDocument();
+    expect(within(dialog).getByRole('heading',{name:translated(locale,'Related categories')})).toBeInTheDocument();
+    for(const application of details.applications)expect(within(dialog).getByText(translated(locale,application))).toBeInTheDocument();
+    for(const categoryId of skill.categoryIds){
+      const category=technologySkillCategories.find(item=>item.id===categoryId)!;
+      expect(within(dialog).getByText(translated(locale,category.name))).toBeInTheDocument();
+    }
+    expect(within(dialog).getByRole('button',{name:translated(locale,'Partner with our specialists')})).toHaveAttribute('aria-haspopup','dialog');
+    expect(engine.autoplay.running).toBe(false);
+    engine.animating=true;engine.autoplay.running=true;
+    act(()=>engine.props?.onAutoplay?.(engine));
+    expect(engine.autoplay.running).toBe(false);
+    expect(engine.animating).toBe(false);
+    const close=within(dialog).getByRole('button',{name:translated(locale,'Close technology details')});
+    const partner=within(dialog).getByRole('button',{name:translated(locale,'Partner with our specialists')});
+    act(()=>partner.focus());
+    const forward=createEvent.keyDown(partner,{key:'Tab',bubbles:true,cancelable:true});
+    fireEvent(partner,forward);
+    expect(forward.defaultPrevented).toBe(true);
+    expect(close).toHaveFocus();
+    const backward=createEvent.keyDown(close,{key:'Tab',shiftKey:true,bubbles:true,cancelable:true});
+    fireEvent(close,backward);
+    expect(backward.defaultPrevented).toBe(true);
+    expect(partner).toHaveFocus();
+    fireEvent.click(close);
+    expect(dialog).not.toHaveAttribute('open');
+    expect(trigger).toHaveFocus();
+    act(()=>screen.getByRole('button',{name:'Outside slider'}).focus());
+    expect(engine.autoplay.running).toBe(true);
+    expect(location.href).toBe(href);
+  });
+
+  it.each(['close','cancel','backdrop'] as const)('dismisses through %s and restores the tile focus and existing scroll styles',method=>{
+    document.body.style.overflow='auto';document.body.style.paddingRight='9px';
+    vi.spyOn(document.documentElement,'clientWidth','get').mockReturnValue(window.innerWidth-16);
+    renderShowcase();
+    const trigger=screen.getByRole('button',{name:'View React details'});
+    fireEvent.click(trigger);
+    const dialog=screen.getByRole('dialog',{name:'React'});
+    expect(document.body.style.overflow).toBe('hidden');
+    expect(document.body.style.paddingRight).toBe('25px');
+    if(method==='close')fireEvent.click(within(dialog).getByRole('button',{name:'Close technology details'}));
+    else if(method==='cancel'){
+      const cancel=new Event('cancel',{cancelable:true});
+      fireEvent(dialog,cancel);
+      expect(cancel.defaultPrevented).toBe(true);
+    }else{
+      vi.spyOn(dialog,'getBoundingClientRect').mockReturnValue(new DOMRect(600,0,424,768));
+      fireEvent.click(within(dialog).getByRole('heading',{name:'React'}));
+      fireEvent.click(dialog,{clientX:700,clientY:100});
+      expect(dialog).toHaveAttribute('open');
+      fireEvent.click(dialog,{clientX:200,clientY:100});
+    }
+    expect(dialog).not.toHaveAttribute('open');
+    expect(trigger).toHaveFocus();
+    expect(document.body.style.overflow).toBe('auto');
+    expect(document.body.style.paddingRight).toBe('9px');
+  });
+
+  it('opens a skill from the expanded grid and hands off to the existing partnership form',async()=>{
+    document.body.style.overflow='auto';document.body.style.paddingRight='7px';
+    vi.spyOn(document.documentElement,'clientWidth','get').mockReturnValue(window.innerWidth-16);
+    renderShowcase();
+    fireEvent.click(screen.getByRole('button',{name:/^Show all skills/}));
+    const trigger=screen.getByRole('button',{name:'View ServiceNow details'});
+    fireEvent.click(trigger);
+    const drawer=screen.getByRole('dialog',{name:'ServiceNow'});
+    expect(within(drawer).getByText('User support and incident resolution')).toBeInTheDocument();
+    fireEvent.click(within(drawer).getByRole('button',{name:'Partner with our specialists'}));
+    const partner=await screen.findByRole('dialog',{name:'Partner With Our Experts'});
+    expect(drawer).not.toHaveAttribute('open');
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    await within(partner).findByLabelText('Company / organization *');
+    expect(document.body.style.overflow).toBe('hidden');
+    expect(document.body.style.paddingRight).toBe('23px');
+    fireEvent.click(within(partner).getByRole('button',{name:'Close expert partnership'}));
+    await waitFor(()=>expect(partner).not.toHaveAttribute('open'));
+    expect(trigger).toHaveFocus();
+    expect(document.body.style.overflow).toBe('auto');
+    expect(document.body.style.paddingRight).toBe('7px');
+    expect(screen.getByRole('button',{name:/^Show fewer skills/})).toHaveAttribute('aria-expanded','true');
+    expect(location.pathname).toBe('/en/home');
   });
 });

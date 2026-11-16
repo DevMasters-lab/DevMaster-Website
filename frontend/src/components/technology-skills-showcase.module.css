@@ -25,10 +25,15 @@
 .track:not(:global(.swiper-initialized)) .slide{width:calc((100% - 12px)/2);margin-right:12px}
 .skillsGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:1fr;gap:14px;min-width:0;margin:20px 0 0;padding:0;list-style:none}
 .skillsGrid>li{display:flex;min-width:0}
-.card{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:0;min-width:0;min-height:174px;padding:24px 12px 20px;border:1px solid var(--border);border-radius:14px;background:var(--dm-home-card-background,var(--paper));color:var(--ink);text-align:center;box-shadow:0 2px 8px #24213202;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.card{position:relative;display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:0;min-width:0;min-height:174px;padding:24px 12px 20px;border:1px solid var(--border);border-radius:14px;background:var(--dm-home-card-background,var(--paper));color:var(--ink);text-align:center;box-shadow:0 2px 8px #24213202;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.tileTrigger{position:absolute;inset:0;z-index:1;width:100%;height:100%;padding:0;border:0;border-radius:inherit;background:transparent;cursor:pointer}
+.tileTrigger:focus-visible{outline:3px solid var(--purple);outline-offset:-4px}
 .icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:64px;height:64px;margin-bottom:12px;border-radius:17px;background:var(--technology-tint,var(--soft));color:var(--technology-color,var(--purple));font-family:var(--dm-font-body);font-size:26px;font-weight:700;line-height:1;letter-spacing:-.8px;transition:transform .2s ease}
 .icon>svg{width:30px;height:30px}
 .section .card .name{max-width:100%;margin:0;font-family:var(--dm-font-body);font-size:var(--dm-text-label);font-weight:600;line-height:1.5;letter-spacing:-.2px;overflow-wrap:anywhere}
+.viewTechnology{margin-top:8px;color:#65758c;font-size:11px;font-weight:500;line-height:1.7;letter-spacing:.04em;text-transform:uppercase}
+:global(html[data-theme=dark]) .viewTechnology{color:#b4a7c5}
+:global(html[lang=km]) .viewTechnology{letter-spacing:0}
 .arrow{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:10px;border:1px solid var(--border);border-radius:50%;background:var(--dm-home-card-background,var(--paper));color:var(--purple);transition:background .18s ease,border-color .18s ease,color .18s ease,transform .18s ease}
 .arrow>svg{width:19px;height:19px;flex-shrink:0}
 .arrow:disabled{opacity:.4;cursor:default}

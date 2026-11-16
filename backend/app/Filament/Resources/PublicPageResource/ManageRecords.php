@@ -5,7 +5,6 @@ namespace App\Filament\Resources\PublicPageResource;
 use App\Filament\HandlesWorkflowErrors;
 use App\Filament\Resources\PublicPageResource;
 use App\Filament\Resources\WorkflowActions;
-use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ManageRecords as BasePage;
 
 class ManageRecords extends BasePage
@@ -16,12 +15,6 @@ class ManageRecords extends BasePage
 
     protected function getHeaderActions(): array
     {
-        return array_merge(WorkflowActions::header((new (static::$resource::getModel()))->getTable()), [CreateAction::make()->modalContentFooter(fn () => view('filament.language-switcher'))->mutateDataUsing(function (array $data): array {
-            if (in_array((new (static::$resource::getModel()))->getTable(), ['organizations', 'contacts'])) {
-                $data['created_by_user_id'] = auth()->id();
-            }
-
-            return $data;
-        })]);
+        return WorkflowActions::header((new (static::$resource::getModel()))->getTable());
     }
 }

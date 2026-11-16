@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Observers\MasterRecordObserver;
 use App\Policies\DocumentVersionPolicy;
 use App\Support\Localization;
+use App\Support\PasswordResetUrl;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Field;
 use Filament\Infolists\Components\TextEntry;
@@ -67,6 +68,6 @@ class AppServiceProvider extends ServiceProvider
         foreach (['public-submissions' => 10, 'login' => 5, 'recovery' => 3, 'commands' => 30] as $name => $limit) {
             RateLimiter::for($name, fn ($r) => Limit::perMinute($limit)->by($r->user()?->id ?? $r->ip()));
         }
-        ResetPassword::createUrlUsing(fn ($user, $token) => config('devmasters.frontend_url').'/reset-password?token='.urlencode($token).'&email='.urlencode($user->email).($user->hasPermissionTo('admin.access') ? '&portal=admin' : ''));
+        ResetPassword::createUrlUsing(fn (User $user, string $token): string => PasswordResetUrl::forUser($user, $token));
     }
 }

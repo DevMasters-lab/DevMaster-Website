@@ -11,6 +11,7 @@ if (process.env.VERCEL && (backendUrl.protocol !== 'https:' || /^(?:localhost|.*
 }
 const backend = backendUrl.origin;
 const config: NextConfig = {
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   devIndicators: false,
   // Preserve 127.0.0.1 when locale rewrites run alongside other localhost apps.
   skipProxyUrlNormalize: true,
